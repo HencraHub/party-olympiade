@@ -397,34 +397,64 @@
       flex-wrap: wrap;
       border: 1px solid rgba(255, 255, 255, 0.12);
       background:
-        linear-gradient(120deg, rgba(19, 21, 44, 0.88), rgba(20, 22, 46, 0.66)),
-        radial-gradient(circle at 10% 50%, rgba(139, 92, 246, 0.16), transparent 34%),
-        radial-gradient(circle at 88% 45%, rgba(34, 211, 238, 0.14), transparent 34%);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
+        linear-gradient(140deg, rgba(24, 26, 51, 0.8), rgba(19, 21, 46, 0.66)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%);
+      box-shadow: 0 0 44px rgba(139, 92, 246, 0.2), 0 0 58px rgba(34, 211, 238, 0.18);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
     }
 
-    .bottom-strip p {
+    .step-bar {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .step-image-card {
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      overflow: hidden;
+      background: rgba(10, 12, 24, 0.78);
+      transition: transform 0.22s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      min-height: 220px;
+    }
+
+    .step-image-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(236, 72, 153, 0.52);
+      box-shadow: 0 0 40px rgba(236, 72, 153, 0.26), 0 0 52px rgba(34, 211, 238, 0.22);
+    }
+
+    .step-image-card img {
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .host-control {
+      margin-top: 24px;
+      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 28px;
+      background:
+        linear-gradient(140deg, rgba(29, 19, 52, 0.76), rgba(17, 22, 44, 0.78)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 42%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 0 44px rgba(236, 72, 153, 0.26), 0 0 62px rgba(34, 211, 238, 0.22);
+    }
+
+    .host-control h3 {
+      margin: 0 0 12px;
+      font-size: clamp(24px, 2.2vw, 32px);
+    }
+
+    .host-control p {
       margin: 0;
       color: #d8dbe7;
-    }
-
-    .bottom-strip button {
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 999px;
-      padding: 11px 18px;
-      font-weight: 700;
-      color: #fff;
-      background: linear-gradient(100deg, rgba(139, 92, 246, 0.68), rgba(236, 72, 153, 0.68));
-      cursor: pointer;
-      box-shadow: 0 0 24px rgba(236, 72, 153, 0.32);
-      transition: transform 0.2s ease, box-shadow 0.22s ease;
-    }
-
-    .bottom-strip button:hover,
-    .bottom-strip button:focus-visible {
-      transform: translateY(-2px);
-      box-shadow: 0 0 34px rgba(236, 72, 153, 0.48);
+      line-height: 1.7;
     }
 
     footer {
@@ -462,6 +492,10 @@
       #features {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
+
+      .step-bar {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 940px) {
@@ -476,6 +510,10 @@
 
       #features {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .step-bar {
+        grid-template-columns: 1fr;
       }
 
       .btn {
@@ -497,6 +535,10 @@
 
     @media (max-width: 560px) {
       #features {
+        grid-template-columns: 1fr;
+      }
+
+      .step-bar {
         grid-template-columns: 1fr;
       }
     }
@@ -541,7 +583,7 @@
       </section>
     </div>
 
-    <h2 class="section-title" id="how">Features</h2>
+    <h2 class="section-title">Features</h2>
     <section id="features" aria-label="Feature Karten">
       <article class="feature-card">
         <div class="icon-orb"><img class="feature-icon" src="assets/icon-dice.png" alt="Icon Zufalls-Auslosung" /></div>
@@ -575,9 +617,21 @@
       </article>
     </section>
 
-    <section class="bottom-strip" aria-label="Hinweisbereich">
-      <p>Perfekt für Geburtstage, WG-Partys, Teamevents und jede Feier!</p>
-      <button type="button" onclick="document.getElementById('features').scrollIntoView({ behavior: 'smooth' });">Mehr erfahren</button>
+    <section id="how" aria-label="So funktioniert's">
+      <h2 class="how-title">So funktioniert’s</h2>
+      <p class="how-subline">Von der Lobby bis zum Champion – alles läuft über den Host.</p>
+      <div class="step-panel">
+        <div class="step-bar">
+          <article class="step-image-card"><img src="assets/step-01-lobby.png" alt="Schritt 1: Lobby erstellen" /></article>
+          <article class="step-image-card"><img src="assets/step-02-freunde.png" alt="Schritt 2: Freunde einladen" /></article>
+          <article class="step-image-card"><img src="assets/step-03-spiele.png" alt="Schritt 3: Spiele starten" /></article>
+          <article class="step-image-card"><img src="assets/step-04-gewinner.png" alt="Schritt 4: Champion küren" /></article>
+        </div>
+      </div>
+      <article class="host-control">
+        <h3>Der Host hat die volle Kontrolle</h3>
+        <p>Der Host bestimmt Regeln, Spiele, Teams, Ergebnisse und Sonderfälle. Alle anderen können entspannt mitspielen oder zuschauen.</p>
+      </article>
     </section>
   </main>
 
