@@ -8,8 +8,8 @@
     :root {
       --bg: #070714;
       --bg2: #0d1024;
-      --panel: rgba(18, 18, 36, 0.78);
-      --panel2: rgba(28, 28, 56, 0.56);
+      --panel: rgba(18, 18, 36, 0.8);
+      --panel2: rgba(28, 28, 56, 0.58);
       --border: rgba(255, 255, 255, 0.12);
       --purple: #8b5cf6;
       --pink: #ec4899;
@@ -169,6 +169,49 @@
       filter: blur(56px);
       opacity: 0.95;
       pointer-events: none;
+    }
+
+    .character-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .character {
+      position: absolute;
+      width: clamp(66px, 6.5vw, 110px);
+      height: auto;
+      pointer-events: none;
+      user-select: none;
+      filter: drop-shadow(0 0 22px rgba(139, 92, 246, 0.26));
+    }
+
+    .character-hero-side {
+      top: 44%;
+      left: -26px;
+      animation: floatGentle 8s ease-in-out infinite, peekSide 7.2s ease-in-out infinite;
+    }
+
+    .character-features-bottom {
+      top: 100%;
+      left: 8%;
+      transform: translateY(16px);
+      animation: floatGentle 9s ease-in-out infinite;
+    }
+
+    .character-right-pop {
+      top: 58%;
+      right: -22px;
+      animation: floatGentle 8.6s ease-in-out infinite, peekRight 7.8s ease-in-out infinite;
+    }
+
+    .character-sad-corner {
+      top: calc(100% + 222px);
+      right: 2%;
+      width: clamp(62px, 5.6vw, 96px);
+      opacity: 0.92;
+      animation: floatSlow 10s ease-in-out infinite;
     }
 
     .hero {
@@ -399,6 +442,26 @@
       100% { background-position: 200% 0; }
     }
 
+    @keyframes floatGentle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-9px); }
+    }
+
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-7px) rotate(2deg); }
+    }
+
+    @keyframes peekSide {
+      0%, 100% { margin-left: 0; }
+      50% { margin-left: 8px; }
+    }
+
+    @keyframes peekRight {
+      0%, 100% { margin-right: 0; }
+      50% { margin-right: 8px; }
+    }
+
     @media (max-width: 1260px) {
       .hero {
         grid-template-columns: 1fr;
@@ -443,6 +506,10 @@
       h1 {
         max-width: none;
       }
+
+      .character-layer {
+        display: none;
+      }
     }
 
     @media (max-width: 560px) {
@@ -470,6 +537,12 @@
     </header>
 
     <div class="hero-wrap">
+      <div class="character-layer" aria-hidden="true">
+        <img class="character character-hero-side" src="assets/character-pink.png" alt="" />
+        <img class="character character-features-bottom" src="assets/character-blue.png" alt="" />
+        <img class="character character-right-pop" src="assets/character-purple.png" alt="" />
+        <img class="character character-sad-corner" src="assets/character-green.png" alt="" />
+      </div>
       <section class="hero glass" id="top">
         <div class="hero-content">
           <h1>Deine Party.<br />Eure Spiele.<br />Ein <span class="champion">Champion.</span></h1>
