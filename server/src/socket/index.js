@@ -9,66 +9,77 @@ export function initSocket(io) {
      * join-room — join a room by Olympic code
      * payload: { code, name, isHost, hostToken? }
      */
-    socket.on("join-room", async ({ code, name, isHost, hostToken }) => {
-      if (!code) return socket.emit("error", { message: "Room code required" });
+    socket.on(
+      "join-room",
+      async ({ code, name, isHost, hostToken, userId }) => {
+        if (!code)
+          return socket.emit("error", { message: "Room code required" });
 
-      const upperCode = code.toUpperCase();
-      try {
-        // Use findOne (not lean) so we can save if needed
-        const olympic = await Olympic.findOne({ code: upperCode });
-        if (!olympic)
-          return socket.emit("error", { message: "Olympic not found" });
+        const upperCode = code.toUpperCase();
+        try {
+          // Use findOne (not lean) so we can save if needed
+          const olympic = await Olympic.findOne({ code: upperCode });
+          if (!olympic)
+            return socket.emit("error", { message: "Olympic not found" });
 
-        let participantAdded = false;
+          let participantAdded = false;
 
-        // Only accept new players when the room is in lobby state
-        if (olympic.status === "draft") {
-          return socket.emit("error", {
-            message: "This Olympic has not been launched yet",
-          });
-        }
-
-        // Dynamically add participant when a non-host joins (lobby only)
-        if (!isHost && name && name.trim() && olympic.status === "lobby") {
-          const trimName = name.trim().slice(0, 30);
-          const alreadyIn = olympic.participants.some(
-            (p) => p.name === trimName,
-          );
-          if (!alreadyIn) {
-            if (olympic.participants.length >= (olympic.maxPlayers || 20)) {
-              return socket.emit("error", { message: "Room is full" });
-            }
-            olympic.participants.push({ name: trimName });
-            await olympic.save();
-            participantAdded = true;
+          // Only accept new players when the room is in lobby state
+          if (olympic.status === "draft") {
+            return socket.emit("error", {
+              message: "This Olympic has not been launched yet",
+            });
           }
+
+          // Dynamically add participant when a non-host joins (lobby only)
+          if (!isHost && name && name.trim() && olympic.status === "lobby") {
+            const trimName = name.trim().slice(0, 30);
+            const existing = olympic.participants.find(
+              (p) => p.name === trimName,
+            );
+            if (!existing) {
+              if (olympic.participants.length >= (olympic.maxPlayers || 20)) {
+                return socket.emit("error", { message: "Room is full" });
+              }
+              olympic.participants.push({
+                name: trimName,
+                userId: userId || null,
+              });
+              await olympic.save();
+              participantAdded = true;
+            } else if (userId && !existing.userId) {
+              // Backfill userId if player rejoins while logged in
+              existing.userId = userId;
+              await olympic.save();
+            }
+          }
+
+          socket.join(upperCode);
+          socket.data.code = upperCode;
+          socket.data.name = name;
+          socket.data.isHost = isHost || false;
+
+          const safeOlympic = olympic.toObject();
+          delete safeOlympic.hostToken;
+          const leaderboard = computeLeaderboard(safeOlympic);
+
+          if (participantAdded) {
+            // Broadcast to everyone so all devices see the updated player list
+            io.to(upperCode).emit("room-update", {
+              olympic: safeOlympic,
+              leaderboard,
+            });
+          } else {
+            socket.emit("room-update", { olympic: safeOlympic, leaderboard });
+          }
+
+          console.log(`${name || "Anonymous"} joined room ${upperCode}`);
+        } catch (err) {
+          console.error("join-room error:", err);
+          socket.emit("error", { message: "Server error" });
         }
-
-        socket.join(upperCode);
-        socket.data.code = upperCode;
-        socket.data.name = name;
-        socket.data.isHost = isHost || false;
-
-        const safeOlympic = olympic.toObject();
-        delete safeOlympic.hostToken;
-        const leaderboard = computeLeaderboard(safeOlympic);
-
-        if (participantAdded) {
-          // Broadcast to everyone so all devices see the updated player list
-          io.to(upperCode).emit("room-update", {
-            olympic: safeOlympic,
-            leaderboard,
-          });
-        } else {
-          socket.emit("room-update", { olympic: safeOlympic, leaderboard });
-        }
-
-        console.log(`${name || "Anonymous"} joined room ${upperCode}`);
-      } catch (err) {
-        console.error("join-room error:", err);
-        socket.emit("error", { message: "Server error" });
-      }
-    });
+      },
+    );
 
     /**
      * start-olympic — host starts the event (lobby → active)
@@ -184,10 +195,13 @@ export function initSocket(io) {
           return socket.emit("error", { message: "Unauthorized" });
 
         olympic.status = "finished";
-        await olympic.save();
         const safe3 = olympic.toObject();
         delete safe3.hostToken;
         const leaderboard3 = computeLeaderboard(safe3);
+
+        // Persist final leaderboard snapshot
+        olympic.finalLeaderboard = leaderboard3;
+        await olympic.save();
 
         io.to(code.toUpperCase()).emit("room-update", {
           olympic: safe3,

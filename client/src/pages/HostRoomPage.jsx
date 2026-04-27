@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { connectSocket, getSocket } from "../socket/socket.js";
 import useOlympicStore from "../store/useOlympicStore.js";
 import GlassCard from "../components/ui/GlassCard.jsx";
+import Select from "../components/ui/Select.jsx";
+import ConfirmModal from "../components/ui/ConfirmModal.jsx";
 import GameCard from "../components/GameCard.jsx";
 import Scoreboard from "../components/Scoreboard.jsx";
 import ScoreEntry from "../components/ScoreEntry.jsx";
@@ -19,6 +21,7 @@ export default function HostRoomPage() {
   const [finishing, setFinishing] = useState(false);
   const [starting, setStarting] = useState(false);
   const [reverting, setReverting] = useState(false);
+  const [confirmModal, setConfirmModal] = useState(null); // { title, message, confirmLabel, danger, onConfirm }
 
   const hostToken = localStorage.getItem(`hostToken_${code?.toUpperCase()}`);
 
@@ -74,13 +77,21 @@ export default function HostRoomPage() {
   }
 
   function revertToDraft() {
-    if (
-      !confirm("Revert to draft? All players will be removed from the lobby.")
-    )
-      return;
-    setReverting(true);
-    const socket = getSocket();
-    socket.emit("revert-to-draft", { code: code.toUpperCase(), hostToken });
+    setConfirmModal({
+      title: "Revert to Draft?",
+      message:
+        "All players will be kicked from the lobby and the Olympic will return to draft status.",
+      confirmLabel: "↩ Revert",
+      danger: false,
+      onConfirm: () => {
+        setConfirmModal(null);
+        setReverting(true);
+        getSocket().emit("revert-to-draft", {
+          code: code.toUpperCase(),
+          hostToken,
+        });
+      },
+    });
   }
 
   function submitScore(result) {
@@ -95,13 +106,20 @@ export default function HostRoomPage() {
   }
 
   function finishOlympic() {
-    if (
-      !confirm("End the Olympic and reveal the winner? This cannot be undone.")
-    )
-      return;
-    setFinishing(true);
-    const socket = getSocket();
-    socket.emit("finish-olympic", { code: code.toUpperCase(), hostToken });
+    setConfirmModal({
+      title: "End the Olympic?",
+      message: "This will reveal the final winner. This cannot be undone.",
+      confirmLabel: "🏆 End Event",
+      danger: true,
+      onConfirm: () => {
+        setConfirmModal(null);
+        setFinishing(true);
+        getSocket().emit("finish-olympic", {
+          code: code.toUpperCase(),
+          hostToken,
+        });
+      },
+    });
   }
 
   if (!olympic) {
@@ -119,6 +137,7 @@ export default function HostRoomPage() {
   const scoredCount = olympic.results.length;
   const progress =
     totalGames > 0 ? Math.round((scoredCount / totalGames) * 100) : 0;
+  const scoringEnabled = olympic.scoringEnabled !== false;
 
   const existingResult = scoreGame
     ? olympic.results.find((r) => String(r.gameId) === String(scoreGame._id))
@@ -236,289 +255,312 @@ export default function HostRoomPage() {
 
   // ── Active game view ────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen px-4 py-6">
-      <div className="max-w-2xl mx-auto space-y-4">
-        {/* Header */}
-        <GlassCard className="flex items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xl">🏅</span>
-              <h1 className="font-black text-white text-lg truncate">
-                {olympic.name}
-              </h1>
+    <>
+      <div className="min-h-screen px-4 py-6">
+        <div className="max-w-2xl mx-auto space-y-4">
+          {/* Header */}
+          <GlassCard className="flex items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xl">🏅</span>
+                <h1 className="font-black text-white text-lg truncate">
+                  {olympic.name}
+                </h1>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-mono text-yellow-400 tracking-widest">
+                  🔑 {code?.toUpperCase()}
+                </span>
+                <button
+                  className="text-xs text-muted hover:text-cyan transition-colors"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/join/${code?.toUpperCase()}`,
+                    );
+                  }}
+                >
+                  📋 Copy invite link
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-mono text-yellow-400 tracking-widest">
-                🔑 {code?.toUpperCase()}
-              </span>
-              <button
-                className="text-xs text-muted hover:text-cyan transition-colors"
-                onClick={() => {
-                  navigator.clipboard.writeText(
-                    `${window.location.origin}/join/${code?.toUpperCase()}`,
-                  );
-                }}
-              >
-                📋 Copy invite link
-              </button>
-            </div>
-          </div>
-          <button
-            className="btn-secondary text-sm !px-3 !py-1.5"
-            onClick={finishOlympic}
-            disabled={finishing}
-          >
-            {finishing ? "..." : "🏆 End Event"}
-          </button>
-        </GlassCard>
-
-        {/* Progress bar */}
-        <div className="glass rounded-xl px-4 py-3">
-          <div className="flex justify-between text-xs text-muted mb-1.5">
-            <span>Progress</span>
-            <span>
-              {scoredCount} / {totalGames} games scored
-            </span>
-          </div>
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${progress}%`,
-                background: "linear-gradient(90deg, #8b5cf6, #ec4899)",
-              }}
-            />
-          </div>
-        </div>
-
-        {socketError && (
-          <div className="text-pink-400 text-sm bg-pink-500/10 border border-pink-500/20 rounded-xl px-4 py-2">
-            ⚠ {socketError}
-          </div>
-        )}
-
-        {/* Tabs */}
-        <div className="flex gap-1 glass rounded-xl p-1">
-          {[
-            { key: "game", label: "▶ Game" },
-            { key: "score", label: "✏️ Score" },
-            { key: "board", label: "📊 Board" },
-            { key: "players", label: "👥 Players" },
-          ].map(({ key, label }) => (
             <button
-              key={key}
-              onClick={() => {
-                setTab(key);
-                if (key === "score") setScoreGame(currentGame);
-              }}
-              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
-                tab === key
-                  ? "bg-purple-500/30 text-white"
-                  : "text-muted hover:text-white"
-              }`}
+              className="btn-secondary text-sm !px-3 !py-1.5"
+              onClick={finishOlympic}
+              disabled={finishing}
             >
-              {label}
+              {finishing ? "..." : "🏆 End Event"}
             </button>
-          ))}
-        </div>
+          </GlassCard>
 
-        {/* Tab: Current Game */}
-        {tab === "game" && currentGame && (
-          <div className="space-y-4">
-            <GameCard
-              game={currentGame}
-              isCurrent
-              isScored={
-                !!olympic.results.find(
-                  (r) => String(r.gameId) === String(currentGame._id),
-                )
-              }
-            />
+          {/* Progress bar */}
+          <div className="glass rounded-xl px-4 py-3">
+            <div className="flex justify-between text-xs text-muted mb-1.5">
+              <span>Progress</span>
+              <span>
+                {scoredCount} / {totalGames} games scored
+              </span>
+            </div>
+            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${progress}%`,
+                  background: "linear-gradient(90deg, #8b5cf6, #ec4899)",
+                }}
+              />
+            </div>
+          </div>
 
-            {/* Full rules */}
-            {currentGame.rules && (
-              <GlassCard>
-                <h3 className="text-sm font-semibold text-muted mb-2">Rules</h3>
-                <p className="text-sm text-white whitespace-pre-line">
-                  {currentGame.rules}
-                </p>
-              </GlassCard>
-            )}
+          {socketError && (
+            <div className="text-pink-400 text-sm bg-pink-500/10 border border-pink-500/20 rounded-xl px-4 py-2">
+              ⚠ {socketError}
+            </div>
+          )}
 
-            {/* Drinking rules */}
-            {currentGame.addons?.drinkingGame?.enabled &&
-              currentGame.addons.drinkingGame.rules && (
-                <GlassCard className="border-orange-500/30">
-                  <h3 className="text-sm font-semibold text-orange-400 mb-1">
-                    🍺 Drinking Rules
+          {/* Tabs */}
+          <div className="flex gap-1 glass rounded-xl p-1">
+            {[
+              { key: "game", label: "▶ Game" },
+              ...(scoringEnabled ? [{ key: "score", label: "✏️ Score" }] : []),
+              ...(scoringEnabled ? [{ key: "board", label: "📊 Board" }] : []),
+              { key: "players", label: "👥 Players" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setTab(key);
+                  if (key === "score") setScoreGame(currentGame);
+                }}
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+                  tab === key
+                    ? "bg-purple-500/30 text-white"
+                    : "text-muted hover:text-white"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Tab: Current Game */}
+          {tab === "game" && currentGame && (
+            <div className="space-y-4">
+              <GameCard
+                game={currentGame}
+                isCurrent
+                isScored={
+                  !!olympic.results.find(
+                    (r) => String(r.gameId) === String(currentGame._id),
+                  )
+                }
+              />
+
+              {/* Full rules */}
+              {currentGame.rules && (
+                <GlassCard>
+                  <h3 className="text-sm font-semibold text-muted mb-2">
+                    Rules
                   </h3>
                   <p className="text-sm text-white whitespace-pre-line">
-                    {currentGame.addons.drinkingGame.rules}
+                    {currentGame.rules}
                   </p>
                 </GlassCard>
               )}
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between gap-3">
-              <button
-                className="btn-secondary flex-1"
-                onClick={() => navigate_game("prev")}
-                disabled={olympic.currentGameIndex === 0}
-              >
-                ← Prev
-              </button>
-              <span className="text-muted text-sm whitespace-nowrap">
-                {olympic.currentGameIndex + 1} / {totalGames}
-              </span>
-              <button
-                className="btn-primary flex-1"
-                onClick={() => navigate_game("next")}
-                disabled={olympic.currentGameIndex >= totalGames - 1}
-              >
-                Next →
-              </button>
-            </div>
-
-            <button
-              className="btn-secondary w-full"
-              onClick={() => {
-                setScoreGame(currentGame);
-                setTab("score");
-              }}
-            >
-              ✏️ Enter Score for This Game
-            </button>
-          </div>
-        )}
-
-        {/* Tab: Score Entry */}
-        {tab === "score" && (
-          <GlassCard>
-            {/* Game selector */}
-            <div className="mb-4">
-              <label className="label">Select game to score</label>
-              <select
-                className="input-field"
-                value={scoreGame?._id || ""}
-                onChange={(e) => {
-                  const g = olympic.games.find(
-                    (gm) => String(gm._id) === e.target.value,
-                  );
-                  setScoreGame(g || null);
-                }}
-              >
-                <option value="">— pick a game —</option>
-                {olympic.games.map((g) => (
-                  <option key={g._id} value={g._id}>
-                    {g.icon} {g.title}
-                    {olympic.results.find(
-                      (r) => String(r.gameId) === String(g._id),
-                    )
-                      ? " ✅"
-                      : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {scoreGame ? (
-              <ScoreEntry
-                game={scoreGame}
-                participants={olympic.participants}
-                existingResult={olympic.results.find(
-                  (r) => String(r.gameId) === String(scoreGame._id),
+              {/* Drinking rules */}
+              {currentGame.addons?.drinkingGame?.enabled &&
+                currentGame.addons.drinkingGame.rules && (
+                  <GlassCard className="border-orange-500/30">
+                    <h3 className="text-sm font-semibold text-orange-400 mb-1">
+                      🍺 Drinking Rules
+                    </h3>
+                    <p className="text-sm text-white whitespace-pre-line">
+                      {currentGame.addons.drinkingGame.rules}
+                    </p>
+                  </GlassCard>
                 )}
-                onSubmit={submitScore}
-                onCancel={() => setScoreGame(null)}
-              />
-            ) : (
-              <p className="text-muted text-sm text-center py-4">
-                Select a game above.
-              </p>
-            )}
-          </GlassCard>
-        )}
 
-        {/* Tab: Scoreboard */}
-        {tab === "board" && (
-          <GlassCard>
-            <h2 className="font-bold text-white mb-4">Live Leaderboard</h2>
-            <Scoreboard
-              leaderboard={leaderboard}
-              participants={olympic.participants}
-            />
-          </GlassCard>
-        )}
-
-        {/* Tab: Players */}
-        {tab === "players" && (
-          <GlassCard>
-            <h2 className="font-bold text-white mb-4">
-              Participants ({olympic.participants.length})
-            </h2>
-            <div className="space-y-2">
-              {olympic.participants.map((p) => (
-                <div
-                  key={p.name}
-                  className="flex items-center gap-3 py-2 border-b border-white/5"
+              {/* Navigation */}
+              <div className="flex items-center justify-between gap-3">
+                <button
+                  className="btn-secondary flex-1"
+                  onClick={() => navigate_game("prev")}
+                  disabled={olympic.currentGameIndex === 0}
                 >
-                  {p.avatarBase64 ? (
-                    <img
-                      src={p.avatarBase64}
-                      alt={p.name}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple to-pink flex items-center justify-center font-bold">
-                      {p.name[0]}
-                    </div>
-                  )}
-                  <span className="font-medium text-white">{p.name}</span>
-                </div>
-              ))}
-            </div>
-          </GlassCard>
-        )}
+                  ← Prev
+                </button>
+                <span className="text-muted text-sm whitespace-nowrap">
+                  {olympic.currentGameIndex + 1} / {totalGames}
+                </span>
+                <button
+                  className="btn-primary flex-1"
+                  onClick={() => navigate_game("next")}
+                  disabled={olympic.currentGameIndex >= totalGames - 1}
+                >
+                  Next →
+                </button>
+              </div>
 
-        {/* All games list (mini) */}
-        {tab === "game" && (
-          <GlassCard>
-            <h3 className="text-sm font-semibold text-muted mb-3">All Games</h3>
-            <div className="space-y-1">
-              {olympic.games.map((g, i) => {
-                const scored = !!olympic.results.find(
-                  (r) => String(r.gameId) === String(g._id),
-                );
-                const isCur = i === olympic.currentGameIndex;
-                return (
-                  <button
-                    key={g._id}
-                    className={`w-full flex items-center gap-2 text-sm py-1.5 px-2 rounded-lg transition-colors text-left ${
-                      isCur
-                        ? "bg-purple-500/20 text-white"
-                        : "text-muted hover:text-white hover:bg-white/5"
-                    }`}
-                    onClick={() => {
-                      setScoreGame(g);
-                      setTab("score");
-                    }}
-                  >
-                    <span className="w-5 text-center">{i + 1}.</span>
-                    <span>{g.icon}</span>
-                    <span className="flex-1 truncate">{g.title}</span>
-                    {scored && (
-                      <span className="text-green-400 text-xs">✅</span>
-                    )}
-                    {isCur && (
-                      <span className="text-yellow-400 text-xs">▶</span>
-                    )}
-                  </button>
-                );
-              })}
+              {scoringEnabled && (
+                <button
+                  className="btn-secondary w-full"
+                  onClick={() => {
+                    setScoreGame(currentGame);
+                    setTab("score");
+                  }}
+                >
+                  ✏️ Enter Score for This Game
+                </button>
+              )}
             </div>
-          </GlassCard>
-        )}
+          )}
+
+          {/* Tab: Score Entry */}
+          {tab === "score" && scoringEnabled && (
+            <GlassCard>
+              {/* Game selector */}
+              <div className="mb-4">
+                <Select
+                  label="Select game to score"
+                  value={scoreGame?._id ? String(scoreGame._id) : ""}
+                  onChange={(val) => {
+                    const g = olympic.games.find(
+                      (gm) => String(gm._id) === val,
+                    );
+                    setScoreGame(g || null);
+                  }}
+                  placeholder="— pick a game —"
+                  options={[
+                    { value: "", label: "— pick a game —" },
+                    ...olympic.games.map((g) => ({
+                      value: String(g._id),
+                      label: `${g.icon} ${g.title}${
+                        olympic.results.find(
+                          (r) => String(r.gameId) === String(g._id),
+                        )
+                          ? " ✅"
+                          : ""
+                      }`,
+                    })),
+                  ]}
+                />
+              </div>
+
+              {scoreGame ? (
+                <ScoreEntry
+                  game={scoreGame}
+                  participants={olympic.participants}
+                  existingResult={olympic.results.find(
+                    (r) => String(r.gameId) === String(scoreGame._id),
+                  )}
+                  onSubmit={submitScore}
+                  onCancel={() => setScoreGame(null)}
+                />
+              ) : (
+                <p className="text-muted text-sm text-center py-4">
+                  Select a game above.
+                </p>
+              )}
+            </GlassCard>
+          )}
+
+          {/* Tab: Scoreboard */}
+          {tab === "board" && scoringEnabled && (
+            <GlassCard>
+              <h2 className="font-bold text-white mb-4">Live Leaderboard</h2>
+              <Scoreboard
+                leaderboard={leaderboard}
+                participants={olympic.participants}
+              />
+            </GlassCard>
+          )}
+
+          {/* Tab: Players */}
+          {tab === "players" && (
+            <GlassCard>
+              <h2 className="font-bold text-white mb-4">
+                Participants ({olympic.participants.length})
+              </h2>
+              <div className="space-y-2">
+                {olympic.participants.map((p) => (
+                  <div
+                    key={p.name}
+                    className="flex items-center gap-3 py-2 border-b border-white/5"
+                  >
+                    {p.avatarBase64 ? (
+                      <img
+                        src={p.avatarBase64}
+                        alt={p.name}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple to-pink flex items-center justify-center font-bold">
+                        {p.name[0]}
+                      </div>
+                    )}
+                    <span className="font-medium text-white">{p.name}</span>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          )}
+
+          {/* All games list (mini) */}
+          {tab === "game" && (
+            <GlassCard>
+              <h3 className="text-sm font-semibold text-muted mb-3">
+                All Games
+              </h3>
+              <div className="space-y-1">
+                {olympic.games.map((g, i) => {
+                  const scored = !!olympic.results.find(
+                    (r) => String(r.gameId) === String(g._id),
+                  );
+                  const isCur = i === olympic.currentGameIndex;
+                  return (
+                    <button
+                      key={g._id}
+                      className={`w-full flex items-center gap-2 text-sm py-1.5 px-2 rounded-lg transition-colors text-left ${
+                        isCur
+                          ? "bg-purple-500/20 text-white"
+                          : "text-muted hover:text-white hover:bg-white/5"
+                      }`}
+                      onClick={() => {
+                        if (scoringEnabled) {
+                          setScoreGame(g);
+                          setTab("score");
+                        }
+                      }}
+                    >
+                      <span className="w-5 text-center">{i + 1}.</span>
+                      <span>{g.icon}</span>
+                      <span className="flex-1 truncate">{g.title}</span>
+                      {scored && (
+                        <span className="text-green-400 text-xs">✅</span>
+                      )}
+                      {isCur && (
+                        <span className="text-yellow-400 text-xs">▶</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </GlassCard>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Confirm modal */}
+      {confirmModal && (
+        <ConfirmModal
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmLabel={confirmModal.confirmLabel}
+          danger={confirmModal.danger}
+          onConfirm={confirmModal.onConfirm}
+          onCancel={() => setConfirmModal(null)}
+        />
+      )}
+    </>
   );
 }

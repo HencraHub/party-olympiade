@@ -4,6 +4,7 @@ import GlassCard from "../components/ui/GlassCard.jsx";
 import Input from "../components/ui/Input.jsx";
 import { connectSocket, disconnectSocket } from "../socket/socket.js";
 import useOlympicStore from "../store/useOlympicStore.js";
+import { useAuthStore } from "../store/useAuthStore.js";
 
 export default function JoinPage() {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export default function JoinPage() {
 
   const { updateFromRoomEvent, setParticipantName, setIsHost, setConnected } =
     useOlympicStore();
+  const { user } = useAuthStore();
 
   function handleJoin() {
     const trimCode = code.trim().toUpperCase();
@@ -53,7 +55,12 @@ export default function JoinPage() {
       disconnectSocket();
     });
 
-    socket.emit("join-room", { code: trimCode, name: trimName, isHost: false });
+    socket.emit("join-room", {
+      code: trimCode,
+      name: trimName,
+      isHost: false,
+      userId: user?.id || null,
+    });
   }
 
   return (

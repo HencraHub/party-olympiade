@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import Select from "./ui/Select.jsx";
 
 export default function ScoreEntry({
   game,
@@ -17,6 +18,12 @@ export default function ScoreEntry({
   });
 
   // Team state
+  const [teamAName, setTeamAName] = useState(
+    () => existingResult?.teams?.[0]?.name || "Team A",
+  );
+  const [teamBName, setTeamBName] = useState(
+    () => existingResult?.teams?.[1]?.name || "Team B",
+  );
   const [teamA, setTeamA] = useState(
     () => existingResult?.teams?.[0]?.members || [],
   );
@@ -87,8 +94,16 @@ export default function ScoreEntry({
       onSubmit({ gameId: game._id, placements, teams: [] });
     } else {
       const teams = [
-        { name: "Team A", members: teamA, won: winner === "A" },
-        { name: "Team B", members: teamB, won: winner === "B" },
+        {
+          name: teamAName.trim() || "Team A",
+          members: teamA,
+          won: winner === "A",
+        },
+        {
+          name: teamBName.trim() || "Team B",
+          members: teamB,
+          won: winner === "B",
+        },
       ];
       onSubmit({ gameId: game._id, placements: [], teams });
     }
@@ -112,19 +127,21 @@ export default function ScoreEntry({
                 <span className="w-32 truncate text-white text-sm font-medium">
                   {name}
                 </span>
-                <select
-                  className="input-field w-20 text-sm py-2"
-                  value={entry?.place || ""}
-                  onChange={(e) => setPlace(name, Number(e.target.value))}
-                >
-                  <option value="">—</option>
-                  {names.map((_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                      {i + 1}
-                      {i === 0 ? " 🥇" : i === 1 ? " 🥈" : i === 2 ? " 🥉" : ""}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  value={entry?.place ? String(entry.place) : ""}
+                  onChange={(val) => setPlace(name, Number(val))}
+                  placeholder="—"
+                  className="w-28"
+                  options={[
+                    { value: "", label: "—" },
+                    ...names.map((_, i) => ({
+                      value: String(i + 1),
+                      label: `${i + 1}${
+                        i === 0 ? " 🥇" : i === 1 ? " 🥈" : i === 2 ? " 🥉" : ""
+                      }`,
+                    })),
+                  ]}
+                />
               </div>
             );
           })}
@@ -132,27 +149,37 @@ export default function ScoreEntry({
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-muted">
-            Assign players to teams, then select the winner:
+            Form two teams from the player list, name them, then pick the
+            winner.
+            <span className="ml-1 text-purple-light">
+              The winning team earns points — losing team scores nothing.
+            </span>
           </p>
           <div className="grid grid-cols-2 gap-3">
             {["A", "B"].map((team) => {
               const members = team === "A" ? teamA : teamB;
+              const teamName = team === "A" ? teamAName : teamBName;
+              const setTeamName = team === "A" ? setTeamAName : setTeamBName;
               return (
-                <div key={team} className="glass rounded-xl p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-bold text-white">Team {team}</span>
-                    <button
-                      className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-                        winner === team
-                          ? "bg-green-500/30 border-green-500 text-green-400"
-                          : "border-white/20 text-muted hover:border-white/40"
-                      }`}
-                      onClick={() => setWinner(team)}
-                    >
-                      {winner === team ? "✅ Winner" : "Set as winner"}
-                    </button>
-                  </div>
-                  <div className="space-y-1">
+                <div key={team} className="glass rounded-xl p-3 space-y-2">
+                  <input
+                    className="input-field text-sm font-bold py-1.5"
+                    maxLength={30}
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
+                    placeholder={`Team ${team}`}
+                  />
+                  <button
+                    className={`w-full text-xs px-2 py-1.5 rounded-lg border transition-colors ${
+                      winner === team
+                        ? "bg-green-500/30 border-green-500 text-green-400"
+                        : "border-white/20 text-muted hover:border-white/40"
+                    }`}
+                    onClick={() => setWinner(team)}
+                  >
+                    {winner === team ? "✅ Winner" : "Set as winner"}
+                  </button>
+                  <div className="space-y-1 pt-1">
                     {names.map((name) => (
                       <label
                         key={name}

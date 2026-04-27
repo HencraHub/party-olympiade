@@ -37,6 +37,12 @@ export default function GameLibraryPage() {
   // Confirm delete
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [deleteError, setDeleteError] = useState("");
+
+  function showDeleteError(msg) {
+    setDeleteError(msg);
+    setTimeout(() => setDeleteError(""), 4000);
+  }
 
   useEffect(() => {
     fetchPresets();
@@ -83,7 +89,7 @@ export default function GameLibraryPage() {
       await api.delete(`/game-presets/${id}`);
       setPresets((prev) => prev.filter((p) => p._id !== id));
     } catch (err) {
-      alert(err.response?.data?.error || "Failed to delete");
+      showDeleteError(err.response?.data?.error || "Failed to delete");
     } finally {
       setDeleting(null);
     }
@@ -106,6 +112,14 @@ export default function GameLibraryPage() {
 
   return (
     <div className="min-h-screen px-4 py-10">
+      {/* Delete error toast */}
+      {deleteError && (
+        <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 animate-slide-up">
+          <div className="bg-pink-600/90 backdrop-blur-sm text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl border border-pink-400/30">
+            ⚠ {deleteError}
+          </div>
+        </div>
+      )}
       <div className="max-w-2xl mx-auto space-y-6 animate-slide-up">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">

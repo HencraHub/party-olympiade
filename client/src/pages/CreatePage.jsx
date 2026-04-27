@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/client.js";
 import GlassCard from "../components/ui/GlassCard.jsx";
 import Input from "../components/ui/Input.jsx";
+import Select from "../components/ui/Select.jsx";
 import { useAuthStore } from "../store/useAuthStore.js";
 import AuthModal from "../components/AuthModal.jsx";
 
@@ -31,6 +32,8 @@ function readFileAsBase64(file) {
 
 // ─── Step 1: Event Setup ───────────────────────────────────────────────────
 function StepEventSetup({ data, onChange }) {
+  const scoringEnabled = data.scoringEnabled !== false;
+
   return (
     <div className="space-y-5">
       <Input
@@ -58,70 +61,154 @@ function StepEventSetup({ data, onChange }) {
         </p>
       </div>
 
-      <div>
-        <label className="label">Tie-Breaking Rule</label>
-        <select
-          className="input-field"
-          value={data.tieRule}
-          onChange={(e) => onChange({ tieRule: e.target.value })}
-        >
-          <option value="tiebreaker">Tiebreaker question decides</option>
-          <option value="shared_points">Tied players share points</option>
-        </select>
+      {/* ─ Scoring toggle ─ */}
+      <div className="space-y-3">
+        <label className="flex items-start gap-3 cursor-pointer glass rounded-xl p-3 hover:border-white/20 transition-colors">
+          <input
+            type="checkbox"
+            className="mt-0.5 accent-purple w-4 h-4 shrink-0"
+            checked={scoringEnabled}
+            onChange={(e) => onChange({ scoringEnabled: e.target.checked })}
+          />
+          <div>
+            <span className="text-sm font-semibold text-white">
+              🏅 Track Scores
+            </span>
+            <p className="text-xs text-muted mt-0.5">
+              When off, games are played for fun — no points, no leaderboard.
+            </p>
+          </div>
+        </label>
+
+        {scoringEnabled && (
+          <>
+            <Select
+              label="Scoring System"
+              value={data.scoringMode}
+              onChange={(val) => onChange({ scoringMode: val })}
+              options={[
+                {
+                  value: "linear",
+                  label: "Linear",
+                  description:
+                    "Every position earns points: 1st = n pts, last = 1 pt",
+                },
+                {
+                  value: "top3",
+                  label: "Top 3 Only",
+                  description: "1st: 3 pts · 2nd: 2 pts · 3rd: 1 pt · rest: 0",
+                },
+                {
+                  value: "f1",
+                  label: "F1 Format",
+                  description: "10 · 8 · 6 · 5 · 4 · 3 · 2 · 1 pts",
+                },
+              ]}
+              description="Team games: winning team gets half the max points. Losing team: 0."
+            />
+
+            <Select
+              label="Tie-Breaking Rule"
+              value={data.tieRule}
+              onChange={(val) => onChange({ tieRule: val })}
+              options={[
+                { value: "tiebreaker", label: "Tiebreaker question decides" },
+                { value: "shared_points", label: "Tied players share points" },
+              ]}
+            />
+
+            <div>
+              <p className="label mb-3">Optional Bonus / Penalty Rules</p>
+              <div className="space-y-3">
+                {[
+                  {
+                    key: "comebackPenalty",
+                    label: "Comeback Penalty",
+                    desc: "Previous leader not in top 3 → −2 pts",
+                    icon: "📉",
+                  },
+                  {
+                    key: "lastPlaceBonus",
+                    label: "Last Place Bonus",
+                    desc: "Previous last-place in top 3 → +1 pt",
+                    icon: "📈",
+                  },
+                  {
+                    key: "winStreakBonus",
+                    label: "Win Streak Bonus",
+                    desc: "Win two FFA games in a row → +1 pt",
+                    icon: "🔥",
+                  },
+                  {
+                    key: "finalDoublePoints",
+                    label: "Final Double Points",
+                    desc: "Last game awards 2× base points",
+                    icon: "💥",
+                  },
+                ].map(({ key, label, desc, icon }) => (
+                  <label
+                    key={key}
+                    className="flex items-start gap-3 cursor-pointer glass rounded-xl p-3 hover:border-white/20 transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 accent-purple w-4 h-4 shrink-0"
+                      checked={data.extraRules[key]}
+                      onChange={(e) =>
+                        onChange({
+                          extraRules: {
+                            ...data.extraRules,
+                            [key]: e.target.checked,
+                          },
+                        })
+                      }
+                    />
+                    <div>
+                      <span className="text-sm font-semibold text-white">
+                        {icon} {label}
+                      </span>
+                      <p className="text-xs text-muted mt-0.5">{desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      <div>
-        <p className="label mb-3">Optional Bonus / Penalty Rules</p>
-        <div className="space-y-3">
-          {[
-            {
-              key: "comebackPenalty",
-              label: "Comeback Penalty",
-              desc: "Previous leader not in top 3 → −2 pts",
-              icon: "📉",
-            },
-            {
-              key: "lastPlaceBonus",
-              label: "Last Place Bonus",
-              desc: "Previous last-place in top 3 → +1 pt",
-              icon: "📈",
-            },
-            {
-              key: "winStreakBonus",
-              label: "Win Streak Bonus",
-              desc: "Win two FFA games in a row → +1 pt",
-              icon: "🔥",
-            },
-            {
-              key: "finalDoublePoints",
-              label: "Final Double Points",
-              desc: "Last game awards 2× base points",
-              icon: "💥",
-            },
-          ].map(({ key, label, desc, icon }) => (
-            <label
-              key={key}
-              className="flex items-start gap-3 cursor-pointer glass rounded-xl p-3 hover:border-white/20 transition-colors"
-            >
-              <input
-                type="checkbox"
-                className="mt-0.5 accent-purple w-4 h-4 shrink-0"
-                checked={data.extraRules[key]}
-                onChange={(e) =>
-                  onChange({
-                    extraRules: { ...data.extraRules, [key]: e.target.checked },
-                  })
-                }
-              />
-              <div>
-                <span className="text-sm font-semibold text-white">
-                  {icon} {label}
-                </span>
-                <p className="text-xs text-muted mt-0.5">{desc}</p>
-              </div>
-            </label>
-          ))}
-        </div>
+      {/* ─ Host participation ─ */}
+      <div className="space-y-3">
+        <label className="flex items-start gap-3 cursor-pointer glass rounded-xl p-3 hover:border-white/20 transition-colors">
+          <input
+            type="checkbox"
+            className="mt-0.5 accent-purple w-4 h-4 shrink-0"
+            checked={!!data.hostParticipates}
+            onChange={(e) => onChange({ hostParticipates: e.target.checked })}
+          />
+          <div>
+            <span className="text-sm font-semibold text-white">
+              🎮 Host also plays
+            </span>
+            <p className="text-xs text-muted mt-0.5">
+              You join as a player — your score
+              {scoringEnabled
+                ? " is tracked on the leaderboard"
+                : " shows on screen"}
+              .
+            </p>
+          </div>
+        </label>
+
+        {data.hostParticipates && (
+          <Input
+            label="Your player name"
+            placeholder="e.g. Alex"
+            maxLength={30}
+            value={data.hostPlayerName || ""}
+            onChange={(e) => onChange({ hostPlayerName: e.target.value })}
+          />
+        )}
       </div>
     </div>
   );
@@ -573,12 +660,31 @@ function StepGames({ games, onChange }) {
 
 // ─── Step 3: Preview ──────────────────────────────────────────────────────
 function StepPreview({ data }) {
+  const scoringLabels = {
+    linear: "Linear",
+    top3: "Top 3 Only",
+    f1: "F1 Format",
+  };
   return (
     <div className="space-y-4">
       <GlassCard>
         <h3 className="font-bold text-white mb-1">{data.name || "—"}</h3>
         <p className="text-sm text-muted">Max players: {data.maxPlayers}</p>
-        <p className="text-sm text-muted">Tie rule: {data.tieRule}</p>
+        {data.scoringEnabled !== false ? (
+          <>
+            <p className="text-sm text-muted">
+              Scoring: {scoringLabels[data.scoringMode] || data.scoringMode} ·
+              Tie: {data.tieRule === "shared_points" ? "Shared" : "Tiebreaker"}
+            </p>
+          </>
+        ) : (
+          <p className="text-sm text-amber-400">🎉 Fun mode — no scoring</p>
+        )}
+        {data.hostParticipates && data.hostPlayerName && (
+          <p className="text-sm text-cyan-400">
+            🎮 Host plays as: {data.hostPlayerName}
+          </p>
+        )}
         <div className="flex flex-wrap gap-1 mt-2">
           {Object.entries(data.extraRules)
             .filter(([, v]) => v)
@@ -641,6 +747,10 @@ export default function CreatePage() {
   const [eventData, setEventData] = useState({
     name: "",
     tieRule: "tiebreaker",
+    scoringMode: "linear",
+    scoringEnabled: true,
+    hostParticipates: false,
+    hostPlayerName: "",
     extraRules: {
       comebackPenalty: false,
       lastPlaceBonus: false,
@@ -660,6 +770,10 @@ export default function CreatePage() {
         setEventData({
           name: data.name,
           tieRule: data.tieRule,
+          scoringMode: data.scoringMode || "linear",
+          scoringEnabled: data.scoringEnabled !== false,
+          hostParticipates: !!data.hostParticipates,
+          hostPlayerName: data.hostPlayerName || "",
           extraRules: data.extraRules,
           maxPlayers: data.maxPlayers,
         });
@@ -688,6 +802,10 @@ export default function CreatePage() {
         await api.patch(`/olympics/${editCode}`, {
           name: eventData.name,
           tieRule: eventData.tieRule,
+          scoringMode: eventData.scoringMode,
+          scoringEnabled: eventData.scoringEnabled,
+          hostParticipates: eventData.hostParticipates,
+          hostPlayerName: eventData.hostPlayerName,
           extraRules: eventData.extraRules,
           maxPlayers: eventData.maxPlayers,
           games,
@@ -697,6 +815,10 @@ export default function CreatePage() {
         const { data } = await api.post("/olympics", {
           name: eventData.name,
           tieRule: eventData.tieRule,
+          scoringMode: eventData.scoringMode,
+          scoringEnabled: eventData.scoringEnabled,
+          hostParticipates: eventData.hostParticipates,
+          hostPlayerName: eventData.hostPlayerName,
           extraRules: eventData.extraRules,
           maxPlayers: eventData.maxPlayers,
           games,

@@ -15,7 +15,14 @@ export default function WinnerPage() {
     useOlympicStore();
 
   const [olympic, setOlympic] = useState(storeOlympic);
-  const [leaderboard, setLeaderboard] = useState(storeLeaderboard);
+  // Prefer finalLeaderboard snapshot from store if available
+  const [leaderboard, setLeaderboard] = useState(
+    storeOlympic &&
+      Array.isArray(storeOlympic.finalLeaderboard) &&
+      storeOlympic.finalLeaderboard.length > 0
+      ? storeOlympic.finalLeaderboard
+      : storeLeaderboard,
+  );
   const [loading, setLoading] = useState(!storeOlympic);
   const [copied, setCopied] = useState(false);
   const [showBonusLog, setShowBonusLog] = useState(false);
@@ -29,7 +36,13 @@ export default function WinnerPage() {
         .get(`/olympics/${code.toUpperCase()}`)
         .then(({ data }) => {
           setOlympic(data);
-          setLeaderboard(computeLeaderboard(data));
+          // Use persisted finalLeaderboard if available, otherwise compute
+          setLeaderboard(
+            Array.isArray(data.finalLeaderboard) &&
+              data.finalLeaderboard.length > 0
+              ? data.finalLeaderboard
+              : computeLeaderboard(data),
+          );
         })
         .catch(() => navigate("/"))
         .finally(() => setLoading(false));
@@ -93,10 +106,66 @@ export default function WinnerPage() {
 
   if (!olympic) return null;
 
+  const scoringEnabled = olympic.scoringEnabled !== false;
   const winner = leaderboard[0];
   const allBonusLogs = leaderboard.flatMap((p) =>
     (p.bonusLog || []).map((log) => ({ player: p.name, ...log })),
   );
+
+  // No-score view
+  if (!scoringEnabled) {
+    return (
+      <div className="min-h-screen px-4 py-10">
+        <div className="max-w-2xl mx-auto space-y-8">
+          <div className="text-center animate-fade-in">
+            <h1 className="text-4xl sm:text-5xl font-black text-white mb-2">
+              🎉 Event Complete!
+            </h1>
+            <p className="text-muted">{olympic.name}</p>
+          </div>
+
+          <GlassCard>
+            <h2 className="font-bold text-white mb-4">
+              Participants ({olympic.participants.length})
+            </h2>
+            <div className="space-y-2">
+              {olympic.participants.map((p) => (
+                <div
+                  key={p.name}
+                  className="flex items-center gap-3 py-2 border-b border-white/5"
+                >
+                  {p.avatarBase64 ? (
+                    <img
+                      src={p.avatarBase64}
+                      alt={p.name}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple to-pink flex items-center justify-center font-bold text-white">
+                      {p.name[0]}
+                    </div>
+                  )}
+                  <span className="font-medium text-white">{p.name}</span>
+                </div>
+              ))}
+            </div>
+          </GlassCard>
+
+          <div className="flex flex-col sm:flex-row gap-3 pb-8">
+            <button
+              className="btn-primary flex-1"
+              onClick={() => navigate("/create")}
+            >
+              🚀 New Olympic
+            </button>
+            <button className="btn-ghost flex-1" onClick={() => navigate("/")}>
+              🏠 Home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-4 py-10">

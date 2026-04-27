@@ -47,7 +47,17 @@ function requireAuth(req, res, next) {
 // POST /api/olympics — Create a new Olympic as a draft (requires auth)
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { name, tieRule, extraRules, games, maxPlayers } = req.body;
+    const {
+      name,
+      tieRule,
+      extraRules,
+      games,
+      maxPlayers,
+      scoringMode,
+      scoringEnabled,
+      hostParticipates,
+      hostPlayerName,
+    } = req.body;
     if (!name)
       return res.status(400).json({ error: "Olympic name is required" });
 
@@ -60,6 +70,10 @@ router.post("/", requireAuth, async (req, res) => {
       hostToken,
       ownerId: req.user.id,
       tieRule: tieRule || "tiebreaker",
+      scoringMode: scoringMode || "linear",
+      scoringEnabled: scoringEnabled !== false,
+      hostParticipates: !!hostParticipates,
+      hostPlayerName: hostPlayerName || "",
       extraRules: extraRules || {},
       maxPlayers: maxPlayers || 20,
       participants: [],
@@ -81,6 +95,23 @@ router.get("/mine", requireAuth, async (req, res) => {
   try {
     const olympics = await Olympic.find({ ownerId: req.user.id })
       .sort({ createdAt: -1 })
+      .select("-hostToken")
+      .lean();
+    res.json(olympics);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// GET /api/olympics/participated — Olympics the user joined as a participant (requires auth)
+router.get("/participated", requireAuth, async (req, res) => {
+  try {
+    const olympics = await Olympic.find({
+      "participants.userId": req.user.id,
+      // exclude ones they own (those appear in /mine)
+      ownerId: { $ne: req.user.id },
+    })
+      .sort({ updatedAt: -1 })
       .select("-hostToken")
       .lean();
     res.json(olympics);
@@ -132,12 +163,27 @@ router.patch("/:code", requireAuth, async (req, res) => {
         .status(400)
         .json({ error: "Only draft Olympics can be edited" });
 
-    const { name, tieRule, extraRules, maxPlayers, games } = req.body;
+    const {
+      name,
+      tieRule,
+      extraRules,
+      maxPlayers,
+      games,
+      scoringMode,
+      scoringEnabled,
+      hostParticipates,
+      hostPlayerName,
+    } = req.body;
     if (name !== undefined) olympic.name = name;
     if (tieRule !== undefined) olympic.tieRule = tieRule;
+    if (scoringMode !== undefined) olympic.scoringMode = scoringMode;
+    if (scoringEnabled !== undefined) olympic.scoringEnabled = scoringEnabled;
     if (extraRules !== undefined) olympic.extraRules = extraRules;
     if (maxPlayers !== undefined) olympic.maxPlayers = maxPlayers;
     if (games !== undefined) olympic.games = games;
+    if (hostParticipates !== undefined)
+      olympic.hostParticipates = hostParticipates;
+    if (hostPlayerName !== undefined) olympic.hostPlayerName = hostPlayerName;
 
     await olympic.save();
     const { hostToken: _ht, ...safe } = olympic.toObject();
@@ -180,6 +226,14 @@ router.post("/:code/launch", requireAuth, async (req, res) => {
       return res
         .status(400)
         .json({ error: "Add at least one game before launching" });
+
+    // Auto-add host as participant when hostParticipates is enabled
+    if (olympic.hostParticipates && olympic.hostPlayerName?.trim()) {
+      const hostName = olympic.hostPlayerName.trim();
+      if (!olympic.participants.some((p) => p.name === hostName)) {
+        olympic.participants.push({ name: hostName });
+      }
+    }
 
     olympic.status = "lobby";
     await olympic.save();

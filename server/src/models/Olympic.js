@@ -15,6 +15,7 @@ const ParticipantSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true, maxlength: 30 },
   avatarBase64: { type: String, default: "" },
   stats: { type: StatSchema, default: () => ({}) },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
 });
 
 const AddonsSchema = new mongoose.Schema(
@@ -108,10 +109,19 @@ const OlympicSchema = new mongoose.Schema(
       enum: ["tiebreaker", "shared_points"],
       default: "tiebreaker",
     },
+    scoringMode: {
+      type: String,
+      enum: ["linear", "top3", "f1"],
+      default: "linear",
+    },
+    scoringEnabled: { type: Boolean, default: true },
+    hostParticipates: { type: Boolean, default: false },
+    hostPlayerName: { type: String, default: "", trim: true, maxlength: 30 },
     extraRules: { type: ExtraRulesSchema, default: () => ({}) },
     participants: [ParticipantSchema],
     games: [GameSchema],
     results: [ResultSchema],
+    finalLeaderboard: { type: mongoose.Schema.Types.Mixed, default: null },
   },
   { timestamps: true },
 );

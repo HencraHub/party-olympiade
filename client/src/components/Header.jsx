@@ -16,42 +16,71 @@ export default function Header() {
   return (
     <>
       <header
-        className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-5 py-3 border-b border-white/[0.06]"
+        className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-5 sm:px-10 py-3 border-b border-white/[0.06]"
         style={{
-          background: "rgba(7,7,20,0.85)",
-          backdropFilter: "blur(16px)",
+          background: "rgba(7,7,20,0.88)",
+          backdropFilter: "blur(20px)",
         }}
       >
         {/* Logo */}
         <button
-          className="flex items-center gap-2 font-black text-lg text-white hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2 font-black text-white hover:opacity-80 transition-opacity shrink-0"
           onClick={() => navigate("/")}
         >
-          <span>🏅</span>
-          <span
-            style={{
-              background: "linear-gradient(90deg, #8b5cf6, #ec4899)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            Party Olympiade
-          </span>
+          <span className="text-xl">🏅</span>
+          <div className="leading-none text-left">
+            <div
+              className="text-base font-black tracking-widest"
+              style={{
+                background: "linear-gradient(90deg, #ec4899, #8b5cf6)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              PARTY
+            </div>
+            <div
+              className="text-[0.6rem] font-black tracking-[0.3em]"
+              style={{
+                background: "linear-gradient(90deg, #8b5cf6, #22d3ee)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              OLYMPIADE
+            </div>
+          </div>
         </button>
+
+        {/* Center nav */}
+        <nav className="hidden sm:flex items-center gap-1">
+          <button
+            className="btn-ghost text-sm font-semibold text-white/80 hover:text-white underline underline-offset-4 decoration-pink-500"
+            onClick={() => navigate("/create")}
+          >
+            Lobby erstellen
+          </button>
+          <button
+            className="btn-ghost text-sm font-semibold text-white/60 hover:text-white flex items-center gap-1.5"
+            onClick={() => navigate("/join")}
+          >
+            <span className="text-cyan-400">👥</span> Lobby beitreten
+          </button>
+          <button
+            className="btn-ghost text-sm font-semibold text-white/60 hover:text-white flex items-center gap-1.5"
+            onClick={() => navigate("/library")}
+          >
+            <span className="text-purple-400">📋</span> Regeln
+          </button>
+        </nav>
 
         {/* Right side */}
         <div className="flex items-center gap-3">
-          <button
-            className="btn-ghost text-sm hidden sm:block"
-            onClick={() => navigate("/library")}
-          >
-            📚 Library
-          </button>
           {user ? (
             <div className="relative">
               <button
                 onClick={() => setShowMenu((s) => !s)}
-                className="flex items-center gap-2 glass rounded-full px-3 py-1.5 text-sm font-medium text-white hover:border-white/20 transition-colors"
+                className="flex items-center gap-2 glass rounded-full px-3 py-1.5 text-sm font-semibold text-white hover:border-white/20 transition-colors"
               >
                 <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold shrink-0">
                   {user.username[0].toUpperCase()}
