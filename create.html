@@ -4,39 +4,103 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Lobby erstellen | Party Olympiade</title>
-  <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: radial-gradient(circle at top, #1a1a2e, #090914); color: white; text-align: center; }
-    .container { max-width: 560px; margin: auto; padding: 60px 20px; }
-    input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 14px; border: 1px solid #333; background: #151528; color: white; box-sizing: border-box; }
-    .rules { text-align: left; background: #151528; border-radius: 14px; padding: 12px; margin-top: 12px; }
-    .rule-item { display: flex; gap: 8px; margin: 8px 0; color: #d4d4ea; font-size: 14px; }
-    button { width: 100%; padding: 15px; margin-top: 14px; border-radius: 30px; border: none; font-weight: bold; background: linear-gradient(45deg, #8b5cf6, #ec4899); color: white; }
-    .error { color: #fb7185; font-size: 14px; min-height: 18px; margin-top: 8px; }
-    a { display: block; margin-top: 20px; color: #22d3ee; text-decoration: none; }
-  </style>
+    <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Lobby erstellen</h1>
-    <input id="lobbyName" placeholder="Name der Olympiade" />
-    <input id="hostName" placeholder="Dein Name" maxlength="20" />
+  <div class="page">
+    <header class="header glass">
+      <a href="index.html" aria-label="Startseite">
+        <img class="brand-logo" src="assets/logo-party-olympiade.png" alt="Party Olympiade" />
+      </a>
+      <nav class="nav" aria-label="Navigation">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#how">So funktioniert’s</a>
+        <a href="index.html#rules">Regeln</a>
+      </nav>
+      <div>
+        <a class="btn btn-secondary" href="index.html">Zurück zur Startseite</a>
+      </div>
+    </header>
 
-    <select id="tieRule">
-      <option value="tiebreaker">Gleichstand: Schätzfrage entscheidet</option>
-      <option value="shared_points">Gleichstand: Gleiche Punkte vergeben</option>
-    </select>
+    <section class="setup-wrap">
+      <div class="setup glass">
+        <div class="panel">
+          <h1>Erstelle deine Olympiade</h1>
+          <p class="lead">Lege Name, Host und Regeln fest. Danach bekommst du deinen Lobby-Code.</p>
+          <ul class="info-list">
+            <li><span class="dot"></span>Kein Login</li>
+            <li><span class="dot"></span>Host steuert die Runde</li>
+            <li><span class="dot"></span>Regeln später sichtbar</li>
+          </ul>
+        </div>
 
-    <div class="rules">
-      <strong>Optionale Extra-Regeln (nur FFA außer Finale-Doppelt)</strong>
-      <label class="rule-item"><input type="checkbox" id="rComeback" /> Comeback-Regel (-2 wenn vorheriger Führender nicht Top 3)</label>
-      <label class="rule-item"><input type="checkbox" id="rLast" /> Letzter-Holt-Auf-Regel (+1 wenn vorher Letzter Top 3 erreicht)</label>
-      <label class="rule-item"><input type="checkbox" id="rStreak" /> Sieges-Serie-Regel (+1 bei 2 FFA-Siegen in Folge)</label>
-      <label class="rule-item"><input type="checkbox" id="rFinal" /> Finale-Doppelt-Regel (letztes Spiel doppelte Grundpunkte)</label>
-    </div>
+        <div class="panel">
+          <form onsubmit="event.preventDefault(); createLobby();">
+            <div class="field">
+              <label for="lobbyName">Name der Olympiade</label>
+              <input id="lobbyName" type="text" placeholder="z. B. Sommer-Spezial 2026" />
+            </div>
 
-    <div id="error" class="error"></div>
-    <button onclick="createLobby()">Party starten</button>
-    <a href="index.html">← Zur Startseite</a>
+            <div class="field">
+              <label for="hostName">Dein Name</label>
+              <input id="hostName" type="text" maxlength="20" placeholder="Dein Host-Name" />
+            </div>
+
+            <div class="field">
+              <span class="section-title">Gleichstandsregel</span>
+              <select id="tieRule" aria-label="Gleichstandsregel">
+                <option value="tiebreaker">Gleichstand: Schätzfrage entscheidet</option>
+                <option value="shared_points">Gleichstand: Gleiche Punkte vergeben</option>
+              </select>
+              <div class="tie-cards">
+                <button type="button" class="choice-card active" data-tie-rule="tiebreaker">
+                  <strong>Schätzfrage entscheidet</strong>
+                  <span>Bei Punktgleichstand entscheidet eine zusätzliche Schätzfrage.</span>
+                </button>
+                <button type="button" class="choice-card" data-tie-rule="shared_points">
+                  <strong>Gleiche Punkte vergeben</strong>
+                  <span>Alle beteiligten Teams erhalten die gleiche Platzierungspunktzahl.</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="field">
+              <span class="section-title">Extra-Regeln</span>
+              <div class="toggle-grid">
+                <label class="toggle-card" for="rComeback">
+                  <input type="checkbox" id="rComeback" />
+                  <strong>Comeback-Regel</strong>
+                  <span>-2, wenn vorheriger Führender nicht Top 3 erreicht.</span>
+                </label>
+                <label class="toggle-card" for="rLast">
+                  <input type="checkbox" id="rLast" />
+                  <strong>Letzter-holt-auf</strong>
+                  <span>+1, wenn vorher Letzter jetzt Top 3 erreicht.</span>
+                </label>
+                <label class="toggle-card" for="rStreak">
+                  <input type="checkbox" id="rStreak" />
+                  <strong>Sieges-Serie</strong>
+                  <span>+1 bei zwei FFA-Siegen in Folge.</span>
+                </label>
+                <label class="toggle-card" for="rFinal">
+                  <input type="checkbox" id="rFinal" />
+                  <strong>Finale doppelt</strong>
+                  <span>Letztes Spiel zählt mit doppelten Grundpunkten.</span>
+                </label>
+              </div>
+            </div>
+
+            <div id="error" class="error"></div>
+
+            <div class="button-row">
+              <button class="btn btn-primary" type="submit">Lobby erstellen</button>
+            </div>
+
+            <a class="back-link" href="index.html">← Zurück zur Startseite</a>
+          </form>
+        </div>
+      </div>
+    </section>
   </div>
 
   <script>
@@ -79,6 +143,25 @@
       localStorage.setItem("party_olympiade_last_code", lobby.code);
       window.location.href = "lobby.html?code=" + lobby.code;
     }
+
+    const tieRuleSelect = document.getElementById("tieRule");
+    const tieCards = Array.from(document.querySelectorAll(".choice-card"));
+
+    tieCards.forEach((card) => {
+      card.addEventListener("click", () => {
+        tieCards.forEach((item) => item.classList.remove("active"));
+        card.classList.add("active");
+        tieRuleSelect.value = card.dataset.tieRule;
+      });
+    });
+
+    const toggleCards = Array.from(document.querySelectorAll(".toggle-card"));
+    toggleCards.forEach((card) => {
+      const input = card.querySelector("input[type='checkbox']");
+      const sync = () => card.classList.toggle("active", input.checked);
+      input.addEventListener("change", sync);
+      sync();
+    });
   </script>
 </body>
 </html>
