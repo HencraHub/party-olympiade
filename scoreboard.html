@@ -45,61 +45,52 @@
       <div id="hint" class="muted"></div>
       <div id="formArea"></div>
       <div id="formError" class="error"></div>
-      <div class="actions">
-        <button id="saveBtn" class="btn btn-primary" onclick="saveResult()">Ergebnis speichern</button>
-        <button class="btn btn-secondary" onclick="resetResults()">Ergebnisse zurücksetzen</button>
-      </div>
-    </section>
-  </main>
-</div>
+      <button id="saveBtn" onclick="saveResult()">Ergebnis speichern</button>
+    </div>
 
-<script>
-  const code = (new URLSearchParams(window.location.search).get("code") || "").toUpperCase();
-  if (!code) window.location.href = "index.html";
+    <div class="card">
+      <h2>Bonus-/Malus-Log</h2>
+      <div id="logArea" class="info"></div>
+    </div>
 
-  const storageKey = "party_olympiade_" + code;
-  let lobby = JSON.parse(localStorage.getItem(storageKey));
-  if (!lobby) { alert("Lobby nicht gefunden."); window.location.href = "index.html"; }
+    <div class="card">
+      <button onclick="window.location.href='winner.html?code='+lobby.code">Olympiade beenden</button>
+      <button class="secondary" onclick="resetResults()">Ergebnisse zurücksetzen</button>
+    </div>
 
-  function makeId(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2));}
+    <p><a id="backToGames" href="#">← Zurück zu den Spielen</a></p>
+  </div>
 
-  function normalizeLobby() {
-    lobby.players = Array.isArray(lobby.players) ? lobby.players : [];
-    lobby.games = Array.isArray(lobby.games) ? lobby.games : [];
-    lobby.results = Array.isArray(lobby.results) ? lobby.results : [];
-    lobby.tieRule = lobby.tieRule || "tiebreaker";
-    lobby.extraRules = {
-      comebackPenalty: !!(lobby.extraRules && lobby.extraRules.comebackPenalty),
-      lastPlaceBonus: !!(lobby.extraRules && lobby.extraRules.lastPlaceBonus),
-      winStreakBonus: !!(lobby.extraRules && lobby.extraRules.winStreakBonus),
-      finalDoublePoints: !!(lobby.extraRules && lobby.extraRules.finalDoublePoints)
-    };
-    lobby.games = lobby.games.map((g)=> typeof g==='string' ? {id:makeId(),name:g,icon:'🎮',mode:'ffa'} : {id:g.id||makeId(),name:g.name||'Spiel',icon:g.icon||'🎮',mode:g.mode==='team'?'team':'ffa'});
-  }
+  <script>
+    const code = (new URLSearchParams(window.location.search).get("code") || "").toUpperCase();
+    if (!code) window.location.href = "index.html";
 
-  function saveLobby(){ localStorage.setItem(storageKey, JSON.stringify(lobby)); }
-  function showError(msg){ document.getElementById('formError').innerText = msg || ''; }
+    const storageKey = "party_olympiade_" + code;
+    let lobby = JSON.parse(localStorage.getItem(storageKey));
+    if (!lobby) { alert("Lobby nicht gefunden."); window.location.href = "index.html"; }
 
-  function getResultForGame(game){ return lobby.results.find((r)=>r.gameId===game.id) || null; }
-  function rankRows(rows){ return [...rows].sort((a,b)=>b.total-b.total || b.wins-a.wins || a.name.localeCompare(b.name)); }
+    function makeId(){return (window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2));}
 
-  function getUniqueLeaderAndLast(rows){
-    const sorted=rankRows(rows);
-    if(!sorted.length) return {leader:null,last:null,hasClearLeader:false,hasClearLast:false};
-    const leader=sorted[0]; const last=sorted[sorted.length-1];
-    const hasClearLeader = sorted.filter((r)=>r.total===leader.total).length===1;
-    const hasClearLast = sorted.filter((r)=>r.total===last.total).length===1;
-    return {leader,last,hasClearLeader,hasClearLast};
-  }
+    function normalizeLobby() {
+      lobby.players = Array.isArray(lobby.players) ? lobby.players : [];
+      lobby.players = lobby.players
+        .map((p) => typeof p === "string" ? p : (p && typeof p === "object" ? (p.name || "") : ""))
+        .map((name) => String(name).trim())
+        .filter(Boolean);
+      lobby.games = Array.isArray(lobby.games) ? lobby.games : [];
+      lobby.results = Array.isArray(lobby.results) ? lobby.results : [];
+      lobby.tieRule = lobby.tieRule || "tiebreaker";
+      lobby.extraRules = {
+        comebackPenalty: !!(lobby.extraRules && lobby.extraRules.comebackPenalty),
+        lastPlaceBonus: !!(lobby.extraRules && lobby.extraRules.lastPlaceBonus),
+        winStreakBonus: !!(lobby.extraRules && lobby.extraRules.winStreakBonus),
+        finalDoublePoints: !!(lobby.extraRules && lobby.extraRules.finalDoublePoints)
+      };
+      lobby.games = lobby.games.map((g)=> typeof g==='string' ? {id:makeId(),name:g,icon:'🎮',mode:'ffa'} : {id:g.id||makeId(),name:g.name||'Spiel',icon:g.icon||'🎮',mode:g.mode==='team'?'team':'ffa'});
+    }
 
-  function recalculateRanking() {
-    const players = lobby.players.map((name)=>({name,total:0,base:0,bonus:0,wins:0}));
-    let previousFfaWinners = new Set(); let playedGames = 0;
-
-    lobby.games.forEach((game, index)=>{
-      const result = getResultForGame(game); if(!result) return;
-      result.adjustments = [];
-      const mult = lobby.extraRules.finalDoublePoints && index===lobby.games.length-1 ? 2 : 1;
+    function saveLobby(){ localStorage.setItem(storageKey, JSON.stringify(lobby)); }
+    function showError(msg){ document.getElementById('formError').innerText = msg || ''; }
 
       if(game.mode==='ffa'){
         const before = getUniqueLeaderAndLast(players);
