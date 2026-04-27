@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 const useOlympicStore = create((set) => ({
   olympic: null,

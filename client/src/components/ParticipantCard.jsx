@@ -1,14 +1,20 @@
-import { STAT_LABELS } from './ui/StatSlider.jsx';
+import { STAT_LABELS } from "./ui/StatSlider.jsx";
 
 const STAT_KEYS = Object.keys(STAT_LABELS);
 
-export default function ParticipantCard({ participant, rank, highlight = false }) {
+export default function ParticipantCard({
+  participant,
+  rank,
+  highlight = false,
+}) {
   const { name, avatarBase64, stats = {} } = participant;
 
   return (
     <div
       className={`glass rounded-xl p-4 flex gap-4 items-start transition-all duration-300 ${
-        highlight ? 'border-purple-500 shadow-[0_0_20px_rgba(139,92,246,0.3)]' : ''
+        highlight
+          ? "border-purple-500 shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+          : ""
       }`}
     >
       {/* Avatar */}

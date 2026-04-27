@@ -1,6 +1,11 @@
-const MEDAL = ['🥇', '🥈', '🥉'];
+const MEDAL = ["🥇", "🥈", "🥉"];
 
-export default function Scoreboard({ leaderboard = [], participants = [], myName = null, compact = false }) {
+export default function Scoreboard({
+  leaderboard = [],
+  participants = [],
+  myName = null,
+  compact = false,
+}) {
   const gamesPlayed = leaderboard.reduce((max, p) => Math.max(max, p.wins), 0);
 
   return (
@@ -30,11 +35,13 @@ export default function Scoreboard({ leaderboard = [], participants = [], myName
               <tr
                 key={entry.name}
                 className={`border-b border-white/5 transition-colors ${
-                  isMe ? 'bg-purple-500/10' : 'hover:bg-white/3'
+                  isMe ? "bg-purple-500/10" : "hover:bg-white/3"
                 }`}
               >
                 <td className="py-2.5 pr-2 text-center">
-                  {medal || <span className="text-muted font-mono">{i + 1}</span>}
+                  {medal || (
+                    <span className="text-muted font-mono">{i + 1}</span>
+                  )}
                 </td>
                 <td className="py-2.5">
                   <div className="flex items-center gap-2">
@@ -49,20 +56,34 @@ export default function Scoreboard({ leaderboard = [], participants = [], myName
                         {entry.name[0]?.toUpperCase()}
                       </div>
                     )}
-                    <span className={`font-medium ${isMe ? 'text-purple-light' : 'text-white'}`}>
+                    <span
+                      className={`font-medium ${isMe ? "text-purple-light" : "text-white"}`}
+                    >
                       {entry.name}
-                      {isMe && <span className="ml-1 text-xs text-purple-400">(you)</span>}
+                      {isMe && (
+                        <span className="ml-1 text-xs text-purple-400">
+                          (you)
+                        </span>
+                      )}
                     </span>
                   </div>
                 </td>
-                <td className="py-2.5 text-right font-bold text-white">{entry.total}</td>
+                <td className="py-2.5 text-right font-bold text-white">
+                  {entry.total}
+                </td>
                 {!compact && (
                   <>
-                    <td className="py-2.5 text-right text-muted">{entry.base}</td>
-                    <td className={`py-2.5 text-right font-medium ${entry.bonus > 0 ? 'text-green-400' : entry.bonus < 0 ? 'text-pink-400' : 'text-muted'}`}>
+                    <td className="py-2.5 text-right text-muted">
+                      {entry.base}
+                    </td>
+                    <td
+                      className={`py-2.5 text-right font-medium ${entry.bonus > 0 ? "text-green-400" : entry.bonus < 0 ? "text-pink-400" : "text-muted"}`}
+                    >
                       {entry.bonus > 0 ? `+${entry.bonus}` : entry.bonus}
                     </td>
-                    <td className="py-2.5 text-right text-muted">{entry.wins}</td>
+                    <td className="py-2.5 text-right text-muted">
+                      {entry.wins}
+                    </td>
                   </>
                 )}
               </tr>
@@ -70,7 +91,10 @@ export default function Scoreboard({ leaderboard = [], participants = [], myName
           })}
           {leaderboard.length === 0 && (
             <tr>
-              <td colSpan={compact ? 3 : 6} className="py-6 text-center text-muted">
+              <td
+                colSpan={compact ? 3 : 6}
+                className="py-6 text-center text-muted"
+              >
                 No scores yet
               </td>
             </tr>

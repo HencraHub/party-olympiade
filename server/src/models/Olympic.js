@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const StatSchema = new mongoose.Schema(
   {
@@ -8,36 +8,35 @@ const StatSchema = new mongoose.Schema(
     driver: { type: Number, min: 1, max: 10, default: 5 },
     strategist: { type: Number, min: 1, max: 10, default: 5 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const ParticipantSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true, maxlength: 30 },
-  avatarBase64: { type: String, default: '' },
+  avatarBase64: { type: String, default: "" },
   stats: { type: StatSchema, default: () => ({}) },
 });
-
 
 const AddonsSchema = new mongoose.Schema(
   {
     drinkingGame: {
       enabled: { type: Boolean, default: false },
-      rules: { type: String, default: '', maxlength: 500 },
+      rules: { type: String, default: "", maxlength: 500 },
     },
     timeLimit: { type: Number, default: 0, min: 0 },
-    equipment: { type: String, default: '', maxlength: 200 },
-    handicap: { type: String, default: '', maxlength: 200 },
+    equipment: { type: String, default: "", maxlength: 200 },
+    handicap: { type: String, default: "", maxlength: 200 },
     teamSize: { type: Number, default: 2, min: 1 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const GameSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true, maxlength: 60 },
-  mode: { type: String, enum: ['ffa', 'team'], default: 'ffa' },
-  icon: { type: String, default: '🎮', maxlength: 10 },
-  rules: { type: String, default: '', maxlength: 1000 },
-  imageBase64: { type: String, default: '' },
+  mode: { type: String, enum: ["ffa", "team"], default: "ffa" },
+  icon: { type: String, default: "🎮", maxlength: 10 },
+  rules: { type: String, default: "", maxlength: 1000 },
+  imageBase64: { type: String, default: "" },
   order: { type: Number, default: 0 },
   addons: { type: AddonsSchema, default: () => ({}) },
 });
@@ -47,7 +46,7 @@ const PlacementSchema = new mongoose.Schema(
     participantName: { type: String, required: true },
     place: { type: Number, required: true, min: 1 },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const TeamResultSchema = new mongoose.Schema(
@@ -56,7 +55,7 @@ const TeamResultSchema = new mongoose.Schema(
     members: [{ type: String }],
     won: { type: Boolean, required: true },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const ResultSchema = new mongoose.Schema(
@@ -65,7 +64,7 @@ const ResultSchema = new mongoose.Schema(
     placements: [PlacementSchema],
     teams: [TeamResultSchema],
   },
-  { _id: false }
+  { _id: false },
 );
 
 const ExtraRulesSchema = new mongoose.Schema(
@@ -75,7 +74,7 @@ const ExtraRulesSchema = new mongoose.Schema(
     winStreakBonus: { type: Boolean, default: false },
     finalDoublePoints: { type: Boolean, default: false },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const OlympicSchema = new mongoose.Schema(
@@ -91,26 +90,32 @@ const OlympicSchema = new mongoose.Schema(
     },
     name: { type: String, required: true, trim: true, maxlength: 60 },
     hostToken: { type: String, required: true },
+    ownerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true,
+    },
     status: {
       type: String,
-      enum: ['lobby', 'active', 'finished'],
-      default: 'lobby',
+      enum: ["draft", "lobby", "active", "finished"],
+      default: "draft",
     },
     maxPlayers: { type: Number, default: 20, min: 2, max: 50 },
     currentGameIndex: { type: Number, default: 0, min: 0 },
     tieRule: {
       type: String,
-      enum: ['tiebreaker', 'shared_points'],
-      default: 'tiebreaker',
+      enum: ["tiebreaker", "shared_points"],
+      default: "tiebreaker",
     },
     extraRules: { type: ExtraRulesSchema, default: () => ({}) },
     participants: [ParticipantSchema],
     games: [GameSchema],
     results: [ResultSchema],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // code uniqueness is enforced by unique: true in the schema field above
 
-export default mongoose.model('Olympic', OlympicSchema);
+export default mongoose.model("Olympic", OlympicSchema);

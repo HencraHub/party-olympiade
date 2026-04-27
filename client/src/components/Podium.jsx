@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
-const PODIUM_HEIGHTS = ['h-28', 'h-20', 'h-14'];
+const PODIUM_HEIGHTS = ["h-28", "h-20", "h-14"];
 const PODIUM_ORDER = [1, 0, 2]; // display order: 2nd, 1st, 3rd
-const MEDALS = ['🥇', '🥈', '🥉'];
-const DELAY = ['delay-300', 'delay-0', 'delay-600'];
+const MEDALS = ["🥇", "🥈", "🥉"];
+const DELAY = ["delay-300", "delay-0", "delay-600"];
 
 export default function Podium({ leaderboard = [], participants = [] }) {
   const top3 = leaderboard.slice(0, 3);
@@ -24,7 +24,7 @@ export default function Podium({ leaderboard = [], participants = [] }) {
           <div
             key={entry.name}
             className={`flex flex-col items-center animate-podium-rise ${animDelay} opacity-0`}
-            style={{ animationFillMode: 'forwards' }}
+            style={{ animationFillMode: "forwards" }}
           >
             {/* Avatar */}
             <div className="mb-2">
@@ -58,10 +58,10 @@ export default function Podium({ leaderboard = [], participants = [] }) {
               style={{
                 background:
                   rankIdx === 0
-                    ? 'linear-gradient(180deg, #8b5cf6, #6d28d9)'
+                    ? "linear-gradient(180deg, #8b5cf6, #6d28d9)"
                     : rankIdx === 1
-                    ? 'linear-gradient(180deg, rgba(139,92,246,0.6), rgba(109,40,217,0.4))'
-                    : 'linear-gradient(180deg, rgba(139,92,246,0.3), rgba(109,40,217,0.2))',
+                      ? "linear-gradient(180deg, rgba(139,92,246,0.6), rgba(109,40,217,0.4))"
+                      : "linear-gradient(180deg, rgba(139,92,246,0.3), rgba(109,40,217,0.2))",
               }}
             >
               {rankIdx + 1}

@@ -14,41 +14,41 @@ The website does **not** host or run the games themselves; it is a **score track
 
 ## 2. Vision & Goals
 
-| Goal | Description |
-|------|-------------|
-| Fun-first | Dark, vibrant, party-ready UI that feels exciting on a TV and on mobile |
-| Low friction | No accounts, no installs; join with a code in seconds |
-| Host in control | One person drives the whole event — games, scores, pace |
-| Real-time | Every participant's device updates the moment the host acts |
-| Extensible | Clean data model that can grow (profiles, history, CDN images, etc.) |
+| Goal            | Description                                                             |
+| --------------- | ----------------------------------------------------------------------- |
+| Fun-first       | Dark, vibrant, party-ready UI that feels exciting on a TV and on mobile |
+| Low friction    | No accounts, no installs; join with a code in seconds                   |
+| Host in control | One person drives the whole event — games, scores, pace                 |
+| Real-time       | Every participant's device updates the moment the host acts             |
+| Extensible      | Clean data model that can grow (profiles, history, CDN images, etc.)    |
 
 ---
 
 ## 3. Tech Stack
 
-| Layer | Technology | Rationale |
-|-------|-----------|-----------|
-| Frontend | **React 18** + **Vite** | Fast dev experience, component model |
-| Styling | **Tailwind CSS v3** | Utility-first, no stylesheet bloat |
-| Routing | **React Router v6** | Standard React routing |
-| State | **Zustand** | Minimal, no boilerplate |
-| Real-time (client) | **Socket.IO-client** | Bi-directional real-time updates |
-| HTTP | **Axios** | Promise-based, interceptor support |
-| Backend | **Node.js** + **Express** | Lightweight, well-known |
-| Real-time (server) | **Socket.IO** | Pairs perfectly with the client |
-| Database | **MongoDB** + **Mongoose** | Flexible document model, embedded sub-docs |
-| Images | **Base64 in MongoDB** | Zero extra services for v1; swap to S3/Cloudinary later |
-| Dev tooling | **Nodemon** + **Concurrently** | Hot reload on both sides in one terminal |
+| Layer              | Technology                     | Rationale                                               |
+| ------------------ | ------------------------------ | ------------------------------------------------------- |
+| Frontend           | **React 18** + **Vite**        | Fast dev experience, component model                    |
+| Styling            | **Tailwind CSS v3**            | Utility-first, no stylesheet bloat                      |
+| Routing            | **React Router v6**            | Standard React routing                                  |
+| State              | **Zustand**                    | Minimal, no boilerplate                                 |
+| Real-time (client) | **Socket.IO-client**           | Bi-directional real-time updates                        |
+| HTTP               | **Axios**                      | Promise-based, interceptor support                      |
+| Backend            | **Node.js** + **Express**      | Lightweight, well-known                                 |
+| Real-time (server) | **Socket.IO**                  | Pairs perfectly with the client                         |
+| Database           | **MongoDB** + **Mongoose**     | Flexible document model, embedded sub-docs              |
+| Images             | **Base64 in MongoDB**          | Zero extra services for v1; swap to S3/Cloudinary later |
+| Dev tooling        | **Nodemon** + **Concurrently** | Hot reload on both sides in one terminal                |
 
 ---
 
 ## 4. User Roles
 
-| Role | Description |
-|------|-------------|
-| **Host** | Creates the Olympic. Controls game flow, submits scores, ends the event. Identified by a UUID `hostToken` stored in `localStorage` and verified server-side. |
-| **Participant** | Joins via room code + name. Read-only view: sees current game & live leaderboard. |
-| **Spectator** *(v2)* | Like Participant but without a registered name; just watches. |
+| Role                 | Description                                                                                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Host**             | Creates the Olympic. Controls game flow, submits scores, ends the event. Identified by a UUID `hostToken` stored in `localStorage` and verified server-side. |
+| **Participant**      | Joins via room code + name. Read-only view: sees current game & live leaderboard.                                                                            |
+| **Spectator** _(v2)_ | Like Participant but without a registered name; just watches.                                                                                                |
 
 ---
 
@@ -57,10 +57,11 @@ The website does **not** host or run the games themselves; it is a **score track
 ### 5.1 Olympic Builder (Multi-Step Wizard)
 
 #### Step 1 — Event Setup
+
 - [ ] Olympic name (required, max 60 chars)
 - [ ] Tie-breaking rule:
-  - *Tiebreaker question* — ties shown as-is; host resolves manually
-  - *Shared points* — tied players split the combined point value of their places
+  - _Tiebreaker question_ — ties shown as-is; host resolves manually
+  - _Shared points_ — tied players split the combined point value of their places
 - [ ] Optional bonus/penalty rules (toggles):
   - **Comeback Penalty** — Previous leader not in top 3 → −2 pts
   - **Last Place Bonus** — Previous last-place in top 3 → +1 pt
@@ -68,6 +69,7 @@ The website does **not** host or run the games themselves; it is a **score track
   - **Final Double Points** — Last game awards 2× base points
 
 #### Step 2 — Participants
+
 - [ ] Add participant: **name** (required, max 30 chars, unique), **avatar** (image upload → base64, max 2 MB), **stats** (all 1–10 sliders)
   - 🧠 IQ — Trivia & puzzle skill
   - 🎯 Shooter — FPS / aiming skill
@@ -78,6 +80,7 @@ The website does **not** host or run the games themselves; it is a **score track
 - [ ] Minimum 2 participants to proceed
 
 #### Step 3 — Games
+
 - [ ] Add game: **title** (required, max 60 chars), **mode** (FFA / Teams), **emoji icon**, **rules** (textarea, max 1 000 chars), **cover image** (base64, max 2 MB)
 - [ ] Optional add-ons per game:
   - 🍺 **Drinking game mode** — toggle + custom drinking rules text
@@ -90,6 +93,7 @@ The website does **not** host or run the games themselves; it is a **score track
 - [ ] Minimum 1 game to proceed
 
 #### Step 4 — Preview & Launch
+
 - [ ] Summary: event name, participant count, game list
 - [ ] **"Launch Olympic"** — POSTs to API, stores `hostToken` in `localStorage`, redirects to Host Room
 
@@ -122,15 +126,18 @@ The website does **not** host or run the games themselves; it is a **score track
 ### 5.4 Score Calculation
 
 **FFA (Free-for-All):**
+
 ```
 Place 1 → N points
 Place 2 → N−1 points
 …
 Place N → 1 point
 ```
-If *Final Double Points* is active and this is the last game: all base points × 2.
+
+If _Final Double Points_ is active and this is the last game: all base points × 2.
 
 **Teams:**
+
 ```
 Winning team member → ⌈N/2⌉ points
 Losing  team member → ⌊N/4⌋ points
@@ -177,26 +184,27 @@ Losing  team member → ⌊N/4⌋ points
 
 ## 6. Non-Functional Requirements
 
-| Requirement | Target |
-|-------------|--------|
-| Real-time latency | < 1 s from host action to all client updates |
-| Mobile-ready | Participant view fully usable on 375 px screen |
-| No accounts | Zero sign-up friction |
-| Image limit | 2 MB per image, validated client-side |
-| Data persistence | All Olympic data stored in MongoDB; no TTL in v1 |
-| Security | `hostToken` verified server-side on every mutating socket event; room codes are random, not sequential |
+| Requirement       | Target                                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------------------------------ |
+| Real-time latency | < 1 s from host action to all client updates                                                           |
+| Mobile-ready      | Participant view fully usable on 375 px screen                                                         |
+| No accounts       | Zero sign-up friction                                                                                  |
+| Image limit       | 2 MB per image, validated client-side                                                                  |
+| Data persistence  | All Olympic data stored in MongoDB; no TTL in v1                                                       |
+| Security          | `hostToken` verified server-side on every mutating socket event; room codes are random, not sequential |
 
 ---
 
 ## 7. Data Models
 
 ### Olympic (top-level document)
+
 ```jsonc
 {
   "_id": "ObjectId",
-  "code": "A3XK",                        // unique 4-char room code
+  "code": "A3XK", // unique 4-char room code
   "name": "Summer Gaming Olympics 2025",
-  "hostToken": "uuid-v4",               // secret; never sent to participants
+  "hostToken": "uuid-v4", // secret; never sent to participants
   "status": "setup | active | finished",
   "currentGameIndex": 0,
   "tieRule": "tiebreaker | shared_points",
@@ -204,26 +212,40 @@ Losing  team member → ⌊N/4⌋ points
     "comebackPenalty": false,
     "lastPlaceBonus": false,
     "winStreakBonus": false,
-    "finalDoublePoints": false
+    "finalDoublePoints": false,
   },
-  "participants": [ /* ParticipantSchema[] */ ],
-  "games":        [ /* GameSchema[] */ ],
-  "results":      [ /* ResultSchema[] */ ],
-  "createdAt": "ISODate"
+  "participants": [
+    /* ParticipantSchema[] */
+  ],
+  "games": [
+    /* GameSchema[] */
+  ],
+  "results": [
+    /* ResultSchema[] */
+  ],
+  "createdAt": "ISODate",
 }
 ```
 
 ### Participant (embedded)
+
 ```jsonc
 {
   "_id": "ObjectId",
   "name": "Alice",
   "avatarBase64": "data:image/jpeg;base64,...",
-  "stats": { "iq": 7, "shooter": 5, "partyAnimal": 9, "driver": 6, "strategist": 8 }
+  "stats": {
+    "iq": 7,
+    "shooter": 5,
+    "partyAnimal": 9,
+    "driver": 6,
+    "strategist": 8,
+  },
 }
 ```
 
 ### Game (embedded)
+
 ```jsonc
 {
   "_id": "ObjectId",
@@ -238,23 +260,24 @@ Losing  team member → ⌊N/4⌋ points
     "timeLimit": 0,
     "equipment": "",
     "handicap": "",
-    "teamSize": 2
-  }
+    "teamSize": 2,
+  },
 }
 ```
 
 ### Result (embedded)
+
 ```jsonc
 {
   "gameId": "ObjectId",
   "placements": [
     { "participantName": "Alice", "place": 1 },
-    { "participantName": "Bob",   "place": 2 }
+    { "participantName": "Bob", "place": 2 },
   ],
   "teams": [
     { "name": "Team A", "members": ["Alice", "Charlie"], "won": true },
-    { "name": "Team B", "members": ["Bob",   "Dave"],   "won": false }
-  ]
+    { "name": "Team B", "members": ["Bob", "Dave"], "won": false },
+  ],
 }
 ```
 
@@ -262,15 +285,15 @@ Losing  team member → ⌊N/4⌋ points
 
 ## 8. REST API
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| `POST` | `/api/olympics` | — | Create new Olympic |
-| `GET` | `/api/olympics/:code` | — | Get full Olympic state (no hostToken) |
-| `POST` | `/api/olympics/:code/results` | hostToken | Submit / upsert game result |
-| `DELETE` | `/api/olympics/:code/results/:gameId` | hostToken | Remove a game result |
-| `PATCH` | `/api/olympics/:code/navigate` | hostToken | Move `currentGameIndex` ±1 |
-| `PATCH` | `/api/olympics/:code/status` | hostToken | Update status (active / finished) |
-| `GET` | `/api/olympics/:code/leaderboard` | — | Computed leaderboard |
+| Method   | Path                                  | Auth      | Description                           |
+| -------- | ------------------------------------- | --------- | ------------------------------------- |
+| `POST`   | `/api/olympics`                       | —         | Create new Olympic                    |
+| `GET`    | `/api/olympics/:code`                 | —         | Get full Olympic state (no hostToken) |
+| `POST`   | `/api/olympics/:code/results`         | hostToken | Submit / upsert game result           |
+| `DELETE` | `/api/olympics/:code/results/:gameId` | hostToken | Remove a game result                  |
+| `PATCH`  | `/api/olympics/:code/navigate`        | hostToken | Move `currentGameIndex` ±1            |
+| `PATCH`  | `/api/olympics/:code/status`          | hostToken | Update status (active / finished)     |
+| `GET`    | `/api/olympics/:code/leaderboard`     | —         | Computed leaderboard                  |
 
 > `hostToken` is sent in the `x-host-token` request header.
 
@@ -278,27 +301,27 @@ Losing  team member → ⌊N/4⌋ points
 
 ## 9. Socket.IO Events
 
-| Event | Direction | Payload | Description |
-|-------|-----------|---------|-------------|
-| `join-room` | C → S | `{ code, name, isHost, hostToken? }` | Join a room by code |
-| `room-update` | S → C | `{ olympic, leaderboard }` | Full state broadcast |
-| `navigate` | Host → S | `{ code, direction, hostToken }` | Navigate games |
-| `submit-score` | Host → S | `{ code, result, hostToken }` | Submit / update game result |
-| `finish-olympic` | Host → S | `{ code, hostToken }` | End the event |
-| `error` | S → C | `{ message }` | Server-side error |
+| Event            | Direction | Payload                              | Description                 |
+| ---------------- | --------- | ------------------------------------ | --------------------------- |
+| `join-room`      | C → S     | `{ code, name, isHost, hostToken? }` | Join a room by code         |
+| `room-update`    | S → C     | `{ olympic, leaderboard }`           | Full state broadcast        |
+| `navigate`       | Host → S  | `{ code, direction, hostToken }`     | Navigate games              |
+| `submit-score`   | Host → S  | `{ code, result, hostToken }`        | Submit / update game result |
+| `finish-olympic` | Host → S  | `{ code, hostToken }`                | End the event               |
+| `error`          | S → C     | `{ message }`                        | Server-side error           |
 
 ---
 
 ## 10. Page Inventory
 
-| Path | Component | Access |
-|------|-----------|--------|
-| `/` | `HomePage` | Public |
-| `/create` | `CreatePage` | Public |
-| `/join` | `JoinPage` | Public |
-| `/room/:code` | `ParticipantView` | Participant |
-| `/room/:code/host` | `HostRoomPage` | Host (token check) |
-| `/room/:code/winner` | `WinnerPage` | Public |
+| Path                 | Component         | Access             |
+| -------------------- | ----------------- | ------------------ |
+| `/`                  | `HomePage`        | Public             |
+| `/create`            | `CreatePage`      | Public             |
+| `/join`              | `JoinPage`        | Public             |
+| `/room/:code`        | `ParticipantView` | Participant        |
+| `/room/:code/host`   | `HostRoomPage`    | Host (token check) |
+| `/room/:code/winner` | `WinnerPage`      | Public             |
 
 ---
 

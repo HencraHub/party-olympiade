@@ -1,17 +1,23 @@
-import express from 'express';
-import { v4 as uuidv4 } from 'uuid';
-import Olympic from '../models/Olympic.js';
-import { computeLeaderboard } from '../utils/scoring.js';
+import express from "express";
+import { v4 as uuidv4 } from "uuid";
+import jwt from "jsonwebtoken";
+import Olympic from "../models/Olympic.js";
+import { computeLeaderboard } from "../utils/scoring.js";
 
 const router = express.Router();
 
+const JWT_SECRET = process.env.JWT_SECRET || "change_me_in_production";
+
 /** Generate a unique 4-char room code */
 async function generateCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code;
   let exists = true;
   while (exists) {
-    code = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+    code = Array.from(
+      { length: 4 },
+      () => chars[Math.floor(Math.random() * chars.length)],
+    ).join("");
     exists = await Olympic.exists({ code });
   }
   return code;
@@ -19,17 +25,31 @@ async function generateCode() {
 
 /** Middleware: verify host token */
 function requireHostToken(req, res, next) {
-  const token = req.headers['x-host-token'];
-  if (!token) return res.status(401).json({ error: 'Host token required' });
+  const token = req.headers["x-host-token"];
+  if (!token) return res.status(401).json({ error: "Host token required" });
   req.hostToken = token;
   next();
 }
 
-// POST /api/olympics — Create a new Olympic
-router.post('/', async (req, res) => {
+/** Middleware: verify JWT auth */
+function requireAuth(req, res, next) {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith("Bearer "))
+    return res.status(401).json({ error: "Authentication required" });
+  try {
+    req.user = jwt.verify(auth.slice(7), JWT_SECRET);
+    next();
+  } catch {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+}
+
+// POST /api/olympics — Create a new Olympic as a draft (requires auth)
+router.post("/", requireAuth, async (req, res) => {
   try {
     const { name, tieRule, extraRules, games, maxPlayers } = req.body;
-    if (!name) return res.status(400).json({ error: 'Olympic name is required' });
+    if (!name)
+      return res.status(400).json({ error: "Olympic name is required" });
 
     const code = await generateCode();
     const hostToken = uuidv4();
@@ -38,101 +58,206 @@ router.post('/', async (req, res) => {
       code,
       name,
       hostToken,
-      tieRule: tieRule || 'tiebreaker',
+      ownerId: req.user.id,
+      tieRule: tieRule || "tiebreaker",
       extraRules: extraRules || {},
       maxPlayers: maxPlayers || 20,
       participants: [],
       games: games || [],
       results: [],
-      status: 'lobby',
+      status: "draft",
       currentGameIndex: 0,
     });
 
-    // Never return hostToken in general responses; only on creation
     res.status(201).json({ code: olympic.code, hostToken });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to create Olympic' });
+    res.status(500).json({ error: "Failed to create Olympic" });
+  }
+});
+
+// GET /api/olympics/mine — Get current user's Olympics (requires auth)
+router.get("/mine", requireAuth, async (req, res) => {
+  try {
+    const olympics = await Olympic.find({ ownerId: req.user.id })
+      .sort({ createdAt: -1 })
+      .select("-hostToken")
+      .lean();
+    res.json(olympics);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 // GET /api/olympics/:code — Get Olympic state (no hostToken in response)
-router.get('/:code', async (req, res) => {
+router.get("/:code", async (req, res) => {
   try {
-    const olympic = await Olympic.findOne({ code: req.params.code.toUpperCase() }).lean();
-    if (!olympic) return res.status(404).json({ error: 'Olympic not found' });
+    const olympic = await Olympic.findOne({
+      code: req.params.code.toUpperCase(),
+    }).lean();
+    if (!olympic) return res.status(404).json({ error: "Olympic not found" });
 
     const { hostToken: _ht, ...safeOlympic } = olympic;
     res.json(safeOlympic);
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 // GET /api/olympics/:code/leaderboard — Computed leaderboard
-router.get('/:code/leaderboard', async (req, res) => {
+router.get("/:code/leaderboard", async (req, res) => {
   try {
-    const olympic = await Olympic.findOne({ code: req.params.code.toUpperCase() }).lean();
-    if (!olympic) return res.status(404).json({ error: 'Olympic not found' });
+    const olympic = await Olympic.findOne({
+      code: req.params.code.toUpperCase(),
+    }).lean();
+    if (!olympic) return res.status(404).json({ error: "Olympic not found" });
 
     res.json(computeLeaderboard(olympic));
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-// PATCH /api/olympics/:code/navigate — Move currentGameIndex
-router.patch('/:code/navigate', requireHostToken, async (req, res) => {
+// PATCH /api/olympics/:code — Update a draft Olympic (requires auth + ownership)
+router.patch("/:code", requireAuth, async (req, res) => {
   try {
-    const olympic = await Olympic.findOne({ code: req.params.code.toUpperCase() });
-    if (!olympic) return res.status(404).json({ error: 'Olympic not found' });
-    if (olympic.hostToken !== req.hostToken) return res.status(403).json({ error: 'Invalid host token' });
+    const olympic = await Olympic.findOne({
+      code: req.params.code.toUpperCase(),
+    });
+    if (!olympic) return res.status(404).json({ error: "Olympic not found" });
+    if (String(olympic.ownerId) !== String(req.user.id))
+      return res.status(403).json({ error: "Not your Olympic" });
+    if (olympic.status !== "draft")
+      return res
+        .status(400)
+        .json({ error: "Only draft Olympics can be edited" });
 
-    const { direction } = req.body; // 'next' | 'prev'
-    const maxIndex = olympic.games.length - 1;
-    if (direction === 'next' && olympic.currentGameIndex < maxIndex) olympic.currentGameIndex += 1;
-    else if (direction === 'prev' && olympic.currentGameIndex > 0) olympic.currentGameIndex -= 1;
+    const { name, tieRule, extraRules, maxPlayers, games } = req.body;
+    if (name !== undefined) olympic.name = name;
+    if (tieRule !== undefined) olympic.tieRule = tieRule;
+    if (extraRules !== undefined) olympic.extraRules = extraRules;
+    if (maxPlayers !== undefined) olympic.maxPlayers = maxPlayers;
+    if (games !== undefined) olympic.games = games;
 
     await olympic.save();
     const { hostToken: _ht, ...safe } = olympic.toObject();
     res.json(safe);
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error(err);
+    res.status(500).json({ error: "Failed to update Olympic" });
+  }
+});
+
+// DELETE /api/olympics/:code — Delete an Olympic (requires auth + ownership)
+router.delete("/:code", requireAuth, async (req, res) => {
+  try {
+    const olympic = await Olympic.findOne({
+      code: req.params.code.toUpperCase(),
+    });
+    if (!olympic) return res.status(404).json({ error: "Olympic not found" });
+    if (String(olympic.ownerId) !== String(req.user.id))
+      return res.status(403).json({ error: "Not your Olympic" });
+
+    await olympic.deleteOne();
+    res.json({ message: "Olympic deleted" });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// POST /api/olympics/:code/launch — Launch a draft into lobby (requires auth + ownership)
+router.post("/:code/launch", requireAuth, async (req, res) => {
+  try {
+    const olympic = await Olympic.findOne({
+      code: req.params.code.toUpperCase(),
+    });
+    if (!olympic) return res.status(404).json({ error: "Olympic not found" });
+    if (String(olympic.ownerId) !== String(req.user.id))
+      return res.status(403).json({ error: "Not your Olympic" });
+    if (olympic.status !== "draft")
+      return res.status(400).json({ error: "Olympic is already launched" });
+    if (olympic.games.length === 0)
+      return res
+        .status(400)
+        .json({ error: "Add at least one game before launching" });
+
+    olympic.status = "lobby";
+    await olympic.save();
+    res.json({ code: olympic.code, hostToken: olympic.hostToken });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// PATCH /api/olympics/:code/navigate — Move currentGameIndex
+router.patch("/:code/navigate", requireHostToken, async (req, res) => {
+  try {
+    const olympic = await Olympic.findOne({
+      code: req.params.code.toUpperCase(),
+    });
+    if (!olympic) return res.status(404).json({ error: "Olympic not found" });
+    if (olympic.hostToken !== req.hostToken)
+      return res.status(403).json({ error: "Invalid host token" });
+
+    const { direction } = req.body; // 'next' | 'prev'
+    const maxIndex = olympic.games.length - 1;
+    if (direction === "next" && olympic.currentGameIndex < maxIndex)
+      olympic.currentGameIndex += 1;
+    else if (direction === "prev" && olympic.currentGameIndex > 0)
+      olympic.currentGameIndex -= 1;
+
+    await olympic.save();
+    const { hostToken: _ht, ...safe } = olympic.toObject();
+    res.json(safe);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 // PATCH /api/olympics/:code/status — Update status
-router.patch('/:code/status', requireHostToken, async (req, res) => {
+router.patch("/:code/status", requireHostToken, async (req, res) => {
   try {
-    const olympic = await Olympic.findOne({ code: req.params.code.toUpperCase() });
-    if (!olympic) return res.status(404).json({ error: 'Olympic not found' });
-    if (olympic.hostToken !== req.hostToken) return res.status(403).json({ error: 'Invalid host token' });
+    const olympic = await Olympic.findOne({
+      code: req.params.code.toUpperCase(),
+    });
+    if (!olympic) return res.status(404).json({ error: "Olympic not found" });
+    if (olympic.hostToken !== req.hostToken)
+      return res.status(403).json({ error: "Invalid host token" });
 
     const { status } = req.body;
-    if (!['setup', 'active', 'finished'].includes(status))
-      return res.status(400).json({ error: 'Invalid status' });
+    if (!["setup", "active", "finished"].includes(status))
+      return res.status(400).json({ error: "Invalid status" });
 
     olympic.status = status;
     await olympic.save();
     const { hostToken: _ht, ...safe } = olympic.toObject();
     res.json(safe);
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 // POST /api/olympics/:code/results — Submit / upsert game result
-router.post('/:code/results', requireHostToken, async (req, res) => {
+router.post("/:code/results", requireHostToken, async (req, res) => {
   try {
-    const olympic = await Olympic.findOne({ code: req.params.code.toUpperCase() });
-    if (!olympic) return res.status(404).json({ error: 'Olympic not found' });
-    if (olympic.hostToken !== req.hostToken) return res.status(403).json({ error: 'Invalid host token' });
+    const olympic = await Olympic.findOne({
+      code: req.params.code.toUpperCase(),
+    });
+    if (!olympic) return res.status(404).json({ error: "Olympic not found" });
+    if (olympic.hostToken !== req.hostToken)
+      return res.status(403).json({ error: "Invalid host token" });
 
     const { gameId, placements, teams } = req.body;
-    if (!gameId) return res.status(400).json({ error: 'gameId required' });
+    if (!gameId) return res.status(400).json({ error: "gameId required" });
 
-    const existingIdx = olympic.results.findIndex((r) => String(r.gameId) === String(gameId));
-    const resultData = { gameId, placements: placements || [], teams: teams || [] };
+    const existingIdx = olympic.results.findIndex(
+      (r) => String(r.gameId) === String(gameId),
+    );
+    const resultData = {
+      gameId,
+      placements: placements || [],
+      teams: teams || [],
+    };
 
     if (existingIdx >= 0) olympic.results[existingIdx] = resultData;
     else olympic.results.push(resultData);
@@ -143,23 +268,28 @@ router.post('/:code/results', requireHostToken, async (req, res) => {
     res.json({ olympic: safe, leaderboard });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
 // DELETE /api/olympics/:code/results/:gameId — Remove a game result
-router.delete('/:code/results/:gameId', requireHostToken, async (req, res) => {
+router.delete("/:code/results/:gameId", requireHostToken, async (req, res) => {
   try {
-    const olympic = await Olympic.findOne({ code: req.params.code.toUpperCase() });
-    if (!olympic) return res.status(404).json({ error: 'Olympic not found' });
-    if (olympic.hostToken !== req.hostToken) return res.status(403).json({ error: 'Invalid host token' });
+    const olympic = await Olympic.findOne({
+      code: req.params.code.toUpperCase(),
+    });
+    if (!olympic) return res.status(404).json({ error: "Olympic not found" });
+    if (olympic.hostToken !== req.hostToken)
+      return res.status(403).json({ error: "Invalid host token" });
 
-    olympic.results = olympic.results.filter((r) => String(r.gameId) !== req.params.gameId);
+    olympic.results = olympic.results.filter(
+      (r) => String(r.gameId) !== req.params.gameId,
+    );
     await olympic.save();
     const { hostToken: _ht, ...safe } = olympic.toObject();
     res.json({ olympic: safe, leaderboard: computeLeaderboard(safe) });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 });
 
