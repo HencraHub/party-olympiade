@@ -33,10 +33,7 @@
       overflow-x: hidden;
     }
 
-    .page {
-      width: min(1540px, 96vw);
-      margin: 30px auto 40px;
-    }
+    .page { width: min(1540px, 96vw); margin: 30px auto 40px; }
 
     .glass {
       border: 1px solid var(--border);
@@ -67,12 +64,6 @@
       filter: blur(18px);
       opacity: 0.58;
       z-index: -1;
-    }
-
-    .brand {
-      display: inline-flex;
-      align-items: center;
-      line-height: 1;
     }
 
     .brand-logo {
@@ -106,10 +97,6 @@
       background: rgba(255, 255, 255, 0.08);
     }
 
-    .header-cta {
-      justify-self: end;
-    }
-
     .btn {
       display: inline-flex;
       align-items: center;
@@ -126,19 +113,12 @@
     }
 
     .btn:hover,
-    .btn:focus-visible {
-      transform: scale(1.03);
-    }
+    .btn:focus-visible { transform: scale(1.03); }
 
     .btn-primary {
       color: #fff;
       background: linear-gradient(100deg, rgba(139, 92, 246, 0.95), rgba(236, 72, 153, 0.96));
       box-shadow: 0 0 42px rgba(236, 72, 153, 0.72), 0 0 74px rgba(139, 92, 246, 0.48);
-    }
-
-    .btn-primary:hover,
-    .btn-primary:focus-visible {
-      box-shadow: 0 0 58px rgba(236, 72, 153, 0.88), 0 0 94px rgba(139, 92, 246, 0.62);
     }
 
     .btn-secondary {
@@ -148,18 +128,7 @@
       box-shadow: 0 0 34px rgba(34, 211, 238, 0.3);
     }
 
-    .btn-secondary:hover,
-    .btn-secondary:focus-visible {
-      border-color: rgba(34, 211, 238, 0.9);
-      box-shadow: 0 0 46px rgba(34, 211, 238, 0.56);
-    }
-
-    .setup-wrap {
-      margin-top: 34px;
-      position: relative;
-      border-radius: 34px;
-      overflow: visible;
-    }
+    .setup-wrap { margin-top: 34px; position: relative; }
 
     .setup-wrap::before {
       content: "";
@@ -183,16 +152,13 @@
       padding: 40px;
       min-height: 680px;
       position: relative;
-      overflow: visible;
     }
 
     .panel {
       border-radius: 28px;
-      position: relative;
       padding: 30px;
       border: 1px solid rgba(255, 255, 255, 0.14);
-      background:
-        linear-gradient(145deg, rgba(16, 16, 36, 0.85), rgba(24, 24, 52, 0.56));
+      background: linear-gradient(145deg, rgba(16, 16, 36, 0.85), rgba(24, 24, 52, 0.56));
       box-shadow: 0 0 40px rgba(34, 211, 238, 0.16), 0 0 40px rgba(236, 72, 153, 0.14);
     }
 
@@ -211,14 +177,7 @@
       max-width: 38ch;
     }
 
-    .info-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: grid;
-      gap: 14px;
-    }
-
+    .info-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
     .info-list li {
       display: flex;
       align-items: center;
@@ -239,15 +198,8 @@
       box-shadow: 0 0 14px rgba(236, 72, 153, 0.7), 0 0 20px rgba(34, 211, 238, 0.5);
     }
 
-    form {
-      display: grid;
-      gap: 20px;
-    }
-
-    .field {
-      display: grid;
-      gap: 8px;
-    }
+    form { display: grid; gap: 20px; }
+    .field { display: grid; gap: 8px; }
 
     .field label,
     .section-title {
@@ -274,18 +226,10 @@
     }
 
     .tie-cards,
-    .toggle-grid {
-      display: grid;
-      gap: 12px;
-    }
+    .toggle-grid { display: grid; gap: 12px; }
 
-    .tie-cards {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    .toggle-grid {
-      grid-template-columns: 1fr 1fr;
-    }
+    .tie-cards { grid-template-columns: 1fr 1fr; }
+    .toggle-grid { grid-template-columns: 1fr 1fr; }
 
     .choice-card,
     .toggle-card {
@@ -328,9 +272,7 @@
       box-shadow: 0 0 26px rgba(236, 72, 153, 0.38), 0 0 30px rgba(139, 92, 246, 0.26);
     }
 
-    .toggle-card input {
-      display: none;
-    }
+    .toggle-card input { display: none; }
 
     .toggle-card.active {
       border-color: rgba(34, 211, 238, 0.82);
@@ -338,24 +280,9 @@
       box-shadow: 0 0 24px rgba(34, 211, 238, 0.34);
     }
 
-    .error {
-      min-height: 20px;
-      margin-top: -4px;
-      font-size: 0.93rem;
-      color: var(--danger);
-    }
-
-    .button-row {
-      display: flex;
-      justify-content: flex-start;
-      margin-top: 2px;
-    }
-
-    .button-row .btn {
-      min-width: 280px;
-      padding: 16px 34px;
-      font-size: 1.03rem;
-    }
+    .error { min-height: 20px; margin-top: -4px; font-size: 0.93rem; color: var(--danger); }
+    .button-row { display: flex; justify-content: flex-start; margin-top: 2px; }
+    .button-row .btn { min-width: 280px; padding: 16px 34px; font-size: 1.03rem; }
 
     .back-link {
       margin-top: 10px;
@@ -365,49 +292,29 @@
       font-weight: 600;
     }
 
-    #tieRule {
-      display: none;
-    }
+    #tieRule { display: none; }
 
     @media (max-width: 1100px) {
-      .header {
-        grid-template-columns: 1fr;
-        justify-items: center;
-        text-align: center;
-      }
-
-      .header-cta {
-        justify-self: center;
-      }
-
-      .setup {
-        grid-template-columns: 1fr;
-      }
-
-      .panel h1 {
-        font-size: clamp(34px, 7vw, 48px);
-      }
-
+      .header { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+      .setup { grid-template-columns: 1fr; }
+      .panel h1 { font-size: clamp(34px, 7vw, 48px); }
       .tie-cards,
-      .toggle-grid {
-        grid-template-columns: 1fr;
-      }
-
+      .toggle-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="header glass">
-      <a class="brand" href="index.html" aria-label="Startseite">
+      <a href="index.html" aria-label="Startseite">
         <img class="brand-logo" src="assets/logo-party-olympiade.png" alt="Party Olympiade" />
       </a>
       <nav class="nav" aria-label="Navigation">
         <a href="index.html#features">Features</a>
-        <a href="index.html#games">Spiele</a>
-        <a href="index.html#how">Ablauf</a>
+        <a href="index.html#how">So funktioniert’s</a>
+        <a href="index.html#rules">Regeln</a>
       </nav>
-      <div class="header-cta">
+      <div>
         <a class="btn btn-secondary" href="index.html">Zurück zur Startseite</a>
       </div>
     </header>
