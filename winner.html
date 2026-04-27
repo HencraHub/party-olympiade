@@ -56,6 +56,10 @@
 
     function normalizeLobby() {
       lobby.players = Array.isArray(lobby.players) ? lobby.players : [];
+      lobby.players = lobby.players
+        .map((p) => typeof p === "string" ? p : (p && typeof p === "object" ? (p.name || "") : ""))
+        .map((name) => String(name).trim())
+        .filter(Boolean);
       lobby.games = Array.isArray(lobby.games) ? lobby.games : [];
       lobby.results = Array.isArray(lobby.results) ? lobby.results : [];
       lobby.tieRule = lobby.tieRule || 'tiebreaker';
