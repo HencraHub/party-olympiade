@@ -171,49 +171,6 @@
       pointer-events: none;
     }
 
-    .character-layer {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 3;
-    }
-
-    .character {
-      position: absolute;
-      width: clamp(66px, 6.5vw, 110px);
-      height: auto;
-      pointer-events: none;
-      user-select: none;
-      filter: drop-shadow(0 0 22px rgba(139, 92, 246, 0.26));
-    }
-
-    .character-hero-side {
-      top: 44%;
-      left: -26px;
-      animation: floatGentle 8s ease-in-out infinite, peekSide 7.2s ease-in-out infinite;
-    }
-
-    .character-features-bottom {
-      top: 100%;
-      left: 8%;
-      transform: translateY(16px);
-      animation: floatGentle 9s ease-in-out infinite;
-    }
-
-    .character-right-pop {
-      top: 58%;
-      right: -22px;
-      animation: floatGentle 8.6s ease-in-out infinite, peekRight 7.8s ease-in-out infinite;
-    }
-
-    .character-sad-corner {
-      top: calc(100% + 222px);
-      right: 2%;
-      width: clamp(62px, 5.6vw, 96px);
-      opacity: 0.92;
-      animation: floatSlow 10s ease-in-out infinite;
-    }
-
     .hero {
       min-height: 680px;
       border-radius: 36px;
@@ -284,6 +241,40 @@
       object-fit: cover;
       display: block;
       filter: drop-shadow(0 0 34px rgba(236, 72, 153, 0.35)) drop-shadow(0 0 50px rgba(34, 211, 238, 0.26));
+    }
+
+    .hero-visual .character {
+      position: absolute;
+      width: clamp(96px, 9vw, 146px);
+      height: auto;
+      pointer-events: none;
+      user-select: none;
+      z-index: 2;
+      filter: drop-shadow(0 0 26px rgba(139, 92, 246, 0.34));
+    }
+
+    .hero-visual .character-pink {
+      left: 3%;
+      bottom: 4%;
+      transform: rotate(-6deg);
+    }
+
+    .hero-visual .character-blue {
+      right: 4%;
+      bottom: 3%;
+      transform: rotate(5deg);
+    }
+
+    .hero-visual .character-purple {
+      right: 11%;
+      top: 7%;
+      transform: rotate(8deg);
+    }
+
+    .hero-visual .character-green {
+      left: 18%;
+      top: 8%;
+      transform: rotate(-8deg);
     }
 
     .hero-visual::before {
@@ -442,26 +433,6 @@
       100% { background-position: 200% 0; }
     }
 
-    @keyframes floatGentle {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-9px); }
-    }
-
-    @keyframes floatSlow {
-      0%, 100% { transform: translateY(0) rotate(-2deg); }
-      50% { transform: translateY(-7px) rotate(2deg); }
-    }
-
-    @keyframes peekSide {
-      0%, 100% { margin-left: 0; }
-      50% { margin-left: 8px; }
-    }
-
-    @keyframes peekRight {
-      0%, 100% { margin-right: 0; }
-      50% { margin-right: 8px; }
-    }
-
     @media (max-width: 1260px) {
       .hero {
         grid-template-columns: 1fr;
@@ -507,8 +478,8 @@
         max-width: none;
       }
 
-      .character-layer {
-        display: none;
+      .hero-visual .character {
+        width: clamp(84px, 14vw, 128px);
       }
     }
 
@@ -537,12 +508,6 @@
     </header>
 
     <div class="hero-wrap">
-      <div class="character-layer" aria-hidden="true">
-        <img class="character character-hero-side" src="assets/character-pink.png" alt="" />
-        <img class="character character-features-bottom" src="assets/character-blue.png" alt="" />
-        <img class="character character-right-pop" src="assets/character-purple.png" alt="" />
-        <img class="character character-sad-corner" src="assets/character-green.png" alt="" />
-      </div>
       <section class="hero glass" id="top">
         <div class="hero-content">
           <h1>Deine Party.<br />Eure Spiele.<br />Ein <span class="champion">Champion.</span></h1>
@@ -556,6 +521,10 @@
 
         <div class="hero-visual" aria-label="Podium Artwork">
           <img src="assets/hero-podium.png" alt="Podium mit Champion Visual" />
+          <img class="character character-pink" src="assets/character-pink.png" alt="" />
+          <img class="character character-blue" src="assets/character-blue.png" alt="" />
+          <img class="character character-purple" src="assets/character-purple.png" alt="" />
+          <img class="character character-green" src="assets/character-green.png" alt="" />
         </div>
       </section>
     </div>
