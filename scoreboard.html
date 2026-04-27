@@ -4,29 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Scoreboard | Party Olympiade</title>
-  <style>
-    :root{--bg:#070714;--bg2:#0d1024;--panel:rgba(18,18,36,.82);--panel2:rgba(28,28,56,.56);--border:rgba(255,255,255,.12);--purple:#8b5cf6;--pink:#ec4899;--cyan:#22d3ee;--text:#fff;--muted:#b7bbcc;--danger:#fb7185}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:var(--text);background:radial-gradient(1200px 720px at 8% 0%,rgba(236,72,153,.22),transparent 70%),radial-gradient(1240px 760px at 92% 6%,rgba(34,211,238,.2),transparent 72%),linear-gradient(166deg,var(--bg2),var(--bg))}
-    .page{width:min(1600px,96vw);margin:30px auto 34px}.glass{border:1px solid var(--border);background:linear-gradient(138deg,var(--panel),var(--panel2));backdrop-filter:blur(20px)}
-    .header{min-height:98px;border-radius:26px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px;padding:16px 26px;position:relative}.header::before{content:"";position:absolute;inset:-1px;border-radius:inherit;background:linear-gradient(108deg,rgba(236,72,153,.28),transparent 34%,rgba(34,211,238,.26));filter:blur(18px);opacity:.58;z-index:-1}
-    .brand-logo{height:clamp(58px,5vw,68px)} .nav{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}.nav a{color:#c5c8d6;text-decoration:none;padding:8px 12px;border-radius:999px}.nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
-    .btn{display:inline-flex;align-items:center;justify-content:center;padding:13px 22px;border-radius:999px;border:1px solid transparent;font-weight:700;cursor:pointer}
-    .btn-primary{color:#fff;background:linear-gradient(100deg,rgba(139,92,246,.95),rgba(236,72,153,.96));box-shadow:0 0 32px rgba(236,72,153,.45)} .btn-secondary{color:var(--cyan);border-color:rgba(34,211,238,.64);background:linear-gradient(120deg,rgba(34,211,238,.1),rgba(34,211,238,.04))}
-    .dash{margin-top:28px;display:grid;grid-template-columns:.9fr 1.2fr .9fr;gap:18px}.panel{border-radius:22px;padding:18px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(145deg,rgba(16,16,36,.85),rgba(24,24,52,.56))}
-    h1{margin:0 0 10px;font-size:clamp(30px,2.7vw,42px)} h2{margin:0 0 12px;font-size:1.2rem}.muted{color:var(--muted)}
-    .info-pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:rgba(34,211,238,.12);border:1px solid rgba(34,211,238,.34);font-size:.84rem;margin-bottom:8px}
-    .progress{font-family:ui-monospace,Menlo,monospace}
-    .random-wrap{margin-top:14px;display:grid;gap:10px}
-    .random-highlight{padding:12px;border-radius:14px;border:1px solid rgba(236,72,153,.3);background:linear-gradient(120deg,rgba(236,72,153,.14),rgba(139,92,246,.1));min-height:44px}
-    .spin{animation:glow .6s linear infinite alternate}
-    @keyframes glow{from{box-shadow:0 0 12px rgba(236,72,153,.25)}to{box-shadow:0 0 28px rgba(34,211,238,.42)}}
-    table{width:100%;border-collapse:collapse}th,td{padding:10px 8px;border-bottom:1px solid #2a2a48;text-align:left}th{color:#22d3ee}
-    tr.top1{background:rgba(250,204,21,.12)}tr.top2{background:rgba(226,232,240,.08)}tr.top3{background:rgba(251,146,60,.08)}
-    select{width:100%;padding:11px;border-radius:12px;border:1px solid #333;background:#090914;color:#fff;margin:6px 0}
-    .place-box{background:#090914;border-radius:12px;padding:10px;margin:8px 0;text-align:left}.player-check{display:inline-flex;align-items:center;gap:6px;margin:6px 10px 0 0;font-size:14px}
-    .error{color:var(--danger);min-height:18px;font-size:14px}.log-item{background:#090914;border-radius:12px;padding:10px;margin:8px 0;text-align:left}.actions{display:flex;gap:10px;flex-wrap:wrap}
-    @media (max-width:1200px){.header{grid-template-columns:1fr;justify-items:center;text-align:center}.dash{grid-template-columns:1fr}}
-  </style>
+    <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
 <div class="page">
