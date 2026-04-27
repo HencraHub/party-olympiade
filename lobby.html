@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lobby | Party Olympiade</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #1a1a2e, #090914);
+      color: white;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      padding: 50px 20px;
+    }
+
+    .code {
+      font-size: 3rem;
+      font-weight: bold;
+      color: #FACC15;
+      margin: 20px 0;
+      letter-spacing: 5px;
+    }
+
+    .card {
+      background: #151528;
+      border-radius: 24px;
+      padding: 25px;
+      margin-top: 25px;
+    }
+
+    input {
+      width: 100%;
+      padding: 15px;
+      border-radius: 16px;
+      border: 1px solid #333;
+      background: #090914;
+      color: white;
+      font-size: 16px;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+    }
+
+    button {
+      padding: 14px 22px;
+      border-radius: 30px;
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+      font-weight: bold;
+      background: linear-gradient(45deg, #8B5CF6, #EC4899);
+      color: white;
+      margin: 5px;
+    }
+
+    .secondary {
+      background: transparent;
+      border: 2px solid #8B5CF6;
+      color: #8B5CF6;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: #090914;
+      margin: 8px 0;
+      padding: 12px;
+      border-radius: 14px;
+    }
+
+    a {
+      color: #8B5CF6;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1 id="title">Lobby</h1>
+    <p>Teile diesen Code mit deinen Freunden:</p>
+
+    <div class="code" id="code">----</div>
+
+    <button onclick="copyInvite()">Einladungslink kopieren</button>
+
+    <div class="card">
+      <h2>Spieler</h2>
+      <ul id="players"></ul>
+
+      <input id="playerName" placeholder="Spielername hinzufügen" />
+      <button onclick="addPlayer()">Spieler hinzufügen</button>
+    </div>
+
+    <div class="card">
+      <h2>Nächster Schritt</h2>
+      <p>Jetzt legen wir Spiele für eure Olympiade an.</p>
+      <button onclick="goToGames()">Spiele verwalten</button>
+    </div>
+
+    <p><a href="index.html">Zurück zur Startseite</a></p>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const storageKey = "party_olympiade_" + code;
+
+    let lobby = JSON.parse(localStorage.getItem(storageKey));
+
+    if (!lobby) {
+      alert("Lobby nicht gefunden.");
+      window.location.href = "index.html";
+    }
+
+    document.getElementById("title").innerText = lobby.lobbyName;
+    document.getElementById("code").innerText = lobby.code;
+
+    function saveLobby() {
+      localStorage.setItem(storageKey, JSON.stringify(lobby));
+    }
+
+    function renderPlayers() {
+      const list = document.getElementById("players");
+      list.innerHTML = "";
+
+      lobby.players.forEach((player) => {
+        const li = document.createElement("li");
+        li.innerText = player;
+        list.appendChild(li);
+      });
+    }
+
+    function addPlayer() {
+      const input = document.getElementById("playerName");
+      const name = input.value.trim();
+
+      if (!name) {
+        alert("Bitte Namen eingeben.");
+        return;
+      }
+
+      if (lobby.players.includes(name)) {
+        alert("Dieser Spieler ist schon dabei.");
+        return;
+      }
+
+      lobby.players.push(name);
+      input.value = "";
+      saveLobby();
+      renderPlayers();
+    }
+
+    function copyInvite() {
+      const link = window.location.href;
+      navigator.clipboard.writeText(link);
+      alert("Einladungslink kopiert.");
+    }
+
+    function goToGames() {
+      window.location.href = "games.html?code=" + lobby.code;
+    }
+
+    renderPlayers();
+  </script>
+</body>
+</html>
