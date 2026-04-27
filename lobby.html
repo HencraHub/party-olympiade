@@ -5,37 +5,75 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Lobby | Party Olympiade</title>
   <style>
-    body{margin:0;font-family:Arial,sans-serif;background:radial-gradient(circle at top,#1a1a2e,#090914);color:white;text-align:center}
-    .container{max-width:700px;margin:auto;padding:50px 20px}
-    .code{font-size:clamp(2rem,10vw,3rem);font-weight:bold;color:#facc15;letter-spacing:5px}
-    .card{background:#151528;border-radius:20px;padding:20px;margin-top:20px}
-    input{width:100%;padding:12px;border-radius:12px;border:1px solid #333;background:#090914;color:white;box-sizing:border-box;margin-bottom:8px}
-    button{padding:12px 18px;border-radius:30px;border:none;background:linear-gradient(45deg,#8b5cf6,#ec4899);color:white;font-weight:bold;cursor:pointer}
-    li{list-style:none;background:#090914;border-radius:10px;padding:10px;margin:6px 0;text-align:left}
-    .error{color:#fb7185;min-height:18px;font-size:14px}
-    a{color:#22d3ee;text-decoration:none}
+    :root{--bg:#070714;--bg2:#0d1024;--panel:rgba(18,18,36,.82);--panel2:rgba(28,28,56,.56);--border:rgba(255,255,255,.12);--purple:#8b5cf6;--pink:#ec4899;--cyan:#22d3ee;--text:#fff;--muted:#b7bbcc;--danger:#fb7185;--ok:#34d399}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:var(--text);background:radial-gradient(1200px 720px at 8% 0%,rgba(236,72,153,.22),transparent 70%),radial-gradient(1240px 760px at 92% 6%,rgba(34,211,238,.2),transparent 72%),linear-gradient(166deg,var(--bg2),var(--bg));overflow-x:hidden}
+    .page{width:min(1540px,96vw);margin:30px auto 40px}
+    .glass{border:1px solid var(--border);background:linear-gradient(138deg,var(--panel),var(--panel2)),linear-gradient(180deg,rgba(255,255,255,.04),transparent 36%);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+    .header{min-height:98px;border-radius:26px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px;padding:16px 26px;position:relative}
+    .header::before{content:"";position:absolute;inset:-1px;border-radius:inherit;background:linear-gradient(108deg,rgba(236,72,153,.28),transparent 34%,rgba(34,211,238,.26));filter:blur(18px);opacity:.58;z-index:-1}
+    .brand-logo{height:clamp(58px,5vw,68px);max-height:68px;display:block;filter:drop-shadow(0 0 16px rgba(236,72,153,.18))}
+    .nav{display:flex;justify-content:center;gap:22px;flex-wrap:wrap}.nav a{color:#c5c8d6;text-decoration:none;padding:8px 12px;border-radius:999px}.nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:14px 26px;border-radius:999px;border:1px solid transparent;text-decoration:none;font-weight:700;cursor:pointer}
+    .btn-primary{color:#fff;background:linear-gradient(100deg,rgba(139,92,246,.95),rgba(236,72,153,.96));box-shadow:0 0 38px rgba(236,72,153,.5)}
+    .btn-secondary{color:var(--cyan);border-color:rgba(34,211,238,.64);background:linear-gradient(120deg,rgba(34,211,238,.1),rgba(34,211,238,.04))}
+    .lobby-layout{margin-top:34px;display:grid;grid-template-columns:1.2fr .8fr;gap:24px}
+    .panel{border-radius:28px;padding:28px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(145deg,rgba(16,16,36,.85),rgba(24,24,52,.56));box-shadow:0 0 36px rgba(34,211,238,.14),0 0 36px rgba(236,72,153,.12)}
+    .title{margin:0 0 8px;font-size:clamp(36px,3.5vw,52px)}
+    .muted{color:var(--muted)}
+    .code{font-size:clamp(44px,10vw,86px);font-weight:800;letter-spacing:.14em;color:#facc15;text-shadow:0 0 24px rgba(250,204,21,.38);margin:8px 0 14px}
+    .actions{display:flex;gap:12px;flex-wrap:wrap}
+    .players-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+    .player-card{padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(11,13,28,.75);display:flex;justify-content:space-between;align-items:center}
+    .host-badge{font-size:.78rem;color:#111;background:linear-gradient(120deg,#facc15,#fde68a);padding:2px 8px;border-radius:999px;font-weight:700}
+    .input-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:14px}
+    input{width:100%;padding:13px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:#090914;color:#fff}
+    .error{color:var(--danger);min-height:18px;font-size:.92rem;margin-top:8px}
+    .ok{color:var(--ok);min-height:18px;font-size:.92rem;margin-top:6px}
+    .host-note{line-height:1.65}
+    .char-wrap{display:flex;justify-content:space-between;opacity:.9;margin-top:16px}
+    .char-wrap img{height:84px;filter:drop-shadow(0 0 20px rgba(139,92,246,.4))}
+    @media (max-width:1080px){.header{grid-template-columns:1fr;justify-items:center;text-align:center}.lobby-layout{grid-template-columns:1fr}.players-grid{grid-template-columns:1fr}.input-row{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1 id="title">Lobby</h1>
-    <p>Code teilen:</p>
-    <div class="code" id="code">----</div>
-    <button onclick="copyInvite()">Einladungslink kopieren</button>
+  <div class="page">
+    <header class="header glass">
+      <a href="index.html"><img class="brand-logo" src="assets/logo-party-olympiade.png" alt="Party Olympiade"/></a>
+      <nav class="nav" aria-label="Navigation"><a href="index.html#features">Features</a><a href="index.html#how">Ablauf</a><a href="create.html">Neue Lobby</a></nav>
+      <div><a class="btn btn-secondary" href="index.html">Zur Startseite</a></div>
+    </header>
 
-    <div class="card">
-      <h2>Spieler</h2>
-      <ul id="players"></ul>
-      <input id="playerName" placeholder="Spielername (max. 20 Zeichen)" maxlength="20" />
-      <div id="error" class="error"></div>
-      <button onclick="addPlayer()">Spieler hinzufügen</button>
-    </div>
+    <section class="lobby-layout">
+      <div class="panel glass">
+        <h1 id="title" class="title">Lobby</h1>
+        <p class="muted">Teile den Code oder den Einladungslink mit deinen Freunden.</p>
+        <div id="code" class="code">----</div>
+        <div class="actions">
+          <button class="btn btn-primary" onclick="window.location.href='games.html?code=' + lobby.code">Spiele auswählen</button>
+          <button class="btn btn-secondary" onclick="copyInvite()">Einladungslink kopieren</button>
+        </div>
+        <div id="copyInfo" class="ok"></div>
 
-    <div class="card">
-      <button onclick="window.location.href='games.html?code=' + lobby.code">Spiele verwalten</button>
-    </div>
+        <h2>Spieler in der Lobby</h2>
+        <div id="players" class="players-grid"></div>
 
-    <p><a href="index.html">← Zurück zur Startseite</a></p>
+        <div class="input-row">
+          <input id="playerName" placeholder="Spielername (max. 20 Zeichen)" maxlength="20" />
+          <button class="btn btn-primary" onclick="addPlayer()">Spieler hinzufügen</button>
+        </div>
+        <div id="error" class="error"></div>
+      </div>
+
+      <aside class="panel glass">
+        <h2>Host-Bereich</h2>
+        <p class="host-note muted">Nur der Host steuert die Runde, wählt Spiele aus und trägt Ergebnisse ein. Alle anderen können entspannt mitspielen oder zuschauen.</p>
+        <div class="char-wrap" aria-hidden="true">
+          <img src="assets/character-blue.png" alt=""/>
+          <img src="assets/character-purple.png" alt=""/>
+        </div>
+      </aside>
+    </section>
   </div>
 
   <script>
@@ -66,10 +104,16 @@
     function renderPlayers() {
       const list = document.getElementById("players");
       list.innerHTML = "";
+      if (!lobby.players.length) {
+        list.innerHTML = '<div class="muted">Noch keine Spieler in der Lobby.</div>';
+        return;
+      }
       lobby.players.forEach((p) => {
-        const li = document.createElement("li");
-        li.innerText = p;
-        list.appendChild(li);
+        const card = document.createElement("div");
+        card.className = "player-card";
+        const isHost = lobby.hostName && p === lobby.hostName;
+        card.innerHTML = `<span>${p}</span>${isHost ? '<span class="host-badge">Host</span>' : ''}`;
+        list.appendChild(card);
       });
     }
 
@@ -88,8 +132,11 @@
     }
 
     function copyInvite() {
+      document.getElementById("copyInfo").innerText = "";
       const link = `${window.location.origin}${window.location.pathname.replace('lobby.html','lobby.html')}?code=${lobby.code}`;
-      navigator.clipboard.writeText(link).then(() => alert("Einladungslink kopiert.")).catch(() => alert("Kopieren fehlgeschlagen."));
+      navigator.clipboard.writeText(link)
+        .then(() => { document.getElementById("copyInfo").innerText = "Einladungslink kopiert."; })
+        .catch(() => { showError("Kopieren fehlgeschlagen."); });
     }
 
     normalizeLobby();
