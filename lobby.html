@@ -4,38 +4,59 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Lobby | Party Olympiade</title>
-  <style>
-    body{margin:0;font-family:Arial,sans-serif;background:radial-gradient(circle at top,#1a1a2e,#090914);color:white;text-align:center}
-    .container{max-width:700px;margin:auto;padding:50px 20px}
-    .code{font-size:clamp(2rem,10vw,3rem);font-weight:bold;color:#facc15;letter-spacing:5px}
-    .card{background:#151528;border-radius:20px;padding:20px;margin-top:20px}
-    input{width:100%;padding:12px;border-radius:12px;border:1px solid #333;background:#090914;color:white;box-sizing:border-box;margin-bottom:8px}
-    button{padding:12px 18px;border-radius:30px;border:none;background:linear-gradient(45deg,#8b5cf6,#ec4899);color:white;font-weight:bold;cursor:pointer}
-    li{list-style:none;background:#090914;border-radius:10px;padding:10px;margin:6px 0;text-align:left}
-    .error{color:#fb7185;min-height:18px;font-size:14px}
-    a{color:#22d3ee;text-decoration:none}
-  </style>
+    <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
-  <div class="container">
-    <h1 id="title">Lobby</h1>
-    <p>Code teilen:</p>
-    <div class="code" id="code">----</div>
-    <button onclick="copyInvite()">Einladungslink kopieren</button>
+  <div class="page">
+    <header class="header glass">
+      <a href="index.html"><img class="brand-logo" src="assets/logo-party-olympiade.png" alt="Party Olympiade"/></a>
+      <nav class="nav" aria-label="Navigation">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#how">So funktioniert’s</a>
+        <a href="create.html">Neue Lobby</a>
+      </nav>
+      <div><a class="btn btn-secondary" href="index.html">Zur Startseite</a></div>
+    </header>
 
-    <div class="card">
-      <h2>Spieler</h2>
-      <ul id="players"></ul>
-      <input id="playerName" placeholder="Spielername (max. 20 Zeichen)" maxlength="20" />
-      <div id="error" class="error"></div>
-      <button onclick="addPlayer()">Spieler hinzufügen</button>
-    </div>
+    <section class="setup-progress glass panel">
+      <div class="steps" id="steps"></div>
+      <div class="progress-meta" id="progressMeta"></div>
+    </section>
 
-    <div class="card">
-      <button onclick="window.location.href='games.html?code=' + lobby.code">Spiele verwalten</button>
-    </div>
+    <main class="layout">
+      <section class="panel glass">
+        <h1 id="title" class="lobby-title">Lobby</h1>
+        <div class="muted">Lobby-Code</div>
+        <div id="code" class="lobby-code">----</div>
+        <div class="actions">
+          <button class="btn btn-secondary" onclick="copyInvite()">Einladungslink kopieren</button>
+        </div>
+        <div id="toast" class="toast"></div>
 
-    <p><a href="index.html">← Zurück zur Startseite</a></p>
+        <div id="joinSection" class="join-box">
+          <h3>Lobby beitreten</h3>
+          <div class="row">
+            <input id="playerName" type="text" placeholder="Dein Name (max. 20 Zeichen)" maxlength="20" />
+          </div>
+          <div class="avatars" id="avatarChoices"></div>
+          <div class="actions" style="margin-top:10px;"><button class="btn btn-primary" onclick="joinLobbyAsPlayer()">Lobby beitreten</button></div>
+          <div id="error" class="error"></div>
+        </div>
+
+        <div id="joinedInfo" class="join-box" style="display:none;"></div>
+
+        <h2>Spielerübersicht</h2>
+        <div id="players" class="players-grid"></div>
+      </section>
+
+      <section class="panel glass">
+        <h2>Ausgewählte Spiele</h2>
+        <div id="gamesSummary" class="muted"></div>
+        <div id="gamesList" class="games-list"></div>
+      </section>
+
+      <aside id="sidePanel" class="panel glass"></aside>
+    </main>
   </div>
 
   <script>
@@ -43,17 +64,24 @@
     if (!code) window.location.href = "index.html";
 
     const storageKey = "party_olympiade_" + code;
+    const viewerKey = "party_olympiade_viewer_" + code;
     let lobby = JSON.parse(localStorage.getItem(storageKey));
     if (!lobby) { alert("Lobby nicht gefunden."); window.location.href = "index.html"; }
 
-    function normalizeLobby() {
-      lobby.players = Array.isArray(lobby.players) ? lobby.players : [];
-      lobby.games = Array.isArray(lobby.games) ? lobby.games : [];
-      lobby.results = Array.isArray(lobby.results) ? lobby.results : [];
-      if (!lobby.tieRule) lobby.tieRule = "tiebreaker";
-      if (!lobby.extraRules) {
-        lobby.extraRules = { comebackPenalty: false, lastPlaceBonus: false, winStreakBonus: false, finalDoublePoints: false };
-      }
+    const avatarPool = [
+      "assets/character-pink.png",
+      "assets/character-blue.png",
+      "assets/character-purple.png",
+      "assets/character-green.png"
+    ];
+
+    let viewer = JSON.parse(localStorage.getItem(viewerKey) || "null");
+    let selectedAvatar = avatarPool[0];
+
+    function makeId() {
+      return (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : (Date.now().toString(36) + Math.random().toString(36).slice(2));
     }
 
     function saveLobby() {
@@ -61,42 +89,330 @@
       localStorage.setItem("party_olympiade_last_code", lobby.code);
     }
 
+    function saveViewer() {
+      localStorage.setItem(viewerKey, JSON.stringify(viewer));
+    }
+
     function showError(msg) { document.getElementById("error").innerText = msg || ""; }
+    function showToast(msg) { document.getElementById("toast").innerText = msg || ""; }
+
+    function normalizeLobby() {
+      lobby.players = Array.isArray(lobby.players) ? lobby.players : [];
+      lobby.games = Array.isArray(lobby.games) ? lobby.games : [];
+      lobby.results = Array.isArray(lobby.results) ? lobby.results : [];
+      lobby.tieRule = lobby.tieRule || "tiebreaker";
+      lobby.extraRules = lobby.extraRules || { comebackPenalty: false, lastPlaceBonus: false, winStreakBonus: false, finalDoublePoints: false };
+
+      const hostName = (lobby.hostName || (typeof lobby.players[0] === "string" ? lobby.players[0] : lobby.players[0]?.name) || "Host").trim();
+      lobby.hostName = hostName;
+
+      const normalized = [];
+      let hostAssigned = false;
+
+      lobby.players.forEach((p, i) => {
+        let obj;
+        if (typeof p === "string") {
+          obj = {
+            id: makeId(),
+            name: p.trim(),
+            avatar: avatarPool[i % avatarPool.length],
+            isHost: false,
+            ready: true,
+            joinedAt: Date.now() + i
+          };
+        } else if (p && typeof p === "object") {
+          obj = {
+            id: p.id || makeId(),
+            name: (p.name || "").trim(),
+            avatar: p.avatar || avatarPool[i % avatarPool.length],
+            isHost: !!p.isHost,
+            ready: p.ready !== false,
+            joinedAt: typeof p.joinedAt === "number" ? p.joinedAt : Date.now() + i
+          };
+        }
+        if (!obj || !obj.name) return;
+        if (obj.isHost || obj.name === hostName) {
+          obj.isHost = true;
+          hostAssigned = true;
+        }
+        normalized.push(obj);
+      });
+
+      const names = new Set();
+      lobby.players = normalized.filter((p) => {
+        const key = p.name.toLowerCase();
+        if (names.has(key)) return false;
+        names.add(key);
+        return true;
+      });
+
+      let hostPlayer = lobby.players.find((p) => p.isHost);
+      if (!hostPlayer) {
+        hostPlayer = lobby.players.find((p) => p.name.toLowerCase() === hostName.toLowerCase());
+      }
+      if (!hostPlayer) {
+        hostPlayer = { id: makeId(), name: hostName, avatar: avatarPool[0], isHost: true, ready: true, joinedAt: Date.now() };
+        lobby.players.unshift(hostPlayer);
+      }
+      lobby.players.forEach((p) => { p.isHost = p.id === hostPlayer.id; });
+      lobby.hostName = hostPlayer.name;
+
+      if (!viewer) {
+        const lastCode = localStorage.getItem("party_olympiade_last_code") || "";
+        if (lastCode.toUpperCase() === code) {
+          viewer = { playerId: hostPlayer.id, isHost: true };
+          saveViewer();
+        }
+      }
+    }
+
+    function getCurrentPlayer() {
+      if (!viewer || !viewer.playerId) return null;
+      return lobby.players.find((p) => p.id === viewer.playerId) || null;
+    }
+
+    function isCurrentHost() {
+      const current = getCurrentPlayer();
+      return !!(current && current.isHost);
+    }
+
+    function renderAvatarChoices() {
+      const box = document.getElementById("avatarChoices");
+      box.innerHTML = "";
+      avatarPool.forEach((avatar) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "avatar-option" + (selectedAvatar === avatar ? " active" : "");
+        item.innerHTML = `<img src="${avatar}" alt="Avatar" />`;
+        item.onclick = () => { selectedAvatar = avatar; renderAvatarChoices(); };
+        box.appendChild(item);
+      });
+    }
+
+    function playerAvatarHTML(player) {
+      const initial = (player.name || "?").slice(0, 1).toUpperCase();
+      if (player.avatar) {
+        return `<span class="avatar"><img src="${player.avatar}" alt="Avatar ${player.name}" onerror="this.parentElement.innerText='${initial}'" /></span>`;
+      }
+      return `<span class="avatar">${initial}</span>`;
+    }
 
     function renderPlayers() {
       const list = document.getElementById("players");
       list.innerHTML = "";
+      if (!lobby.players.length) {
+        list.innerHTML = '<div class="muted">Noch keine Spieler in der Lobby.</div>';
+        return;
+      }
+
       lobby.players.forEach((p) => {
-        const li = document.createElement("li");
-        li.innerText = p;
-        list.appendChild(li);
+        const card = document.createElement("article");
+        card.className = "player-card";
+        const removeButton = (isCurrentHost() && !p.isHost)
+          ? `<button class="btn btn-danger" style="min-width:auto;padding:8px 12px;" onclick="removePlayer('${p.id}')">Entfernen</button>`
+          : "";
+
+        card.innerHTML = `
+          <div class="player-left">
+            ${playerAvatarHTML(p)}
+            <div>
+              <div class="name">${p.name}</div>
+              <div class="status">${p.ready ? "bereit" : "in Lobby"}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">${p.isHost ? '<span class="badge host">Host</span>' : '<span class="badge">Spieler</span>'}${removeButton}</div>
+        `;
+        list.appendChild(card);
       });
     }
 
-    function addPlayer() {
+    function joinLobbyAsPlayer() {
       showError("");
       const input = document.getElementById("playerName");
       const name = input.value.trim();
+
       if (!name) return showError("Spielername darf nicht leer sein.");
       if (name.length > 20) return showError("Spielername darf maximal 20 Zeichen haben.");
-      if (lobby.players.some((p) => p.toLowerCase() === name.toLowerCase())) return showError("Spielername existiert bereits.");
+      if (lobby.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) return showError("Spielername existiert bereits.");
 
-      lobby.players.push(name);
-      input.value = "";
+      const newPlayer = {
+        id: makeId(),
+        name,
+        avatar: selectedAvatar || avatarPool[0],
+        isHost: false,
+        ready: true,
+        joinedAt: Date.now()
+      };
+
+      lobby.players.push(newPlayer);
+      viewer = { playerId: newPlayer.id, isHost: false };
+      saveViewer();
       saveLobby();
-      renderPlayers();
+      renderAll();
+    }
+
+    function removePlayer(id) {
+      if (!isCurrentHost()) return;
+      const target = lobby.players.find((p) => p.id === id);
+      if (!target || target.isHost) return;
+      lobby.players = lobby.players.filter((p) => p.id !== id);
+      saveLobby();
+      renderAll();
     }
 
     function copyInvite() {
-      const link = `${window.location.origin}${window.location.pathname.replace('lobby.html','lobby.html')}?code=${lobby.code}`;
-      navigator.clipboard.writeText(link).then(() => alert("Einladungslink kopiert.")).catch(() => alert("Kopieren fehlgeschlagen."));
+      const link = `${window.location.origin}${window.location.pathname.replace('lobby.html', 'lobby.html')}?code=${lobby.code}`;
+      navigator.clipboard.writeText(link)
+        .then(() => showToast("Einladungslink kopiert."))
+        .catch(() => showError("Kopieren fehlgeschlagen."));
+    }
+
+    function setupStepData() {
+      const playersDone = lobby.players.length >= 2;
+      const gamesDone = lobby.games.length >= 1;
+      const rulesDone = !!lobby.tieRule || !!lobby.extraRules;
+      const readyDone = playersDone && gamesDone;
+      const validGameIds = new Set(lobby.games.map((g) => (typeof g === "string" ? g : g.id)));
+      const played = lobby.results.filter((r) => validGameIds.has(r.gameId) || validGameIds.has(r.game)).length;
+      return { playersDone, gamesDone, rulesDone, readyDone, played };
+    }
+
+    function renderSetupProgress() {
+      const { playersDone, gamesDone, rulesDone, readyDone, played } = setupStepData();
+      const steps = [
+        { label: "1. Spieler", done: playersDone },
+        { label: "2. Spiele", done: gamesDone },
+        { label: "3. Regeln", done: rulesDone },
+        { label: "4. Startbereit", done: readyDone }
+      ];
+
+      document.getElementById("steps").innerHTML = steps.map((s) => `<div class="step ${s.done ? "done" : ""}">${s.label}</div>`).join("");
+
+      const gamesText = lobby.games.length ? `${lobby.games.length} Spiele geplant` : "Noch keine Spiele ausgewählt";
+      document.getElementById("progressMeta").innerHTML = `
+        <span>${lobby.players.length} Spieler in der Lobby</span>
+        <span>${gamesText}</span>
+        <span>${played} von ${lobby.games.length || 0} Spielen gespielt</span>
+      `;
+    }
+
+    function gameMode(game) {
+      if (typeof game === "string") return "FFA";
+      return (game.mode === "team" ? "TEAM" : "FFA");
+    }
+
+    function gameName(game) { return typeof game === "string" ? game : (game.name || "Spiel"); }
+
+    function renderGamesPreview() {
+      const box = document.getElementById("gamesList");
+      const summary = document.getElementById("gamesSummary");
+      const validGameIds = new Set(lobby.games.map((g) => (typeof g === "string" ? g : g.id)));
+      const played = lobby.results.filter((r) => validGameIds.has(r.gameId) || validGameIds.has(r.game)).length;
+
+      summary.innerText = `${lobby.games.length} Spiele geplant · ${played} von ${lobby.games.length || 0} gespielt`;
+
+      if (!lobby.games.length) {
+        box.innerHTML = `
+          <div class="muted">Noch keine Spiele ausgewählt.</div>
+          <div class="muted">Der Host legt im nächsten Schritt fest, welche Spiele gespielt werden.</div>
+        `;
+        return;
+      }
+
+      box.innerHTML = lobby.games.map((g) => `
+        <div class="game-item">
+          <span>${gameName(g)}</span>
+          <span class="mode ${gameMode(g).toLowerCase() === "team" ? "team" : "ffa"}">${gameMode(g)}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderRuleOverview() {
+      const tieMap = {
+        tiebreaker: "Schätzfrage entscheidet",
+        shared_points: "Gleiche Punkte vergeben"
+      };
+      const extras = [];
+      if (lobby.extraRules?.comebackPenalty) extras.push("Comeback-Regel");
+      if (lobby.extraRules?.lastPlaceBonus) extras.push("Letzter-holt-auf");
+      if (lobby.extraRules?.winStreakBonus) extras.push("Sieges-Serie");
+      if (lobby.extraRules?.finalDoublePoints) extras.push("Finale doppelt");
+
+      return `
+        <div class="muted">Gleichstandsregel: ${tieMap[lobby.tieRule] || "Schätzfrage entscheidet"}</div>
+        ${extras.length
+          ? `<ul class="rule-list">${extras.map((r) => `<li>${r}</li>`).join("")}</ul>`
+          : `<div class="muted" style="margin-top:8px;">Keine Extra-Regeln aktiv</div>`}
+      `;
+    }
+
+    function resetLobby() {
+      if (!isCurrentHost()) return;
+      if (!confirm("Wirklich Lobby-Setup zurücksetzen?")) return;
+      lobby.games = [];
+      lobby.results = [];
+      saveLobby();
+      renderAll();
+    }
+
+    function renderSidePanel() {
+      const panel = document.getElementById("sidePanel");
+      const isHost = isCurrentHost();
+      const gamesReady = lobby.games.length > 0;
+
+      if (isHost) {
+        panel.innerHTML = `
+          <h2>Host-Bereich</h2>
+          <p class="host-info muted">Du steuerst Spiele, Regeln, Teams und Ergebnisse.</p>
+          <div class="actions">
+            <button class="btn btn-primary" onclick="window.location.href='games.html?code=' + lobby.code">Spiele auswählen</button>
+            <button class="btn btn-secondary" onclick="copyInvite()">Einladungslink kopieren</button>
+            <button class="btn btn-danger" onclick="resetLobby()">Lobby zurücksetzen</button>
+          </div>
+          <h3>Regelübersicht</h3>
+          ${renderRuleOverview()}
+          <p class="muted" style="margin-top:12px;">Alle anderen können entspannt mitspielen oder zuschauen.</p>
+        `;
+      } else {
+        panel.innerHTML = `
+          <h2>Du bist Spieler</h2>
+          <p class="muted">Der Host startet die Spiele und trägt Ergebnisse ein. Du kannst die Lobby, Spiele und Rangliste verfolgen.</p>
+          <p class="muted">Der Host verwaltet Spiele, Ergebnisse und Regeln.</p>
+          <button class="btn btn-secondary" ${gamesReady ? "" : "disabled"} onclick="${gamesReady ? `window.location.href='scoreboard.html?code=' + lobby.code` : ""}">Scoreboard ansehen</button>
+          ${gamesReady ? "" : '<div class="muted" style="margin-top:8px;">Warte, bis der Host Spiele ausgewählt hat.</div>'}
+        `;
+      }
+    }
+
+    function renderJoinState() {
+      const current = getCurrentPlayer();
+      const joinSection = document.getElementById("joinSection");
+      const joinedInfo = document.getElementById("joinedInfo");
+
+      if (current) {
+        joinSection.style.display = "none";
+        joinedInfo.style.display = "block";
+        joinedInfo.innerHTML = `Du bist als <strong>${current.name}</strong> in der Lobby.`;
+      } else {
+        joinSection.style.display = "block";
+        joinedInfo.style.display = "none";
+      }
+    }
+
+    function renderAll() {
+      document.getElementById("title").innerText = lobby.lobbyName || "Lobby";
+      document.getElementById("code").innerText = lobby.code || code;
+      renderSetupProgress();
+      renderAvatarChoices();
+      renderJoinState();
+      renderPlayers();
+      renderGamesPreview();
+      renderSidePanel();
     }
 
     normalizeLobby();
     saveLobby();
-    document.getElementById("title").innerText = lobby.lobbyName;
-    document.getElementById("code").innerText = lobby.code;
-    renderPlayers();
+    renderAll();
   </script>
 </body>
 </html>
