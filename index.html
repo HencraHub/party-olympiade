@@ -382,78 +382,64 @@
     }
 
     .how-subline {
-      margin: 0 6px 28px;
+      margin: 0 6px 22px;
       color: #c9cde0;
       font-size: 1.08rem;
+      line-height: 1.6;
     }
 
-    .how-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 24px;
-    }
-
-    .how-card {
-      min-height: 240px;
+    .step-panel {
       border-radius: 28px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 20px;
       background:
-        linear-gradient(140deg, rgba(24, 26, 51, 0.86), rgba(19, 21, 46, 0.68)),
+        linear-gradient(140deg, rgba(24, 26, 51, 0.8), rgba(19, 21, 46, 0.66)),
         linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%);
+      box-shadow: 0 0 44px rgba(139, 92, 246, 0.2), 0 0 58px rgba(34, 211, 238, 0.18);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      padding: 24px 22px;
-      transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.26s ease;
     }
 
-    .how-card:hover {
-      transform: translateY(-8px);
-      border-color: rgba(255, 255, 255, 0.26);
-      box-shadow: 0 0 44px rgba(139, 92, 246, 0.26), 0 0 68px rgba(34, 211, 238, 0.24);
+    .step-bar {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
     }
 
-    .how-step {
-      display: inline-flex;
-      margin-bottom: 14px;
-      padding: 7px 11px;
-      border-radius: 999px;
-      font-size: 0.84rem;
-      font-weight: 700;
-      letter-spacing: 0.4px;
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.24);
-      background: linear-gradient(110deg, rgba(139, 92, 246, 0.56), rgba(236, 72, 153, 0.54));
-      box-shadow: 0 0 18px rgba(236, 72, 153, 0.3);
+    .step-image-card {
+      border-radius: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      overflow: hidden;
+      background: rgba(10, 12, 24, 0.78);
+      transition: transform 0.22s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      min-height: 220px;
     }
 
-    .how-card h3 {
-      margin: 0 0 10px;
-      font-size: 1.18rem;
+    .step-image-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(236, 72, 153, 0.52);
+      box-shadow: 0 0 40px rgba(236, 72, 153, 0.26), 0 0 52px rgba(34, 211, 238, 0.22);
     }
 
-    .how-card p {
-      margin: 0;
-      color: #c5c8d8;
-      line-height: 1.62;
-      font-size: 0.97rem;
+    .step-image-card img {
+      width: 100%;
+      height: 100%;
+      min-height: 220px;
+      object-fit: cover;
+      display: block;
     }
 
     .host-control {
-      margin-top: 28px;
+      margin-top: 24px;
       border-radius: 28px;
       border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 30px;
+      padding: 28px;
       background:
         linear-gradient(140deg, rgba(29, 19, 52, 0.76), rgba(17, 22, 44, 0.78)),
         linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 42%);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       box-shadow: 0 0 44px rgba(236, 72, 153, 0.26), 0 0 62px rgba(34, 211, 238, 0.22);
-    }
-
-    .host-control:hover {
-      border-color: rgba(255, 255, 255, 0.3);
-      box-shadow: 0 0 56px rgba(236, 72, 153, 0.32), 0 0 74px rgba(34, 211, 238, 0.3);
     }
 
     .host-control h3 {
@@ -503,7 +489,7 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
-      .how-grid {
+      .step-bar {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
@@ -522,7 +508,7 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
-      .how-grid {
+      .step-bar {
         grid-template-columns: 1fr;
       }
 
@@ -548,7 +534,7 @@
         grid-template-columns: 1fr;
       }
 
-      .how-grid {
+      .step-bar {
         grid-template-columns: 1fr;
       }
     }
@@ -630,27 +616,13 @@
     <section id="how" aria-label="So funktioniert's">
       <h2 class="how-title">So funktioniert’s</h2>
       <p class="how-subline">Von der Lobby bis zum Champion – alles läuft über den Host.</p>
-      <div class="how-grid">
-        <article class="how-card">
-          <span class="how-step">1</span>
-          <h3>Lobby erstellen</h3>
-          <p>Der Host erstellt die Olympiade und bekommt sofort einen Lobby-Code.</p>
-        </article>
-        <article class="how-card">
-          <span class="how-step">2</span>
-          <h3>Freunde einladen</h3>
-          <p>Der Code wird geteilt. Spieler treten bei und sehen die aktuelle Runde.</p>
-        </article>
-        <article class="how-card">
-          <span class="how-step">3</span>
-          <h3>Spiele starten</h3>
-          <p>Der Host wählt Spiele aus, lost zufällig das nächste Spiel oder trägt Ergebnisse ein.</p>
-        </article>
-        <article class="how-card">
-          <span class="how-step">4</span>
-          <h3>Champion küren</h3>
-          <p>Die Punkte werden automatisch berechnet. Am Ende steht der Gewinner fest.</p>
-        </article>
+      <div class="step-panel">
+        <div class="step-bar">
+          <article class="step-image-card"><img src="assets/step-01-lobby.png" alt="Schritt 1: Lobby erstellen" /></article>
+          <article class="step-image-card"><img src="assets/step-02-freunde.png" alt="Schritt 2: Freunde einladen" /></article>
+          <article class="step-image-card"><img src="assets/step-03-spiele.png" alt="Schritt 3: Spiele starten" /></article>
+          <article class="step-image-card"><img src="assets/step-04-gewinner.png" alt="Schritt 4: Champion küren" /></article>
+        </div>
       </div>
       <article class="host-control">
         <h3>Der Host hat die volle Kontrolle</h3>
