@@ -1,1 +1,287 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Scoreboard | Party Olympiade</title>
 
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #1a1a2e, #090914);
+      color: white;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 50px 20px;
+    }
+
+    .card {
+      background: #151528;
+      border-radius: 24px;
+      padding: 25px;
+      margin-top: 25px;
+    }
+
+    .player-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #090914;
+      margin: 10px 0;
+      padding: 14px;
+      border-radius: 16px;
+      gap: 10px;
+    }
+
+    .rank {
+      color: #FACC15;
+      font-weight: bold;
+      min-width: 45px;
+    }
+
+    .name {
+      flex: 1;
+      text-align: left;
+      font-weight: bold;
+    }
+
+    .points {
+      font-size: 20px;
+      font-weight: bold;
+      color: #22D3EE;
+      min-width: 80px;
+    }
+
+    select {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      border-radius: 16px;
+      border: 1px solid #333;
+      background: #090914;
+      color: white;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    button {
+      padding: 14px 22px;
+      border-radius: 30px;
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+      font-weight: bold;
+      background: linear-gradient(45deg, #8B5CF6, #EC4899);
+      color: white;
+      margin: 5px;
+    }
+
+    .secondary {
+      background: transparent;
+      border: 2px solid #8B5CF6;
+      color: #8B5CF6;
+    }
+
+    a {
+      color: #8B5CF6;
+      text-decoration: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Live Scoreboard</h1>
+    <p id="lobbyName"></p>
+
+    <div class="card">
+      <h2>Rangliste</h2>
+      <div id="ranking"></div>
+    </div>
+
+    <div class="card">
+      <h2>Ergebnis eintragen</h2>
+
+      <select id="gameSelect"></select>
+      <select id="firstPlace"></select>
+      <select id="secondPlace"></select>
+      <select id="thirdPlace"></select>
+
+      <button onclick="saveResult()">Ergebnis speichern</button>
+    </div>
+
+    <div class="card">
+      <button onclick="finishOlympiad()">Olympiade beenden</button>
+      <button class="secondary" onclick="resetResults()">Ergebnisse zurücksetzen</button>
+    </div>
+
+    <p>
+      <a id="backToGames">Zurück zu den Spielen</a>
+    </p>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const storageKey = "party_olympiade_" + code;
+
+    let lobby = JSON.parse(localStorage.getItem(storageKey));
+
+    if (!lobby) {
+      alert("Lobby nicht gefunden.");
+      window.location.href = "index.html";
+    }
+
+    if (!lobby.results) lobby.results = [];
+
+    document.getElementById("lobbyName").innerText = lobby.lobbyName;
+    document.getElementById("backToGames").href = "games.html?code=" + lobby.code;
+
+    function saveLobby() {
+      localStorage.setItem(storageKey, JSON.stringify(lobby));
+    }
+
+    function getPointsForPlace(place) {
+      if (lobby.rules === "winner") {
+        return place === 1 ? 1 : 0;
+      }
+
+      if (lobby.rules === "top3") {
+        if (place === 1) return 5;
+        if (place === 2) return 3;
+        if (place === 3) return 1;
+        return 0;
+      }
+
+      if (lobby.rules === "all") {
+        return Math.max(lobby.players.length - place + 1, 0);
+      }
+
+      return 0;
+    }
+
+    function calculateScores() {
+      const scores = lobby.players.map(player => ({
+        name: player,
+        points: 0,
+        wins: 0
+      }));
+
+      lobby.results.forEach(result => {
+        result.placements.forEach(item => {
+          const score = scores.find(s => s.name === item.player);
+          if (!score) return;
+
+          score.points += item.points;
+
+          if (item.place === 1) {
+            score.wins += 1;
+          }
+        });
+      });
+
+      return scores.sort((a, b) => b.points - a.points || b.wins - a.wins);
+    }
+
+    function renderRanking() {
+      const ranking = document.getElementById("ranking");
+      ranking.innerHTML = "";
+
+      const scores = calculateScores();
+
+      scores.forEach((player, index) => {
+        const row = document.createElement("div");
+        row.className = "player-row";
+
+        row.innerHTML = `
+          <div class="rank">#${index + 1}</div>
+          <div class="name">${player.name}</div>
+          <div class="points">${player.points} Pkt.</div>
+        `;
+
+        ranking.appendChild(row);
+      });
+    }
+
+    function fillSelect(selectId, placeholder) {
+      const select = document.getElementById(selectId);
+      select.innerHTML = `<option value="">${placeholder}</option>`;
+
+      lobby.players.forEach(player => {
+        select.innerHTML += `<option value="${player}">${player}</option>`;
+      });
+    }
+
+    function renderForm() {
+      const gameSelect = document.getElementById("gameSelect");
+      gameSelect.innerHTML = `<option value="">Spiel auswählen</option>`;
+
+      lobby.games.forEach(game => {
+        gameSelect.innerHTML += `<option value="${game}">${game}</option>`;
+      });
+
+      fillSelect("firstPlace", "1. Platz auswählen");
+      fillSelect("secondPlace", "2. Platz auswählen");
+      fillSelect("thirdPlace", "3. Platz auswählen");
+    }
+
+    function saveResult() {
+      const game = document.getElementById("gameSelect").value;
+      const first = document.getElementById("firstPlace").value;
+      const second = document.getElementById("secondPlace").value;
+      const third = document.getElementById("thirdPlace").value;
+
+      if (!game || !first) {
+        alert("Bitte mindestens Spiel und 1. Platz auswählen.");
+        return;
+      }
+
+      const selectedPlayers = [first, second, third].filter(Boolean);
+      const uniquePlayers = new Set(selectedPlayers);
+
+      if (selectedPlayers.length !== uniquePlayers.size) {
+        alert("Ein Spieler darf nicht mehrfach platziert werden.");
+        return;
+      }
+
+      lobby.results = lobby.results.filter(result => result.game !== game);
+
+      const placements = [];
+
+      if (first) placements.push({ place: 1, player: first, points: getPointsForPlace(1) });
+      if (second) placements.push({ place: 2, player: second, points: getPointsForPlace(2) });
+      if (third) placements.push({ place: 3, player: third, points: getPointsForPlace(3) });
+
+      lobby.results.push({
+        game,
+        placements
+      });
+
+      saveLobby();
+      renderRanking();
+
+      alert("Ergebnis gespeichert.");
+    }
+
+    function resetResults() {
+      if (!confirm("Wirklich alle Ergebnisse löschen?")) return;
+
+      lobby.results = [];
+      saveLobby();
+      renderRanking();
+    }
+
+    function finishOlympiad() {
+      window.location.href = "winner.html?code=" + lobby.code;
+    }
+
+    renderRanking();
+    renderForm();
+  </script>
+</body>
+</html>
