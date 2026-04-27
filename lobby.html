@@ -4,415 +4,474 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Lobby | Party Olympiade</title>
-    <link rel="stylesheet" href="assets/styles.css" />
+  <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
   <div class="page">
     <header class="header glass">
-      <a href="index.html"><img class="brand-logo" src="assets/logo-party-olympiade.png" alt="Party Olympiade"/></a>
+      <a href="index.html" aria-label="Startseite">
+        <img class="brand-logo" src="assets/logo-party-olympiade.png" alt="Party Olympiade" />
+      </a>
       <nav class="nav" aria-label="Navigation">
-        <a href="index.html#features">Features</a>
-        <a href="index.html#how">So funktioniert’s</a>
-        <a href="create.html">Neue Lobby</a>
+        <a href="index.html">Start</a>
+        <a href="games.html">Spiele</a>
+        <a href="scoreboard.html">Scoreboard</a>
       </nav>
-      <div><a class="btn btn-secondary" href="index.html">Zur Startseite</a></div>
+      <div><a class="btn btn-secondary" href="index.html">Zurück zur Startseite</a></div>
     </header>
 
-    <section class="setup-progress glass panel">
-      <div class="steps" id="steps"></div>
-      <div class="progress-meta" id="progressMeta"></div>
-    </section>
+    <main class="lobby-main">
+      <section class="progress-wrap glass">
+        <strong>Setup-Fortschritt</strong>
+        <div class="progress-bar" id="progressBar"></div>
+      </section>
 
-    <main class="layout">
-      <section class="panel glass">
-        <h1 id="title" class="lobby-title">Lobby</h1>
-        <div class="muted">Lobby-Code</div>
-        <div id="code" class="lobby-code">----</div>
-        <div class="actions">
-          <button class="btn btn-secondary" onclick="copyInvite()">Einladungslink kopieren</button>
-        </div>
-        <div id="toast" class="toast"></div>
-
-        <div id="joinSection" class="join-box">
-          <h3>Lobby beitreten</h3>
-          <div class="row">
-            <input id="playerName" type="text" placeholder="Dein Name (max. 20 Zeichen)" maxlength="20" />
+      <section class="dashboard">
+        <aside class="panel">
+          <h1 id="lobbyName">Lobby</h1>
+          <div class="meta-code" id="lobbyCode">----</div>
+          <div class="meta-list">
+            <button class="btn btn-primary" id="copyBtn" type="button">Einladungslink kopieren</button>
+            <span class="status-badge">Wartet auf Spieler</span>
+            <div class="helper">Nur der Host kann Spiele und Regeln ändern.</div>
+            <div class="helper" id="metaStats"></div>
           </div>
-          <div class="avatars" id="avatarChoices"></div>
-          <div class="actions" style="margin-top:10px;"><button class="btn btn-primary" onclick="joinLobbyAsPlayer()">Lobby beitreten</button></div>
-          <div id="error" class="error"></div>
-        </div>
+        </aside>
 
-        <div id="joinedInfo" class="join-box" style="display:none;"></div>
+        <section class="panel">
+          <div class="players-head">
+            <h2>Spielerbereich</h2>
+            <small id="playerCountLabel"></small>
+          </div>
 
-        <h2>Spielerübersicht</h2>
-        <div id="players" class="players-grid"></div>
+          <div id="joinState"></div>
+          <form id="joinForm">
+            <label for="playerName">Dein Name</label>
+            <input class="input" id="playerName" maxlength="20" placeholder="Spielername (max. 20 Zeichen)" />
+            <div>
+              <small>Avatar auswählen</small>
+              <div class="avatar-choice" id="avatarChoice"></div>
+            </div>
+            <div class="error-text" id="formError"></div>
+            <button class="btn btn-primary" type="submit">Lobby beitreten</button>
+          </form>
+
+          <div class="players-grid" id="playersGrid"></div>
+        </section>
+
+        <aside class="panel">
+          <h2 id="hostTitle">Host-Bereich</h2>
+          <div id="hostControls">
+            <button class="btn btn-primary" id="gamesBtn" type="button">Spiele auswählen</button>
+            <button class="btn btn-secondary" id="resetBtn" type="button">Lobby zurücksetzen</button>
+          </div>
+          <div id="playerHint" class="helper" style="display:none">Du bist als Spieler in der Lobby. Nur der Host kann Einstellungen ändern.</div>
+
+          <h3>Regelübersicht</h3>
+          <div class="rule-list" id="ruleList"></div>
+
+          <h3>Ausgewählte Spiele</h3>
+          <div class="helper" id="gamesPlanned"></div>
+          <div class="game-list" id="gameList"></div>
+        </aside>
       </section>
-
-      <section class="panel glass">
-        <h2>Ausgewählte Spiele</h2>
-        <div id="gamesSummary" class="muted"></div>
-        <div id="gamesList" class="games-list"></div>
-      </section>
-
-      <aside id="sidePanel" class="panel glass"></aside>
     </main>
   </div>
+
+  <div class="toast" id="toast"></div>
 
   <script>
     const code = (new URLSearchParams(window.location.search).get("code") || "").toUpperCase();
     if (!code) window.location.href = "index.html";
 
     const storageKey = "party_olympiade_" + code;
-    const viewerKey = "party_olympiade_viewer_" + code;
-    let lobby = JSON.parse(localStorage.getItem(storageKey));
-    if (!lobby) { alert("Lobby nicht gefunden."); window.location.href = "index.html"; }
-
-    const avatarPool = [
+    const identityKey = "party_olympiade_identity_" + code;
+    const hostKey = "party_olympiade_host_" + code;
+    const AVATARS = [
       "assets/character-pink.png",
       "assets/character-blue.png",
       "assets/character-purple.png",
       "assets/character-green.png"
     ];
 
-    let viewer = JSON.parse(localStorage.getItem(viewerKey) || "null");
-    let selectedAvatar = avatarPool[0];
+    let lobby = JSON.parse(localStorage.getItem(storageKey));
+    if (!lobby) window.location.href = "index.html";
 
-    function makeId() {
-      return (window.crypto && crypto.randomUUID)
-        ? crypto.randomUUID()
-        : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+    let selectedAvatar = AVATARS[0];
+
+    function createId() {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+      return "p_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
+    function toInitials(name) {
+      const n = (name || "?").trim();
+      return n.slice(0, 2).toUpperCase();
+    }
+
+    function fallbackColor(id) {
+      const colors = ["#8b5cf6", "#ec4899", "#22d3ee", "#34d399"];
+      let sum = 0;
+      for (let i = 0; i < id.length; i++) sum += id.charCodeAt(i);
+      return colors[sum % colors.length];
+    }
+
+    function normalizeRules() {
+      if (!lobby.tieRule) lobby.tieRule = "tiebreaker";
+      if (!lobby.extraRules || typeof lobby.extraRules !== "object") {
+        lobby.extraRules = { comebackPenalty: false, lastPlaceBonus: false, winStreakBonus: false, finalDoublePoints: false };
+      }
+    }
+
+    function normalizeGames() {
+      lobby.games = Array.isArray(lobby.games) ? lobby.games : [];
+      lobby.games = lobby.games.map((game, index) => {
+        if (typeof game === "string") {
+          return { id: "g_" + index, name: game, icon: "", mode: "ffa" };
+        }
+        return {
+          id: game.id || ("g_" + index),
+          name: (game.name || "Unbenanntes Spiel").trim(),
+          icon: game.icon || "",
+          mode: (game.mode || "ffa").toLowerCase() === "team" ? "team" : "ffa"
+        };
+      });
+    }
+
+    function normalizePlayers() {
+      const list = Array.isArray(lobby.players) ? lobby.players : [];
+      const seen = new Set();
+      let avatarIndex = 0;
+
+      let normalized = list.map((entry) => {
+        if (typeof entry === "string") {
+          const name = entry.trim();
+          if (!name) return null;
+          return {
+            id: createId(),
+            name,
+            avatar: AVATARS[avatarIndex++ % AVATARS.length],
+            isHost: false,
+            ready: true,
+            joinedAt: Date.now()
+          };
+        }
+
+        if (!entry || typeof entry !== "object") return null;
+        const name = (entry.name || "").trim();
+        if (!name) return null;
+
+        return {
+          id: String(entry.id || createId()),
+          name,
+          avatar: entry.avatar || AVATARS[avatarIndex++ % AVATARS.length],
+          isHost: !!entry.isHost,
+          ready: entry.ready !== false,
+          joinedAt: Number(entry.joinedAt) || Date.now()
+        };
+      }).filter(Boolean).filter((player) => {
+        const key = player.name.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      let hostId = lobby.hostId || localStorage.getItem(hostKey) || "";
+      const hostName = (lobby.hostName || "").trim();
+
+      if (!hostId && hostName) {
+        const hostByName = normalized.find((player) => player.name.toLowerCase() === hostName.toLowerCase());
+        if (hostByName) hostId = hostByName.id;
+      }
+
+      normalized = normalized.map((player) => ({ ...player, isHost: hostId ? player.id === hostId : player.name === hostName }));
+      let host = normalized.find((player) => player.isHost);
+
+      if (!host && hostName) {
+        host = {
+          id: hostId || createId(),
+          name: hostName,
+          avatar: AVATARS[0],
+          isHost: true,
+          ready: true,
+          joinedAt: Date.now()
+        };
+        normalized.unshift(host);
+      }
+
+      if (!host && normalized.length) {
+        normalized[0].isHost = true;
+        host = normalized[0];
+      }
+
+      if (host) {
+        lobby.hostId = host.id;
+        lobby.hostName = host.name;
+      }
+
+      lobby.players = normalized;
+    }
+
+    function normalizeLobby() {
+      lobby = lobby && typeof lobby === "object" ? lobby : {};
+      lobby.code = code;
+      lobby.lobbyName = (lobby.lobbyName || "Party Olympiade Lobby").trim();
+      lobby.results = Array.isArray(lobby.results) ? lobby.results : [];
+      normalizeRules();
+      normalizeGames();
+      normalizePlayers();
     }
 
     function saveLobby() {
       localStorage.setItem(storageKey, JSON.stringify(lobby));
       localStorage.setItem("party_olympiade_last_code", lobby.code);
+      if (lobby.hostId) localStorage.setItem(hostKey, lobby.hostId);
     }
 
-    function saveViewer() {
-      localStorage.setItem(viewerKey, JSON.stringify(viewer));
+    function getIdentityId() {
+      return localStorage.getItem(identityKey) || "";
     }
 
-    function showError(msg) { document.getElementById("error").innerText = msg || ""; }
-    function showToast(msg) { document.getElementById("toast").innerText = msg || ""; }
-
-    function normalizeLobby() {
-      lobby.players = Array.isArray(lobby.players) ? lobby.players : [];
-      lobby.games = Array.isArray(lobby.games) ? lobby.games : [];
-      lobby.results = Array.isArray(lobby.results) ? lobby.results : [];
-      lobby.tieRule = lobby.tieRule || "tiebreaker";
-      lobby.extraRules = lobby.extraRules || { comebackPenalty: false, lastPlaceBonus: false, winStreakBonus: false, finalDoublePoints: false };
-
-      const hostName = (lobby.hostName || (typeof lobby.players[0] === "string" ? lobby.players[0] : lobby.players[0]?.name) || "Host").trim();
-      lobby.hostName = hostName;
-
-      const normalized = [];
-      let hostAssigned = false;
-
-      lobby.players.forEach((p, i) => {
-        let obj;
-        if (typeof p === "string") {
-          obj = {
-            id: makeId(),
-            name: p.trim(),
-            avatar: avatarPool[i % avatarPool.length],
-            isHost: false,
-            ready: true,
-            joinedAt: Date.now() + i
-          };
-        } else if (p && typeof p === "object") {
-          obj = {
-            id: p.id || makeId(),
-            name: (p.name || "").trim(),
-            avatar: p.avatar || avatarPool[i % avatarPool.length],
-            isHost: !!p.isHost,
-            ready: p.ready !== false,
-            joinedAt: typeof p.joinedAt === "number" ? p.joinedAt : Date.now() + i
-          };
-        }
-        if (!obj || !obj.name) return;
-        if (obj.isHost || obj.name === hostName) {
-          obj.isHost = true;
-          hostAssigned = true;
-        }
-        normalized.push(obj);
-      });
-
-      const names = new Set();
-      lobby.players = normalized.filter((p) => {
-        const key = p.name.toLowerCase();
-        if (names.has(key)) return false;
-        names.add(key);
-        return true;
-      });
-
-      let hostPlayer = lobby.players.find((p) => p.isHost);
-      if (!hostPlayer) {
-        hostPlayer = lobby.players.find((p) => p.name.toLowerCase() === hostName.toLowerCase());
-      }
-      if (!hostPlayer) {
-        hostPlayer = { id: makeId(), name: hostName, avatar: avatarPool[0], isHost: true, ready: true, joinedAt: Date.now() };
-        lobby.players.unshift(hostPlayer);
-      }
-      lobby.players.forEach((p) => { p.isHost = p.id === hostPlayer.id; });
-      lobby.hostName = hostPlayer.name;
-
-      if (!viewer) {
-        const lastCode = localStorage.getItem("party_olympiade_last_code") || "";
-        if (lastCode.toUpperCase() === code) {
-          viewer = { playerId: hostPlayer.id, isHost: true };
-          saveViewer();
-        }
-      }
+    function isHostView() {
+      return getIdentityId() && getIdentityId() === lobby.hostId;
     }
 
-    function getCurrentPlayer() {
-      if (!viewer || !viewer.playerId) return null;
-      return lobby.players.find((p) => p.id === viewer.playerId) || null;
+    function isRulesDone() {
+      const hasTieRule = !!lobby.tieRule;
+      const hasExtraRules = lobby.extraRules && typeof lobby.extraRules === "object";
+      return hasTieRule && hasExtraRules;
     }
 
-    function isCurrentHost() {
-      const current = getCurrentPlayer();
-      return !!(current && current.isHost);
+    function renderProgress() {
+      const steps = [
+        { key: "players", title: "Spieler", done: lobby.players.length >= 2 },
+        { key: "games", title: "Spiele", done: lobby.games.length >= 1 },
+        { key: "rules", title: "Regeln", done: isRulesDone() },
+        { key: "ready", title: "Startbereit", done: lobby.players.length >= 2 && lobby.games.length >= 1 }
+      ];
+
+      document.getElementById("progressBar").innerHTML = steps.map((step, index) => `
+        <div class="progress-step ${step.done ? "done" : ""}">
+          <span class="progress-label">${index + 1}</span>
+          <span class="progress-title">${step.title}</span>
+        </div>
+      `).join("");
     }
 
-    function renderAvatarChoices() {
-      const box = document.getElementById("avatarChoices");
-      box.innerHTML = "";
-      avatarPool.forEach((avatar) => {
-        const item = document.createElement("button");
-        item.type = "button";
-        item.className = "avatar-option" + (selectedAvatar === avatar ? " active" : "");
-        item.innerHTML = `<img src="${avatar}" alt="Avatar" />`;
-        item.onclick = () => { selectedAvatar = avatar; renderAvatarChoices(); };
-        box.appendChild(item);
+    function renderAvatarChoice() {
+      const container = document.getElementById("avatarChoice");
+      container.innerHTML = AVATARS.map((avatar) => `
+        <button class="avatar-option ${selectedAvatar === avatar ? "active" : ""}" type="button" data-avatar="${avatar}">
+          <img src="${avatar}" alt="Avatar Auswahl" />
+        </button>
+      `).join("");
+      Array.from(container.querySelectorAll(".avatar-option")).forEach((btn) => {
+        btn.addEventListener("click", () => {
+          selectedAvatar = btn.dataset.avatar;
+          renderAvatarChoice();
+        });
       });
     }
 
-    function playerAvatarHTML(player) {
-      const initial = (player.name || "?").slice(0, 1).toUpperCase();
-      if (player.avatar) {
-        return `<span class="avatar"><img src="${player.avatar}" alt="Avatar ${player.name}" onerror="this.parentElement.innerText='${initial}'" /></span>`;
-      }
-      return `<span class="avatar">${initial}</span>`;
+    function avatarMarkup(player) {
+      const hasAvatar = player.avatar && AVATARS.includes(player.avatar);
+      if (hasAvatar) return `<img class="avatar" src="${player.avatar}" alt="Avatar ${player.name}" />`;
+      return `<div class="avatar-fallback" style="background:${fallbackColor(player.id)}">${toInitials(player.name)}</div>`;
+    }
+
+    function removePlayer(playerId) {
+      if (!isHostView()) return;
+      if (playerId === lobby.hostId) return;
+      lobby.players = lobby.players.filter((player) => player.id !== playerId);
+      saveLobby();
+      renderAll();
     }
 
     function renderPlayers() {
-      const list = document.getElementById("players");
-      list.innerHTML = "";
-      if (!lobby.players.length) {
-        list.innerHTML = '<div class="muted">Noch keine Spieler in der Lobby.</div>';
+      const grid = document.getElementById("playersGrid");
+      const hostView = isHostView();
+
+      grid.innerHTML = lobby.players.map((player) => `
+        <article class="player-card">
+          ${avatarMarkup(player)}
+          <div class="player-meta">
+            <strong>${player.name}</strong>
+            <small>Status: In Lobby</small>
+          </div>
+          <div>
+            <span class="role-badge ${player.isHost ? "host" : "player"}">${player.isHost ? "Host" : "Spieler"}</span>
+            ${hostView && !player.isHost ? `<button class="btn btn-secondary" data-remove-id="${player.id}" type="button" style="margin-top:8px">Entfernen</button>` : ""}
+          </div>
+        </article>
+      `).join("");
+
+      Array.from(grid.querySelectorAll("[data-remove-id]")).forEach((button) => {
+        button.addEventListener("click", () => removePlayer(button.dataset.removeId));
+      });
+
+      document.getElementById("playerCountLabel").innerText = `${lobby.players.length} Spieler in der Lobby`;
+    }
+
+    function renderJoinState() {
+      const identityId = getIdentityId();
+      const currentPlayer = lobby.players.find((player) => player.id === identityId);
+      const joinState = document.getElementById("joinState");
+      const joinForm = document.getElementById("joinForm");
+
+      if (currentPlayer) {
+        joinForm.style.display = "none";
+        joinState.className = "helper";
+        joinState.textContent = `Du bist als ${currentPlayer.name} in der Lobby.`;
+      } else {
+        joinForm.style.display = "grid";
+        joinState.textContent = "";
+      }
+    }
+
+    function renderRulesAndGames() {
+      const tieText = lobby.tieRule === "shared_points" ? "Gleichstand: Gleiche Punkte" : "Gleichstand: Schätzfrage entscheidet";
+      const extra = lobby.extraRules || {};
+      const extraLabels = [
+        extra.comebackPenalty ? "Comeback-Regel" : null,
+        extra.lastPlaceBonus ? "Letzter-holt-auf" : null,
+        extra.winStreakBonus ? "Sieges-Serie" : null,
+        extra.finalDoublePoints ? "Finale doppelt" : null
+      ].filter(Boolean);
+
+      document.getElementById("ruleList").innerHTML = `
+        <div class="rule-item">${tieText}</div>
+        <div class="rule-item">${extraLabels.length ? extraLabels.join(", ") : "Keine Extra-Regeln aktiv"}</div>
+      `;
+
+      document.getElementById("gamesPlanned").innerText = `${lobby.games.length} Spiele geplant`;
+      const gameList = document.getElementById("gameList");
+      if (!lobby.games.length) {
+        gameList.innerHTML = `<div class="rule-item">Noch keine Spiele ausgewählt.</div>`;
         return;
       }
 
-      lobby.players.forEach((p) => {
-        const card = document.createElement("article");
-        card.className = "player-card";
-        const removeButton = (isCurrentHost() && !p.isHost)
-          ? `<button class="btn btn-danger" style="min-width:auto;padding:8px 12px;" onclick="removePlayer('${p.id}')">Entfernen</button>`
-          : "";
-
-        card.innerHTML = `
-          <div class="player-left">
-            ${playerAvatarHTML(p)}
-            <div>
-              <div class="name">${p.name}</div>
-              <div class="status">${p.ready ? "bereit" : "in Lobby"}</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;">${p.isHost ? '<span class="badge host">Host</span>' : '<span class="badge">Spieler</span>'}${removeButton}</div>
-        `;
-        list.appendChild(card);
-      });
+      gameList.innerHTML = lobby.games.map((game) => `
+        <div class="game-item">
+          <strong>${game.name}</strong>
+          <span class="game-mode">${game.mode === "team" ? "Team" : "FFA"}</span>
+        </div>
+      `).join("");
     }
 
-    function joinLobbyAsPlayer() {
+    function renderMeta() {
+      const playedGames = Math.min(lobby.results.length, lobby.games.length);
+      document.getElementById("lobbyName").innerText = lobby.lobbyName;
+      document.getElementById("lobbyCode").innerText = lobby.code;
+      document.getElementById("metaStats").innerText = `${lobby.players.length} Spieler in der Lobby · ${lobby.games.length} Spiele geplant · ${playedGames} von ${lobby.games.length} Spielen gespielt`;
+    }
+
+    function renderRoleSection() {
+      const hostView = isHostView();
+      const hostControls = document.getElementById("hostControls");
+      const playerHint = document.getElementById("playerHint");
+      const hostTitle = document.getElementById("hostTitle");
+
+      hostControls.style.display = hostView ? "grid" : "none";
+      playerHint.style.display = hostView ? "none" : "block";
+      hostTitle.innerText = hostView ? "Host-Bereich" : "Spieleransicht";
+
+      const canManage = lobby.players.length >= 2;
+      document.getElementById("gamesBtn").disabled = !canManage;
+      document.getElementById("resetBtn").disabled = !hostView;
+    }
+
+    function renderAll() {
+      renderProgress();
+      renderPlayers();
+      renderJoinState();
+      renderRulesAndGames();
+      renderMeta();
+      renderRoleSection();
+      saveLobby();
+    }
+
+    function showError(message) {
+      document.getElementById("formError").innerText = message || "";
+    }
+
+    function joinLobby(event) {
+      event.preventDefault();
       showError("");
       const input = document.getElementById("playerName");
       const name = input.value.trim();
 
-      if (!name) return showError("Spielername darf nicht leer sein.");
-      if (name.length > 20) return showError("Spielername darf maximal 20 Zeichen haben.");
-      if (lobby.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) return showError("Spielername existiert bereits.");
+      if (!name) return showError("Bitte Namen eingeben.");
+      if (name.length > 20) return showError("Name darf maximal 20 Zeichen haben.");
+      if (lobby.players.some((player) => player.name.toLowerCase() === name.toLowerCase())) {
+        return showError("Name existiert bereits in dieser Lobby.");
+      }
 
-      const newPlayer = {
-        id: makeId(),
+      const player = {
+        id: createId(),
         name,
-        avatar: selectedAvatar || avatarPool[0],
+        avatar: selectedAvatar,
         isHost: false,
         ready: true,
         joinedAt: Date.now()
       };
 
-      lobby.players.push(newPlayer);
-      viewer = { playerId: newPlayer.id, isHost: false };
-      saveViewer();
-      saveLobby();
+      lobby.players.push(player);
+      localStorage.setItem(identityKey, player.id);
+      input.value = "";
       renderAll();
-    }
-
-    function removePlayer(id) {
-      if (!isCurrentHost()) return;
-      const target = lobby.players.find((p) => p.id === id);
-      if (!target || target.isHost) return;
-      lobby.players = lobby.players.filter((p) => p.id !== id);
-      saveLobby();
-      renderAll();
-    }
-
-    function copyInvite() {
-      const link = `${window.location.origin}${window.location.pathname.replace('lobby.html', 'lobby.html')}?code=${lobby.code}`;
-      navigator.clipboard.writeText(link)
-        .then(() => showToast("Einladungslink kopiert."))
-        .catch(() => showError("Kopieren fehlgeschlagen."));
-    }
-
-    function setupStepData() {
-      const playersDone = lobby.players.length >= 2;
-      const gamesDone = lobby.games.length >= 1;
-      const rulesDone = !!lobby.tieRule || !!lobby.extraRules;
-      const readyDone = playersDone && gamesDone;
-      const validGameIds = new Set(lobby.games.map((g) => (typeof g === "string" ? g : g.id)));
-      const played = lobby.results.filter((r) => validGameIds.has(r.gameId) || validGameIds.has(r.game)).length;
-      return { playersDone, gamesDone, rulesDone, readyDone, played };
-    }
-
-    function renderSetupProgress() {
-      const { playersDone, gamesDone, rulesDone, readyDone, played } = setupStepData();
-      const steps = [
-        { label: "1. Spieler", done: playersDone },
-        { label: "2. Spiele", done: gamesDone },
-        { label: "3. Regeln", done: rulesDone },
-        { label: "4. Startbereit", done: readyDone }
-      ];
-
-      document.getElementById("steps").innerHTML = steps.map((s) => `<div class="step ${s.done ? "done" : ""}">${s.label}</div>`).join("");
-
-      const gamesText = lobby.games.length ? `${lobby.games.length} Spiele geplant` : "Noch keine Spiele ausgewählt";
-      document.getElementById("progressMeta").innerHTML = `
-        <span>${lobby.players.length} Spieler in der Lobby</span>
-        <span>${gamesText}</span>
-        <span>${played} von ${lobby.games.length || 0} Spielen gespielt</span>
-      `;
-    }
-
-    function gameMode(game) {
-      if (typeof game === "string") return "FFA";
-      return (game.mode === "team" ? "TEAM" : "FFA");
-    }
-
-    function gameName(game) { return typeof game === "string" ? game : (game.name || "Spiel"); }
-
-    function renderGamesPreview() {
-      const box = document.getElementById("gamesList");
-      const summary = document.getElementById("gamesSummary");
-      const validGameIds = new Set(lobby.games.map((g) => (typeof g === "string" ? g : g.id)));
-      const played = lobby.results.filter((r) => validGameIds.has(r.gameId) || validGameIds.has(r.game)).length;
-
-      summary.innerText = `${lobby.games.length} Spiele geplant · ${played} von ${lobby.games.length || 0} gespielt`;
-
-      if (!lobby.games.length) {
-        box.innerHTML = `
-          <div class="muted">Noch keine Spiele ausgewählt.</div>
-          <div class="muted">Der Host legt im nächsten Schritt fest, welche Spiele gespielt werden.</div>
-        `;
-        return;
-      }
-
-      box.innerHTML = lobby.games.map((g) => `
-        <div class="game-item">
-          <span>${gameName(g)}</span>
-          <span class="mode ${gameMode(g).toLowerCase() === "team" ? "team" : "ffa"}">${gameMode(g)}</span>
-        </div>
-      `).join("");
-    }
-
-    function renderRuleOverview() {
-      const tieMap = {
-        tiebreaker: "Schätzfrage entscheidet",
-        shared_points: "Gleiche Punkte vergeben"
-      };
-      const extras = [];
-      if (lobby.extraRules?.comebackPenalty) extras.push("Comeback-Regel");
-      if (lobby.extraRules?.lastPlaceBonus) extras.push("Letzter-holt-auf");
-      if (lobby.extraRules?.winStreakBonus) extras.push("Sieges-Serie");
-      if (lobby.extraRules?.finalDoublePoints) extras.push("Finale doppelt");
-
-      return `
-        <div class="muted">Gleichstandsregel: ${tieMap[lobby.tieRule] || "Schätzfrage entscheidet"}</div>
-        ${extras.length
-          ? `<ul class="rule-list">${extras.map((r) => `<li>${r}</li>`).join("")}</ul>`
-          : `<div class="muted" style="margin-top:8px;">Keine Extra-Regeln aktiv</div>`}
-      `;
     }
 
     function resetLobby() {
-      if (!isCurrentHost()) return;
-      if (!confirm("Wirklich Lobby-Setup zurücksetzen?")) return;
+      if (!isHostView()) return;
+      const host = lobby.players.find((player) => player.id === lobby.hostId);
+      lobby.players = host ? [host] : [];
       lobby.games = [];
       lobby.results = [];
-      saveLobby();
       renderAll();
     }
 
-    function renderSidePanel() {
-      const panel = document.getElementById("sidePanel");
-      const isHost = isCurrentHost();
-      const gamesReady = lobby.games.length > 0;
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.setTimeout(() => toast.classList.remove("show"), 1800);
+    }
 
-      if (isHost) {
-        panel.innerHTML = `
-          <h2>Host-Bereich</h2>
-          <p class="host-info muted">Du steuerst Spiele, Regeln, Teams und Ergebnisse.</p>
-          <div class="actions">
-            <button class="btn btn-primary" onclick="window.location.href='games.html?code=' + lobby.code">Spiele auswählen</button>
-            <button class="btn btn-secondary" onclick="copyInvite()">Einladungslink kopieren</button>
-            <button class="btn btn-danger" onclick="resetLobby()">Lobby zurücksetzen</button>
-          </div>
-          <h3>Regelübersicht</h3>
-          ${renderRuleOverview()}
-          <p class="muted" style="margin-top:12px;">Alle anderen können entspannt mitspielen oder zuschauen.</p>
-        `;
-      } else {
-        panel.innerHTML = `
-          <h2>Du bist Spieler</h2>
-          <p class="muted">Der Host startet die Spiele und trägt Ergebnisse ein. Du kannst die Lobby, Spiele und Rangliste verfolgen.</p>
-          <p class="muted">Der Host verwaltet Spiele, Ergebnisse und Regeln.</p>
-          <button class="btn btn-secondary" ${gamesReady ? "" : "disabled"} onclick="${gamesReady ? `window.location.href='scoreboard.html?code=' + lobby.code` : ""}">Scoreboard ansehen</button>
-          ${gamesReady ? "" : '<div class="muted" style="margin-top:8px;">Warte, bis der Host Spiele ausgewählt hat.</div>'}
-        `;
+    async function copyInvite() {
+      const link = `${window.location.origin}${window.location.pathname.replace("lobby.html", "lobby.html")}?code=${lobby.code}`;
+      try {
+        await navigator.clipboard.writeText(link);
+        showToast("Einladungslink kopiert.");
+      } catch (e) {
+        showToast("Kopieren fehlgeschlagen.");
       }
     }
 
-    function renderJoinState() {
-      const current = getCurrentPlayer();
-      const joinSection = document.getElementById("joinSection");
-      const joinedInfo = document.getElementById("joinedInfo");
-
-      if (current) {
-        joinSection.style.display = "none";
-        joinedInfo.style.display = "block";
-        joinedInfo.innerHTML = `Du bist als <strong>${current.name}</strong> in der Lobby.`;
-      } else {
-        joinSection.style.display = "block";
-        joinedInfo.style.display = "none";
-      }
-    }
-
-    function renderAll() {
-      document.getElementById("title").innerText = lobby.lobbyName || "Lobby";
-      document.getElementById("code").innerText = lobby.code || code;
-      renderSetupProgress();
-      renderAvatarChoices();
-      renderJoinState();
-      renderPlayers();
-      renderGamesPreview();
-      renderSidePanel();
+    function syncFromStorage() {
+      const latest = JSON.parse(localStorage.getItem(storageKey));
+      if (!latest) return;
+      lobby = latest;
+      normalizeLobby();
+      renderAll();
     }
 
     normalizeLobby();
-    saveLobby();
+    renderAvatarChoice();
+
+    if (!getIdentityId() && localStorage.getItem(hostKey) === lobby.hostId) {
+      localStorage.setItem(identityKey, lobby.hostId);
+    }
+
+    document.getElementById("joinForm").addEventListener("submit", joinLobby);
+    document.getElementById("copyBtn").addEventListener("click", copyInvite);
+    document.getElementById("gamesBtn").addEventListener("click", () => {
+      if (!isHostView()) return;
+      window.location.href = "games.html?code=" + lobby.code;
+    });
+    document.getElementById("resetBtn").addEventListener("click", resetLobby);
+
     renderAll();
+    window.setInterval(syncFromStorage, 2500);
   </script>
 </body>
 </html>

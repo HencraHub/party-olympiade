@@ -410,6 +410,11 @@
       return code;
     }
 
+    function createId() {
+      if (window.crypto && typeof window.crypto.randomUUID === "function") return window.crypto.randomUUID();
+      return "p_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    }
+
     function createLobby() {
       showError("");
       const lobbyName = document.getElementById("lobbyName").value.trim();
@@ -420,11 +425,21 @@
       if (!hostName) return showError("Bitte deinen Namen eingeben.");
       if (hostName.length > 20) return showError("Host-Name darf maximal 20 Zeichen lang sein.");
 
+      const hostId = createId();
+      const hostAvatar = "assets/character-pink.png";
       const lobby = {
         code: generateLobbyCode(),
         lobbyName,
         hostName,
-        players: [hostName],
+        hostId,
+        players: [{
+          id: hostId,
+          name: hostName,
+          avatar: hostAvatar,
+          isHost: true,
+          ready: true,
+          joinedAt: Date.now()
+        }],
         games: [],
         results: [],
         tieRule: tieRule || "tiebreaker",
@@ -438,6 +453,8 @@
 
       localStorage.setItem("party_olympiade_" + lobby.code, JSON.stringify(lobby));
       localStorage.setItem("party_olympiade_last_code", lobby.code);
+      localStorage.setItem("party_olympiade_host_" + lobby.code, hostId);
+      localStorage.setItem("party_olympiade_identity_" + lobby.code, hostId);
       window.location.href = "lobby.html?code=" + lobby.code;
     }
 
