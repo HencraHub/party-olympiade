@@ -394,7 +394,7 @@
     }
 
     .how-card {
-      min-height: 226px;
+      min-height: 240px;
       border-radius: 28px;
       border: 1px solid rgba(255, 255, 255, 0.12);
       background:
@@ -439,16 +439,21 @@
     }
 
     .host-control {
-      margin-top: 24px;
+      margin-top: 28px;
       border-radius: 28px;
       border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 28px;
+      padding: 30px;
       background:
         linear-gradient(140deg, rgba(29, 19, 52, 0.76), rgba(17, 22, 44, 0.78)),
         linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 42%);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       box-shadow: 0 0 44px rgba(236, 72, 153, 0.26), 0 0 62px rgba(34, 211, 238, 0.22);
+    }
+
+    .host-control:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 56px rgba(236, 72, 153, 0.32), 0 0 74px rgba(34, 211, 238, 0.3);
     }
 
     .host-control h3 {
@@ -460,7 +465,6 @@
       margin: 0;
       color: #d8dbe7;
       line-height: 1.7;
-      white-space: pre-line;
     }
 
     footer {
@@ -519,7 +523,7 @@
       }
 
       .how-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 1fr;
       }
 
       .btn {
@@ -622,38 +626,32 @@
 
     <section id="how" aria-label="So funktioniert's">
       <h2 class="how-title">So funktioniert’s</h2>
-      <p class="how-subline">In wenigen Schritten zur eigenen Party-Olympiade</p>
+      <p class="how-subline">Von der Lobby bis zum Champion – alles läuft über den Host.</p>
       <div class="how-grid">
         <article class="how-card">
-          <span class="how-step">1. Schritt</span>
+          <span class="how-step">1</span>
           <h3>Lobby erstellen</h3>
-          <p>Du erstellst eine Olympiade und bekommst sofort einen Code.</p>
+          <p>Der Host erstellt die Olympiade und bekommt sofort einen Lobby-Code.</p>
         </article>
         <article class="how-card">
-          <span class="how-step">2. Schritt</span>
+          <span class="how-step">2</span>
           <h3>Freunde einladen</h3>
-          <p>Teile den Code – alle können sofort beitreten.</p>
+          <p>Der Code wird geteilt. Spieler treten bei und sehen die aktuelle Runde.</p>
         </article>
         <article class="how-card">
-          <span class="how-step">3. Schritt</span>
-          <h3>Spiele spielen</h3>
-          <p>Wähle Spiele, sammle Punkte und verfolge alles live.</p>
+          <span class="how-step">3</span>
+          <h3>Spiele starten</h3>
+          <p>Der Host wählt Spiele aus, lost zufällig das nächste Spiel oder trägt Ergebnisse ein.</p>
         </article>
         <article class="how-card">
-          <span class="how-step">4. Schritt</span>
-          <h3>Gewinner küren</h3>
-          <p>Am Ende steht der Champion fest.</p>
+          <span class="how-step">4</span>
+          <h3>Champion küren</h3>
+          <p>Die Punkte werden automatisch berechnet. Am Ende steht der Gewinner fest.</p>
         </article>
       </div>
       <article class="host-control">
-        <h3>Host-Kontrolle</h3>
-        <p>Der Host hat volle Kontrolle über die Spiele:
-- bestimmt Regeln
-- startet Runden
-- verwaltet Punkte
-- entscheidet bei Unklarheiten
-
-Alle anderen können entspannt mitspielen oder zuschauen.</p>
+        <h3>Der Host hat die volle Kontrolle</h3>
+        <p>Der Host bestimmt Regeln, Spiele, Teams, Ergebnisse und Sonderfälle. Alle anderen können entspannt mitspielen oder zuschauen.</p>
       </article>
     </section>
   </main>
