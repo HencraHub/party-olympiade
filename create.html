@@ -4,105 +4,80 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Lobby erstellen | Party Olympiade</title>
-
   <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: radial-gradient(circle at top, #1a1a2e, #090914);
-      color: white;
-      text-align: center;
-    }
-
-    .container {
-      max-width: 520px;
-      margin: auto;
-      padding: 60px 20px;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 16px;
-      margin: 10px 0;
-      border-radius: 16px;
-      border: 1px solid #333;
-      background: #151528;
-      color: white;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-
-    button {
-      width: 100%;
-      padding: 16px;
-      margin-top: 15px;
-      border-radius: 30px;
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-      font-weight: bold;
-      background: linear-gradient(45deg, #8B5CF6, #EC4899);
-      color: white;
-    }
-
-    a {
-      display: block;
-      margin-top: 30px;
-      color: #8B5CF6;
-      text-decoration: none;
-    }
+    body { margin: 0; font-family: Arial, sans-serif; background: radial-gradient(circle at top, #1a1a2e, #090914); color: white; text-align: center; }
+    .container { max-width: 560px; margin: auto; padding: 60px 20px; }
+    input, select { width: 100%; padding: 14px; margin: 8px 0; border-radius: 14px; border: 1px solid #333; background: #151528; color: white; box-sizing: border-box; }
+    .rules { text-align: left; background: #151528; border-radius: 14px; padding: 12px; margin-top: 12px; }
+    .rule-item { display: flex; gap: 8px; margin: 8px 0; color: #d4d4ea; font-size: 14px; }
+    button { width: 100%; padding: 15px; margin-top: 14px; border-radius: 30px; border: none; font-weight: bold; background: linear-gradient(45deg, #8b5cf6, #ec4899); color: white; }
+    .error { color: #fb7185; font-size: 14px; min-height: 18px; margin-top: 8px; }
+    a { display: block; margin-top: 20px; color: #22d3ee; text-decoration: none; }
   </style>
 </head>
-
 <body>
   <div class="container">
     <h1>Lobby erstellen</h1>
-
     <input id="lobbyName" placeholder="Name der Olympiade" />
-    <input id="hostName" placeholder="Dein Name" />
+    <input id="hostName" placeholder="Dein Name" maxlength="20" />
 
-    <select id="rules">
-      <option value="top3">Top 3: 5 / 3 / 1 Punkte</option>
-      <option value="all">Alle Plätze zählen</option>
-      <option value="winner">Nur Sieger bekommt Punkt</option>
+    <select id="tieRule">
+      <option value="tiebreaker">Gleichstand: Schätzfrage entscheidet</option>
+      <option value="shared_points">Gleichstand: Gleiche Punkte vergeben</option>
     </select>
 
-    <button onclick="createLobby()">Party starten</button>
+    <div class="rules">
+      <strong>Optionale Extra-Regeln (nur FFA außer Finale-Doppelt)</strong>
+      <label class="rule-item"><input type="checkbox" id="rComeback" /> Comeback-Regel (-2 wenn vorheriger Führender nicht Top 3)</label>
+      <label class="rule-item"><input type="checkbox" id="rLast" /> Letzter-Holt-Auf-Regel (+1 wenn vorher Letzter Top 3 erreicht)</label>
+      <label class="rule-item"><input type="checkbox" id="rStreak" /> Sieges-Serie-Regel (+1 bei 2 FFA-Siegen in Folge)</label>
+      <label class="rule-item"><input type="checkbox" id="rFinal" /> Finale-Doppelt-Regel (letztes Spiel doppelte Grundpunkte)</label>
+    </div>
 
-    <a href="index.html">Zurück zur Startseite</a>
+    <div id="error" class="error"></div>
+    <button onclick="createLobby()">Party starten</button>
+    <a href="index.html">← Zur Startseite</a>
   </div>
 
   <script>
+    function showError(message) { document.getElementById("error").innerText = message || ""; }
+
+    function generateLobbyCode() {
+      let code = "";
+      do { code = Math.random().toString(36).slice(2, 6).toUpperCase(); }
+      while (localStorage.getItem("party_olympiade_" + code));
+      return code;
+    }
+
     function createLobby() {
+      showError("");
       const lobbyName = document.getElementById("lobbyName").value.trim();
       const hostName = document.getElementById("hostName").value.trim();
-      const rules = document.getElementById("rules").value;
+      const tieRule = document.getElementById("tieRule").value;
 
-      if (!lobbyName || !hostName) {
-        alert("Bitte Lobby-Name und deinen Namen eingeben.");
-        return;
-      }
-
-      const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+      if (!lobbyName) return showError("Bitte Name der Olympiade eingeben.");
+      if (!hostName) return showError("Bitte deinen Namen eingeben.");
+      if (hostName.length > 20) return showError("Host-Name darf maximal 20 Zeichen lang sein.");
 
       const lobby = {
-        code,
+        code: generateLobbyCode(),
         lobbyName,
         hostName,
-        rules,
         players: [hostName],
         games: [],
-        results: []
+        results: [],
+        tieRule: tieRule || "tiebreaker",
+        extraRules: {
+          comebackPenalty: document.getElementById("rComeback").checked,
+          lastPlaceBonus: document.getElementById("rLast").checked,
+          winStreakBonus: document.getElementById("rStreak").checked,
+          finalDoublePoints: document.getElementById("rFinal").checked
+        }
       };
 
-      localStorage.setItem("party_olympiade_" + code, JSON.stringify(lobby));
-      localStorage.setItem("party_olympiade_last_code", code);
-
-      window.location.href = "lobby.html?code=" + code;
+      localStorage.setItem("party_olympiade_" + lobby.code, JSON.stringify(lobby));
+      localStorage.setItem("party_olympiade_last_code", lobby.code);
+      window.location.href = "lobby.html?code=" + lobby.code;
     }
   </script>
 </body>
