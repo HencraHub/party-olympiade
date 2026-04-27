@@ -243,6 +243,40 @@
       filter: drop-shadow(0 0 34px rgba(236, 72, 153, 0.35)) drop-shadow(0 0 50px rgba(34, 211, 238, 0.26));
     }
 
+    .hero-visual .character {
+      position: absolute;
+      width: clamp(96px, 9vw, 146px);
+      height: auto;
+      pointer-events: none;
+      user-select: none;
+      z-index: 2;
+      filter: drop-shadow(0 0 26px rgba(139, 92, 246, 0.34));
+    }
+
+    .hero-visual .character-pink {
+      left: 3%;
+      bottom: 4%;
+      transform: rotate(-6deg);
+    }
+
+    .hero-visual .character-blue {
+      right: 4%;
+      bottom: 3%;
+      transform: rotate(5deg);
+    }
+
+    .hero-visual .character-purple {
+      right: 11%;
+      top: 7%;
+      transform: rotate(8deg);
+    }
+
+    .hero-visual .character-green {
+      left: 18%;
+      top: 8%;
+      transform: rotate(-8deg);
+    }
+
     .hero-visual::before {
       content: "";
       position: absolute;
@@ -548,6 +582,10 @@
 
         <div class="hero-visual" aria-label="Podium Artwork">
           <img src="assets/hero-podium.png" alt="Podium mit Champion Visual" />
+          <img class="character character-pink" src="assets/character-pink.png" alt="" />
+          <img class="character character-blue" src="assets/character-blue.png" alt="" />
+          <img class="character character-purple" src="assets/character-purple.png" alt="" />
+          <img class="character character-green" src="assets/character-green.png" alt="" />
         </div>
       </section>
     </div>
