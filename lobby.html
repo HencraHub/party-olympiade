@@ -5,75 +5,134 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Lobby | Party Olympiade</title>
   <style>
-    :root{--bg:#070714;--bg2:#0d1024;--panel:rgba(18,18,36,.82);--panel2:rgba(28,28,56,.56);--border:rgba(255,255,255,.12);--purple:#8b5cf6;--pink:#ec4899;--cyan:#22d3ee;--text:#fff;--muted:#b7bbcc;--danger:#fb7185;--ok:#34d399}
-    *{box-sizing:border-box}
-    body{margin:0;min-height:100vh;font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;color:var(--text);background:radial-gradient(1200px 720px at 8% 0%,rgba(236,72,153,.22),transparent 70%),radial-gradient(1240px 760px at 92% 6%,rgba(34,211,238,.2),transparent 72%),linear-gradient(166deg,var(--bg2),var(--bg));overflow-x:hidden}
-    .page{width:min(1540px,96vw);margin:30px auto 40px}
-    .glass{border:1px solid var(--border);background:linear-gradient(138deg,var(--panel),var(--panel2)),linear-gradient(180deg,rgba(255,255,255,.04),transparent 36%);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-    .header{min-height:98px;border-radius:26px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:24px;padding:16px 26px;position:relative}
-    .header::before{content:"";position:absolute;inset:-1px;border-radius:inherit;background:linear-gradient(108deg,rgba(236,72,153,.28),transparent 34%,rgba(34,211,238,.26));filter:blur(18px);opacity:.58;z-index:-1}
-    .brand-logo{height:clamp(58px,5vw,68px);max-height:68px;display:block;filter:drop-shadow(0 0 16px rgba(236,72,153,.18))}
-    .nav{display:flex;justify-content:center;gap:22px;flex-wrap:wrap}.nav a{color:#c5c8d6;text-decoration:none;padding:8px 12px;border-radius:999px}.nav a:hover{color:#fff;background:rgba(255,255,255,.08)}
-    .btn{display:inline-flex;align-items:center;justify-content:center;padding:14px 26px;border-radius:999px;border:1px solid transparent;text-decoration:none;font-weight:700;cursor:pointer}
-    .btn-primary{color:#fff;background:linear-gradient(100deg,rgba(139,92,246,.95),rgba(236,72,153,.96));box-shadow:0 0 38px rgba(236,72,153,.5)}
-    .btn-secondary{color:var(--cyan);border-color:rgba(34,211,238,.64);background:linear-gradient(120deg,rgba(34,211,238,.1),rgba(34,211,238,.04))}
-    .lobby-layout{margin-top:34px;display:grid;grid-template-columns:1.2fr .8fr;gap:24px}
-    .panel{border-radius:28px;padding:28px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(145deg,rgba(16,16,36,.85),rgba(24,24,52,.56));box-shadow:0 0 36px rgba(34,211,238,.14),0 0 36px rgba(236,72,153,.12)}
-    .title{margin:0 0 8px;font-size:clamp(36px,3.5vw,52px)}
-    .muted{color:var(--muted)}
-    .code{font-size:clamp(44px,10vw,86px);font-weight:800;letter-spacing:.14em;color:#facc15;text-shadow:0 0 24px rgba(250,204,21,.38);margin:8px 0 14px}
-    .actions{display:flex;gap:12px;flex-wrap:wrap}
-    .players-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
-    .player-card{padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(11,13,28,.75);display:flex;justify-content:space-between;align-items:center}
-    .host-badge{font-size:.78rem;color:#111;background:linear-gradient(120deg,#facc15,#fde68a);padding:2px 8px;border-radius:999px;font-weight:700}
-    .input-row{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:14px}
-    input{width:100%;padding:13px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:#090914;color:#fff}
-    .error{color:var(--danger);min-height:18px;font-size:.92rem;margin-top:8px}
-    .ok{color:var(--ok);min-height:18px;font-size:.92rem;margin-top:6px}
-    .host-note{line-height:1.65}
-    .char-wrap{display:flex;justify-content:space-between;opacity:.9;margin-top:16px}
-    .char-wrap img{height:84px;filter:drop-shadow(0 0 20px rgba(139,92,246,.4))}
-    @media (max-width:1080px){.header{grid-template-columns:1fr;justify-items:center;text-align:center}.lobby-layout{grid-template-columns:1fr}.players-grid{grid-template-columns:1fr}.input-row{grid-template-columns:1fr}}
+    :root {
+      --bg: #070714; --bg2: #0d1024; --panel: rgba(18,18,36,.82); --panel2: rgba(28,28,56,.58);
+      --border: rgba(255,255,255,.12); --purple:#8b5cf6; --pink:#ec4899; --cyan:#22d3ee; --text:#fff; --muted:#b7bbcc;
+      --danger:#fb7185; --ok:#34d399;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; min-height:100vh; font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif; color:var(--text);
+      background:radial-gradient(1200px 720px at 8% 0%, rgba(236,72,153,.22), transparent 70%), radial-gradient(1240px 760px at 92% 6%, rgba(34,211,238,.2), transparent 72%), linear-gradient(166deg,var(--bg2),var(--bg)); overflow-x:hidden; }
+    .page { width:min(1580px,96vw); margin:30px auto 34px; }
+    .glass { border:1px solid var(--border); background:linear-gradient(138deg,var(--panel),var(--panel2)), linear-gradient(180deg,rgba(255,255,255,.04),transparent 36%); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+    .header { min-height:98px; border-radius:26px; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:24px; padding:16px 26px; position:relative; }
+    .header::before { content:""; position:absolute; inset:-1px; border-radius:inherit; background:linear-gradient(108deg,rgba(236,72,153,.28),transparent 34%,rgba(34,211,238,.26)); filter:blur(18px); opacity:.58; z-index:-1; }
+    .brand-logo { height:clamp(58px,5vw,68px); max-height:68px; filter:drop-shadow(0 0 16px rgba(236,72,153,.2)); }
+    .nav { display:flex; justify-content:center; gap:20px; flex-wrap:wrap; }
+    .nav a { color:#c5c8d6; text-decoration:none; padding:8px 12px; border-radius:999px; }
+    .nav a:hover { color:#fff; background:rgba(255,255,255,.08); }
+    .btn { display:inline-flex; align-items:center; justify-content:center; min-width:190px; padding:13px 22px; border-radius:999px; border:1px solid transparent; font-weight:700; cursor:pointer; text-decoration:none; }
+    .btn-primary { color:#fff; background:linear-gradient(100deg,rgba(139,92,246,.95),rgba(236,72,153,.96)); box-shadow:0 0 36px rgba(236,72,153,.55); }
+    .btn-secondary { color:var(--cyan); border-color:rgba(34,211,238,.64); background:linear-gradient(120deg,rgba(34,211,238,.1),rgba(34,211,238,.04)); }
+    .btn-danger { color:#fff; border-color:rgba(251,113,133,.55); background:linear-gradient(120deg,rgba(251,113,133,.2),rgba(251,113,133,.1)); }
+    .btn[disabled] { opacity:.45; cursor:not-allowed; }
+
+    .setup-progress { margin-top:24px; border-radius:22px; padding:16px; }
+    .steps { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+    .step { padding:12px; border-radius:14px; border:1px solid rgba(255,255,255,.12); background:rgba(10,12,24,.65); color:#d6d9e7; font-weight:600; text-align:center; }
+    .step.done { border-color:rgba(52,211,153,.75); color:#d1fae5; background:rgba(52,211,153,.14); }
+    .progress-meta { margin-top:10px; display:flex; gap:16px; flex-wrap:wrap; color:var(--muted); }
+
+    .layout { margin-top:18px; display:grid; grid-template-columns:1.2fr 1fr .9fr; gap:18px; align-items:start; }
+    .panel { border-radius:24px; padding:22px; border:1px solid rgba(255,255,255,.14); background:linear-gradient(145deg,rgba(16,16,36,.85),rgba(24,24,52,.56)); box-shadow:0 0 34px rgba(34,211,238,.14),0 0 34px rgba(236,72,153,.12); }
+
+    .lobby-title { margin:0; font-size:clamp(34px,3vw,46px); }
+    .lobby-code { font-size:clamp(42px,8vw,74px); letter-spacing:.14em; margin:8px 0 14px; color:#facc15; font-weight:800; text-shadow:0 0 24px rgba(250,204,21,.4); }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; }
+    .toast { min-height:18px; margin-top:8px; color:var(--ok); }
+
+    .join-box { margin-top:16px; padding:14px; border-radius:16px; border:1px solid rgba(255,255,255,.12); background:rgba(8,10,22,.66); }
+    .row { display:grid; grid-template-columns:1fr; gap:8px; }
+    input[type="text"] { width:100%; padding:13px 14px; border-radius:14px; border:1px solid rgba(255,255,255,.14); background:#090914; color:#fff; }
+    .avatars { margin-top:10px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+    .avatar-option { border:1px solid rgba(255,255,255,.16); border-radius:14px; background:rgba(12,14,28,.8); padding:7px; cursor:pointer; display:grid; place-items:center; }
+    .avatar-option img { width:52px; height:52px; object-fit:contain; }
+    .avatar-option.active { border-color:rgba(34,211,238,.88); box-shadow:0 0 20px rgba(34,211,238,.35); }
+
+    .players-grid { margin-top:14px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .player-card { border-radius:16px; padding:12px; border:1px solid rgba(255,255,255,.14); background:rgba(10,12,24,.78); display:flex; gap:10px; align-items:center; justify-content:space-between; }
+    .player-left { display:flex; align-items:center; gap:10px; min-width:0; }
+    .avatar { width:46px; height:46px; border-radius:50%; border:1px solid rgba(255,255,255,.2); overflow:hidden; display:grid; place-items:center; background:linear-gradient(120deg,rgba(139,92,246,.45),rgba(236,72,153,.45)); font-weight:700; }
+    .avatar img { width:100%; height:100%; object-fit:cover; }
+    .name { font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .status { color:var(--muted); font-size:.84rem; }
+    .badge { font-size:.72rem; padding:2px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.25); }
+    .badge.host { background:linear-gradient(120deg,#facc15,#fde68a); color:#111; border:none; font-weight:700; }
+
+    .games-list { display:grid; gap:8px; margin-top:10px; }
+    .game-item { display:flex; justify-content:space-between; gap:10px; align-items:center; border-radius:12px; padding:10px 12px; border:1px solid rgba(255,255,255,.12); background:rgba(10,12,24,.75); }
+    .mode { font-size:.74rem; padding:3px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.24); }
+    .mode.team { color:#22d3ee; } .mode.ffa { color:#f9a8d4; }
+
+    .error { color:var(--danger); min-height:18px; margin-top:8px; }
+    .muted { color:var(--muted); }
+    .host-info { line-height:1.65; }
+    .rule-list { margin:10px 0 0; padding-left:18px; color:#d8dbe7; }
+
+    @media (max-width:1260px) {
+      .header { grid-template-columns:1fr; justify-items:center; text-align:center; }
+      .steps { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .layout { grid-template-columns:1fr; }
+    }
+
+    @media (max-width:760px) {
+      .players-grid { grid-template-columns:1fr; }
+      .avatars { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .steps { grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="page">
     <header class="header glass">
       <a href="index.html"><img class="brand-logo" src="assets/logo-party-olympiade.png" alt="Party Olympiade"/></a>
-      <nav class="nav" aria-label="Navigation"><a href="index.html#features">Features</a><a href="index.html#how">Ablauf</a><a href="create.html">Neue Lobby</a></nav>
+      <nav class="nav" aria-label="Navigation">
+        <a href="index.html#features">Features</a>
+        <a href="index.html#how">So funktioniert’s</a>
+        <a href="create.html">Neue Lobby</a>
+      </nav>
       <div><a class="btn btn-secondary" href="index.html">Zur Startseite</a></div>
     </header>
 
-    <section class="lobby-layout">
-      <div class="panel glass">
-        <h1 id="title" class="title">Lobby</h1>
-        <p class="muted">Teile den Code oder den Einladungslink mit deinen Freunden.</p>
-        <div id="code" class="code">----</div>
+    <section class="setup-progress glass panel">
+      <div class="steps" id="steps"></div>
+      <div class="progress-meta" id="progressMeta"></div>
+    </section>
+
+    <main class="layout">
+      <section class="panel glass">
+        <h1 id="title" class="lobby-title">Lobby</h1>
+        <div class="muted">Lobby-Code</div>
+        <div id="code" class="lobby-code">----</div>
         <div class="actions">
-          <button class="btn btn-primary" onclick="window.location.href='games.html?code=' + lobby.code">Spiele auswählen</button>
           <button class="btn btn-secondary" onclick="copyInvite()">Einladungslink kopieren</button>
         </div>
-        <div id="copyInfo" class="ok"></div>
+        <div id="toast" class="toast"></div>
 
-        <h2>Spieler in der Lobby</h2>
+        <div id="joinSection" class="join-box">
+          <h3>Lobby beitreten</h3>
+          <div class="row">
+            <input id="playerName" type="text" placeholder="Dein Name (max. 20 Zeichen)" maxlength="20" />
+          </div>
+          <div class="avatars" id="avatarChoices"></div>
+          <div class="actions" style="margin-top:10px;"><button class="btn btn-primary" onclick="joinLobbyAsPlayer()">Lobby beitreten</button></div>
+          <div id="error" class="error"></div>
+        </div>
+
+        <div id="joinedInfo" class="join-box" style="display:none;"></div>
+
+        <h2>Spielerübersicht</h2>
         <div id="players" class="players-grid"></div>
+      </section>
 
-        <div class="input-row">
-          <input id="playerName" placeholder="Spielername (max. 20 Zeichen)" maxlength="20" />
-          <button class="btn btn-primary" onclick="addPlayer()">Spieler hinzufügen</button>
-        </div>
-        <div id="error" class="error"></div>
-      </div>
+      <section class="panel glass">
+        <h2>Ausgewählte Spiele</h2>
+        <div id="gamesSummary" class="muted"></div>
+        <div id="gamesList" class="games-list"></div>
+      </section>
 
-      <aside class="panel glass">
-        <h2>Host-Bereich</h2>
-        <p class="host-note muted">Nur der Host steuert die Runde, wählt Spiele aus und trägt Ergebnisse ein. Alle anderen können entspannt mitspielen oder zuschauen.</p>
-        <div class="char-wrap" aria-hidden="true">
-          <img src="assets/character-blue.png" alt=""/>
-          <img src="assets/character-purple.png" alt=""/>
-        </div>
-      </aside>
-    </section>
+      <aside id="sidePanel" class="panel glass"></aside>
+    </main>
   </div>
 
   <script>
@@ -81,17 +140,24 @@
     if (!code) window.location.href = "index.html";
 
     const storageKey = "party_olympiade_" + code;
+    const viewerKey = "party_olympiade_viewer_" + code;
     let lobby = JSON.parse(localStorage.getItem(storageKey));
     if (!lobby) { alert("Lobby nicht gefunden."); window.location.href = "index.html"; }
 
-    function normalizeLobby() {
-      lobby.players = Array.isArray(lobby.players) ? lobby.players : [];
-      lobby.games = Array.isArray(lobby.games) ? lobby.games : [];
-      lobby.results = Array.isArray(lobby.results) ? lobby.results : [];
-      if (!lobby.tieRule) lobby.tieRule = "tiebreaker";
-      if (!lobby.extraRules) {
-        lobby.extraRules = { comebackPenalty: false, lastPlaceBonus: false, winStreakBonus: false, finalDoublePoints: false };
-      }
+    const avatarPool = [
+      "assets/character-pink.png",
+      "assets/character-blue.png",
+      "assets/character-purple.png",
+      "assets/character-green.png"
+    ];
+
+    let viewer = JSON.parse(localStorage.getItem(viewerKey) || "null");
+    let selectedAvatar = avatarPool[0];
+
+    function makeId() {
+      return (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : (Date.now().toString(36) + Math.random().toString(36).slice(2));
     }
 
     function saveLobby() {
@@ -99,7 +165,113 @@
       localStorage.setItem("party_olympiade_last_code", lobby.code);
     }
 
+    function saveViewer() {
+      localStorage.setItem(viewerKey, JSON.stringify(viewer));
+    }
+
     function showError(msg) { document.getElementById("error").innerText = msg || ""; }
+    function showToast(msg) { document.getElementById("toast").innerText = msg || ""; }
+
+    function normalizeLobby() {
+      lobby.players = Array.isArray(lobby.players) ? lobby.players : [];
+      lobby.games = Array.isArray(lobby.games) ? lobby.games : [];
+      lobby.results = Array.isArray(lobby.results) ? lobby.results : [];
+      lobby.tieRule = lobby.tieRule || "tiebreaker";
+      lobby.extraRules = lobby.extraRules || { comebackPenalty: false, lastPlaceBonus: false, winStreakBonus: false, finalDoublePoints: false };
+
+      const hostName = (lobby.hostName || (typeof lobby.players[0] === "string" ? lobby.players[0] : lobby.players[0]?.name) || "Host").trim();
+      lobby.hostName = hostName;
+
+      const normalized = [];
+      let hostAssigned = false;
+
+      lobby.players.forEach((p, i) => {
+        let obj;
+        if (typeof p === "string") {
+          obj = {
+            id: makeId(),
+            name: p.trim(),
+            avatar: avatarPool[i % avatarPool.length],
+            isHost: false,
+            ready: true,
+            joinedAt: Date.now() + i
+          };
+        } else if (p && typeof p === "object") {
+          obj = {
+            id: p.id || makeId(),
+            name: (p.name || "").trim(),
+            avatar: p.avatar || avatarPool[i % avatarPool.length],
+            isHost: !!p.isHost,
+            ready: p.ready !== false,
+            joinedAt: typeof p.joinedAt === "number" ? p.joinedAt : Date.now() + i
+          };
+        }
+        if (!obj || !obj.name) return;
+        if (obj.isHost || obj.name === hostName) {
+          obj.isHost = true;
+          hostAssigned = true;
+        }
+        normalized.push(obj);
+      });
+
+      const names = new Set();
+      lobby.players = normalized.filter((p) => {
+        const key = p.name.toLowerCase();
+        if (names.has(key)) return false;
+        names.add(key);
+        return true;
+      });
+
+      let hostPlayer = lobby.players.find((p) => p.isHost);
+      if (!hostPlayer) {
+        hostPlayer = lobby.players.find((p) => p.name.toLowerCase() === hostName.toLowerCase());
+      }
+      if (!hostPlayer) {
+        hostPlayer = { id: makeId(), name: hostName, avatar: avatarPool[0], isHost: true, ready: true, joinedAt: Date.now() };
+        lobby.players.unshift(hostPlayer);
+      }
+      lobby.players.forEach((p) => { p.isHost = p.id === hostPlayer.id; });
+      lobby.hostName = hostPlayer.name;
+
+      if (!viewer) {
+        const lastCode = localStorage.getItem("party_olympiade_last_code") || "";
+        if (lastCode.toUpperCase() === code) {
+          viewer = { playerId: hostPlayer.id, isHost: true };
+          saveViewer();
+        }
+      }
+    }
+
+    function getCurrentPlayer() {
+      if (!viewer || !viewer.playerId) return null;
+      return lobby.players.find((p) => p.id === viewer.playerId) || null;
+    }
+
+    function isCurrentHost() {
+      const current = getCurrentPlayer();
+      return !!(current && current.isHost);
+    }
+
+    function renderAvatarChoices() {
+      const box = document.getElementById("avatarChoices");
+      box.innerHTML = "";
+      avatarPool.forEach((avatar) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "avatar-option" + (selectedAvatar === avatar ? " active" : "");
+        item.innerHTML = `<img src="${avatar}" alt="Avatar" />`;
+        item.onclick = () => { selectedAvatar = avatar; renderAvatarChoices(); };
+        box.appendChild(item);
+      });
+    }
+
+    function playerAvatarHTML(player) {
+      const initial = (player.name || "?").slice(0, 1).toUpperCase();
+      if (player.avatar) {
+        return `<span class="avatar"><img src="${player.avatar}" alt="Avatar ${player.name}" onerror="this.parentElement.innerText='${initial}'" /></span>`;
+      }
+      return `<span class="avatar">${initial}</span>`;
+    }
 
     function renderPlayers() {
       const list = document.getElementById("players");
@@ -108,42 +280,215 @@
         list.innerHTML = '<div class="muted">Noch keine Spieler in der Lobby.</div>';
         return;
       }
+
       lobby.players.forEach((p) => {
-        const card = document.createElement("div");
+        const card = document.createElement("article");
         card.className = "player-card";
-        const isHost = lobby.hostName && p === lobby.hostName;
-        card.innerHTML = `<span>${p}</span>${isHost ? '<span class="host-badge">Host</span>' : ''}`;
+        const removeButton = (isCurrentHost() && !p.isHost)
+          ? `<button class="btn btn-danger" style="min-width:auto;padding:8px 12px;" onclick="removePlayer('${p.id}')">Entfernen</button>`
+          : "";
+
+        card.innerHTML = `
+          <div class="player-left">
+            ${playerAvatarHTML(p)}
+            <div>
+              <div class="name">${p.name}</div>
+              <div class="status">${p.ready ? "bereit" : "in Lobby"}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">${p.isHost ? '<span class="badge host">Host</span>' : '<span class="badge">Spieler</span>'}${removeButton}</div>
+        `;
         list.appendChild(card);
       });
     }
 
-    function addPlayer() {
+    function joinLobbyAsPlayer() {
       showError("");
       const input = document.getElementById("playerName");
       const name = input.value.trim();
+
       if (!name) return showError("Spielername darf nicht leer sein.");
       if (name.length > 20) return showError("Spielername darf maximal 20 Zeichen haben.");
-      if (lobby.players.some((p) => p.toLowerCase() === name.toLowerCase())) return showError("Spielername existiert bereits.");
+      if (lobby.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) return showError("Spielername existiert bereits.");
 
-      lobby.players.push(name);
-      input.value = "";
+      const newPlayer = {
+        id: makeId(),
+        name,
+        avatar: selectedAvatar || avatarPool[0],
+        isHost: false,
+        ready: true,
+        joinedAt: Date.now()
+      };
+
+      lobby.players.push(newPlayer);
+      viewer = { playerId: newPlayer.id, isHost: false };
+      saveViewer();
       saveLobby();
-      renderPlayers();
+      renderAll();
+    }
+
+    function removePlayer(id) {
+      if (!isCurrentHost()) return;
+      const target = lobby.players.find((p) => p.id === id);
+      if (!target || target.isHost) return;
+      lobby.players = lobby.players.filter((p) => p.id !== id);
+      saveLobby();
+      renderAll();
     }
 
     function copyInvite() {
-      document.getElementById("copyInfo").innerText = "";
-      const link = `${window.location.origin}${window.location.pathname.replace('lobby.html','lobby.html')}?code=${lobby.code}`;
+      const link = `${window.location.origin}${window.location.pathname.replace('lobby.html', 'lobby.html')}?code=${lobby.code}`;
       navigator.clipboard.writeText(link)
-        .then(() => { document.getElementById("copyInfo").innerText = "Einladungslink kopiert."; })
-        .catch(() => { showError("Kopieren fehlgeschlagen."); });
+        .then(() => showToast("Einladungslink kopiert."))
+        .catch(() => showError("Kopieren fehlgeschlagen."));
+    }
+
+    function setupStepData() {
+      const playersDone = lobby.players.length >= 2;
+      const gamesDone = lobby.games.length >= 1;
+      const rulesDone = !!lobby.tieRule || !!lobby.extraRules;
+      const readyDone = playersDone && gamesDone;
+      const validGameIds = new Set(lobby.games.map((g) => (typeof g === "string" ? g : g.id)));
+      const played = lobby.results.filter((r) => validGameIds.has(r.gameId) || validGameIds.has(r.game)).length;
+      return { playersDone, gamesDone, rulesDone, readyDone, played };
+    }
+
+    function renderSetupProgress() {
+      const { playersDone, gamesDone, rulesDone, readyDone, played } = setupStepData();
+      const steps = [
+        { label: "1. Spieler", done: playersDone },
+        { label: "2. Spiele", done: gamesDone },
+        { label: "3. Regeln", done: rulesDone },
+        { label: "4. Startbereit", done: readyDone }
+      ];
+
+      document.getElementById("steps").innerHTML = steps.map((s) => `<div class="step ${s.done ? "done" : ""}">${s.label}</div>`).join("");
+
+      const gamesText = lobby.games.length ? `${lobby.games.length} Spiele geplant` : "Noch keine Spiele ausgewählt";
+      document.getElementById("progressMeta").innerHTML = `
+        <span>${lobby.players.length} Spieler in der Lobby</span>
+        <span>${gamesText}</span>
+        <span>${played} von ${lobby.games.length || 0} Spielen gespielt</span>
+      `;
+    }
+
+    function gameMode(game) {
+      if (typeof game === "string") return "FFA";
+      return (game.mode === "team" ? "TEAM" : "FFA");
+    }
+
+    function gameName(game) { return typeof game === "string" ? game : (game.name || "Spiel"); }
+
+    function renderGamesPreview() {
+      const box = document.getElementById("gamesList");
+      const summary = document.getElementById("gamesSummary");
+      const validGameIds = new Set(lobby.games.map((g) => (typeof g === "string" ? g : g.id)));
+      const played = lobby.results.filter((r) => validGameIds.has(r.gameId) || validGameIds.has(r.game)).length;
+
+      summary.innerText = `${lobby.games.length} Spiele geplant · ${played} von ${lobby.games.length || 0} gespielt`;
+
+      if (!lobby.games.length) {
+        box.innerHTML = `
+          <div class="muted">Noch keine Spiele ausgewählt.</div>
+          <div class="muted">Der Host legt im nächsten Schritt fest, welche Spiele gespielt werden.</div>
+        `;
+        return;
+      }
+
+      box.innerHTML = lobby.games.map((g) => `
+        <div class="game-item">
+          <span>${gameName(g)}</span>
+          <span class="mode ${gameMode(g).toLowerCase() === "team" ? "team" : "ffa"}">${gameMode(g)}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderRuleOverview() {
+      const tieMap = {
+        tiebreaker: "Schätzfrage entscheidet",
+        shared_points: "Gleiche Punkte vergeben"
+      };
+      const extras = [];
+      if (lobby.extraRules?.comebackPenalty) extras.push("Comeback-Regel");
+      if (lobby.extraRules?.lastPlaceBonus) extras.push("Letzter-holt-auf");
+      if (lobby.extraRules?.winStreakBonus) extras.push("Sieges-Serie");
+      if (lobby.extraRules?.finalDoublePoints) extras.push("Finale doppelt");
+
+      return `
+        <div class="muted">Gleichstandsregel: ${tieMap[lobby.tieRule] || "Schätzfrage entscheidet"}</div>
+        ${extras.length
+          ? `<ul class="rule-list">${extras.map((r) => `<li>${r}</li>`).join("")}</ul>`
+          : `<div class="muted" style="margin-top:8px;">Keine Extra-Regeln aktiv</div>`}
+      `;
+    }
+
+    function resetLobby() {
+      if (!isCurrentHost()) return;
+      if (!confirm("Wirklich Lobby-Setup zurücksetzen?")) return;
+      lobby.games = [];
+      lobby.results = [];
+      saveLobby();
+      renderAll();
+    }
+
+    function renderSidePanel() {
+      const panel = document.getElementById("sidePanel");
+      const isHost = isCurrentHost();
+      const gamesReady = lobby.games.length > 0;
+
+      if (isHost) {
+        panel.innerHTML = `
+          <h2>Host-Bereich</h2>
+          <p class="host-info muted">Du steuerst Spiele, Regeln, Teams und Ergebnisse.</p>
+          <div class="actions">
+            <button class="btn btn-primary" onclick="window.location.href='games.html?code=' + lobby.code">Spiele auswählen</button>
+            <button class="btn btn-secondary" onclick="copyInvite()">Einladungslink kopieren</button>
+            <button class="btn btn-danger" onclick="resetLobby()">Lobby zurücksetzen</button>
+          </div>
+          <h3>Regelübersicht</h3>
+          ${renderRuleOverview()}
+          <p class="muted" style="margin-top:12px;">Alle anderen können entspannt mitspielen oder zuschauen.</p>
+        `;
+      } else {
+        panel.innerHTML = `
+          <h2>Du bist Spieler</h2>
+          <p class="muted">Der Host startet die Spiele und trägt Ergebnisse ein. Du kannst die Lobby, Spiele und Rangliste verfolgen.</p>
+          <p class="muted">Der Host verwaltet Spiele, Ergebnisse und Regeln.</p>
+          <button class="btn btn-secondary" ${gamesReady ? "" : "disabled"} onclick="${gamesReady ? `window.location.href='scoreboard.html?code=' + lobby.code` : ""}">Scoreboard ansehen</button>
+          ${gamesReady ? "" : '<div class="muted" style="margin-top:8px;">Warte, bis der Host Spiele ausgewählt hat.</div>'}
+        `;
+      }
+    }
+
+    function renderJoinState() {
+      const current = getCurrentPlayer();
+      const joinSection = document.getElementById("joinSection");
+      const joinedInfo = document.getElementById("joinedInfo");
+
+      if (current) {
+        joinSection.style.display = "none";
+        joinedInfo.style.display = "block";
+        joinedInfo.innerHTML = `Du bist als <strong>${current.name}</strong> in der Lobby.`;
+      } else {
+        joinSection.style.display = "block";
+        joinedInfo.style.display = "none";
+      }
+    }
+
+    function renderAll() {
+      document.getElementById("title").innerText = lobby.lobbyName || "Lobby";
+      document.getElementById("code").innerText = lobby.code || code;
+      renderSetupProgress();
+      renderAvatarChoices();
+      renderJoinState();
+      renderPlayers();
+      renderGamesPreview();
+      renderSidePanel();
     }
 
     normalizeLobby();
     saveLobby();
-    document.getElementById("title").innerText = lobby.lobbyName;
-    document.getElementById("code").innerText = lobby.code;
-    renderPlayers();
+    renderAll();
   </script>
 </body>
 </html>
