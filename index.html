@@ -171,49 +171,6 @@
       pointer-events: none;
     }
 
-    .character-layer {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 3;
-    }
-
-    .character {
-      position: absolute;
-      width: clamp(66px, 6.5vw, 110px);
-      height: auto;
-      pointer-events: none;
-      user-select: none;
-      filter: drop-shadow(0 0 22px rgba(139, 92, 246, 0.26));
-    }
-
-    .character-hero-side {
-      top: 44%;
-      left: -26px;
-      animation: floatGentle 8s ease-in-out infinite, peekSide 7.2s ease-in-out infinite;
-    }
-
-    .character-features-bottom {
-      top: 100%;
-      left: 8%;
-      transform: translateY(16px);
-      animation: floatGentle 9s ease-in-out infinite;
-    }
-
-    .character-right-pop {
-      top: 58%;
-      right: -22px;
-      animation: floatGentle 8.6s ease-in-out infinite, peekRight 7.8s ease-in-out infinite;
-    }
-
-    .character-sad-corner {
-      top: calc(100% + 222px);
-      right: 2%;
-      width: clamp(62px, 5.6vw, 96px);
-      opacity: 0.92;
-      animation: floatSlow 10s ease-in-out infinite;
-    }
-
     .hero {
       min-height: 680px;
       border-radius: 36px;
@@ -284,6 +241,40 @@
       object-fit: cover;
       display: block;
       filter: drop-shadow(0 0 34px rgba(236, 72, 153, 0.35)) drop-shadow(0 0 50px rgba(34, 211, 238, 0.26));
+    }
+
+    .hero-visual .character {
+      position: absolute;
+      width: clamp(96px, 9vw, 146px);
+      height: auto;
+      pointer-events: none;
+      user-select: none;
+      z-index: 2;
+      filter: drop-shadow(0 0 26px rgba(139, 92, 246, 0.34));
+    }
+
+    .hero-visual .character-pink {
+      left: 3%;
+      bottom: 4%;
+      transform: rotate(-6deg);
+    }
+
+    .hero-visual .character-blue {
+      right: 4%;
+      bottom: 3%;
+      transform: rotate(5deg);
+    }
+
+    .hero-visual .character-purple {
+      right: 11%;
+      top: 7%;
+      transform: rotate(8deg);
+    }
+
+    .hero-visual .character-green {
+      left: 18%;
+      top: 8%;
+      transform: rotate(-8deg);
     }
 
     .hero-visual::before {
@@ -383,45 +374,93 @@
     .feature-line.gold { background-image: linear-gradient(90deg, rgba(250, 204, 21, 0.94), rgba(236, 72, 153, 0.5), rgba(250, 204, 21, 0.94)); }
     .feature-line.green { background-image: linear-gradient(90deg, rgba(34, 197, 94, 0.94), rgba(34, 211, 238, 0.52), rgba(34, 197, 94, 0.94)); }
 
-    .bottom-strip {
-      margin-top: 28px;
-      border-radius: 24px;
-      padding: 16px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
+    .how-title {
+      margin: 92px 6px 14px;
+      color: #fff;
+      font-size: clamp(34px, 3.2vw, 48px);
+      letter-spacing: -0.02em;
+    }
+
+    .how-subline {
+      margin: 0 6px 28px;
+      color: #c9cde0;
+      font-size: 1.08rem;
+    }
+
+    .how-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .how-card {
+      min-height: 226px;
+      border-radius: 28px;
       border: 1px solid rgba(255, 255, 255, 0.12);
       background:
-        linear-gradient(120deg, rgba(19, 21, 44, 0.88), rgba(20, 22, 46, 0.66)),
-        radial-gradient(circle at 10% 50%, rgba(139, 92, 246, 0.16), transparent 34%),
-        radial-gradient(circle at 88% 45%, rgba(34, 211, 238, 0.14), transparent 34%);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
+        linear-gradient(140deg, rgba(24, 26, 51, 0.86), rgba(19, 21, 46, 0.68)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 40%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 24px 22px;
+      transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.26s ease;
     }
 
-    .bottom-strip p {
+    .how-card:hover {
+      transform: translateY(-8px);
+      border-color: rgba(255, 255, 255, 0.26);
+      box-shadow: 0 0 44px rgba(139, 92, 246, 0.26), 0 0 68px rgba(34, 211, 238, 0.24);
+    }
+
+    .how-step {
+      display: inline-flex;
+      margin-bottom: 14px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      background: linear-gradient(110deg, rgba(139, 92, 246, 0.56), rgba(236, 72, 153, 0.54));
+      box-shadow: 0 0 18px rgba(236, 72, 153, 0.3);
+    }
+
+    .how-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.18rem;
+    }
+
+    .how-card p {
+      margin: 0;
+      color: #c5c8d8;
+      line-height: 1.62;
+      font-size: 0.97rem;
+    }
+
+    .host-control {
+      margin-top: 24px;
+      border-radius: 28px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 28px;
+      background:
+        linear-gradient(140deg, rgba(29, 19, 52, 0.76), rgba(17, 22, 44, 0.78)),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 42%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 0 44px rgba(236, 72, 153, 0.26), 0 0 62px rgba(34, 211, 238, 0.22);
+    }
+
+    .host-control h3 {
+      margin: 0 0 12px;
+      font-size: clamp(24px, 2.2vw, 32px);
+    }
+
+    .host-control p {
       margin: 0;
       color: #d8dbe7;
-    }
-
-    .bottom-strip button {
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 999px;
-      padding: 11px 18px;
-      font-weight: 700;
-      color: #fff;
-      background: linear-gradient(100deg, rgba(139, 92, 246, 0.68), rgba(236, 72, 153, 0.68));
-      cursor: pointer;
-      box-shadow: 0 0 24px rgba(236, 72, 153, 0.32);
-      transition: transform 0.2s ease, box-shadow 0.22s ease;
-    }
-
-    .bottom-strip button:hover,
-    .bottom-strip button:focus-visible {
-      transform: translateY(-2px);
-      box-shadow: 0 0 34px rgba(236, 72, 153, 0.48);
+      line-height: 1.7;
+      white-space: pre-line;
     }
 
     footer {
@@ -442,26 +481,6 @@
       100% { background-position: 200% 0; }
     }
 
-    @keyframes floatGentle {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-9px); }
-    }
-
-    @keyframes floatSlow {
-      0%, 100% { transform: translateY(0) rotate(-2deg); }
-      50% { transform: translateY(-7px) rotate(2deg); }
-    }
-
-    @keyframes peekSide {
-      0%, 100% { margin-left: 0; }
-      50% { margin-left: 8px; }
-    }
-
-    @keyframes peekRight {
-      0%, 100% { margin-right: 0; }
-      50% { margin-right: 8px; }
-    }
-
     @media (max-width: 1260px) {
       .hero {
         grid-template-columns: 1fr;
@@ -479,6 +498,10 @@
       #features {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
+
+      .how-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 940px) {
@@ -495,6 +518,10 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
+      .how-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       .btn {
         min-width: 100%;
       }
@@ -507,13 +534,14 @@
         max-width: none;
       }
 
-      .character-layer {
-        display: none;
-      }
     }
 
     @media (max-width: 560px) {
       #features {
+        grid-template-columns: 1fr;
+      }
+
+      .how-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -537,12 +565,6 @@
     </header>
 
     <div class="hero-wrap">
-      <div class="character-layer" aria-hidden="true">
-        <img class="character character-hero-side" src="assets/character-pink.png" alt="" />
-        <img class="character character-features-bottom" src="assets/character-blue.png" alt="" />
-        <img class="character character-right-pop" src="assets/character-purple.png" alt="" />
-        <img class="character character-sad-corner" src="assets/character-green.png" alt="" />
-      </div>
       <section class="hero glass" id="top">
         <div class="hero-content">
           <h1>Deine Party.<br />Eure Spiele.<br />Ein <span class="champion">Champion.</span></h1>
@@ -556,11 +578,15 @@
 
         <div class="hero-visual" aria-label="Podium Artwork">
           <img src="assets/hero-podium.png" alt="Podium mit Champion Visual" />
+          <img class="character character-pink" src="assets/character-pink.png" alt="" />
+          <img class="character character-blue" src="assets/character-blue.png" alt="" />
+          <img class="character character-purple" src="assets/character-purple.png" alt="" />
+          <img class="character character-green" src="assets/character-green.png" alt="" />
         </div>
       </section>
     </div>
 
-    <h2 class="section-title" id="how">Features</h2>
+    <h2 class="section-title">Features</h2>
     <section id="features" aria-label="Feature Karten">
       <article class="feature-card">
         <div class="icon-orb"><img class="feature-icon" src="assets/icon-dice.png" alt="Icon Zufalls-Auslosung" /></div>
@@ -594,9 +620,41 @@
       </article>
     </section>
 
-    <section class="bottom-strip" aria-label="Hinweisbereich">
-      <p>Perfekt für Geburtstage, WG-Partys, Teamevents und jede Feier!</p>
-      <button type="button" onclick="document.getElementById('features').scrollIntoView({ behavior: 'smooth' });">Mehr erfahren</button>
+    <section id="how" aria-label="So funktioniert's">
+      <h2 class="how-title">So funktioniert’s</h2>
+      <p class="how-subline">In wenigen Schritten zur eigenen Party-Olympiade</p>
+      <div class="how-grid">
+        <article class="how-card">
+          <span class="how-step">1. Schritt</span>
+          <h3>Lobby erstellen</h3>
+          <p>Du erstellst eine Olympiade und bekommst sofort einen Code.</p>
+        </article>
+        <article class="how-card">
+          <span class="how-step">2. Schritt</span>
+          <h3>Freunde einladen</h3>
+          <p>Teile den Code – alle können sofort beitreten.</p>
+        </article>
+        <article class="how-card">
+          <span class="how-step">3. Schritt</span>
+          <h3>Spiele spielen</h3>
+          <p>Wähle Spiele, sammle Punkte und verfolge alles live.</p>
+        </article>
+        <article class="how-card">
+          <span class="how-step">4. Schritt</span>
+          <h3>Gewinner küren</h3>
+          <p>Am Ende steht der Champion fest.</p>
+        </article>
+      </div>
+      <article class="host-control">
+        <h3>Host-Kontrolle</h3>
+        <p>Der Host hat volle Kontrolle über die Spiele:
+- bestimmt Regeln
+- startet Runden
+- verwaltet Punkte
+- entscheidet bei Unklarheiten
+
+Alle anderen können entspannt mitspielen oder zuschauen.</p>
+      </article>
     </section>
   </main>
 
