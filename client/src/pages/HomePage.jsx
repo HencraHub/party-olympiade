@@ -119,7 +119,8 @@ export default function HomePage() {
             <br />
             <span
               style={{
-                background: "linear-gradient(90deg, #ec4899 0%, #8b5cf6 50%, #22d3ee 100%)",
+                background:
+                  "linear-gradient(90deg, #ec4899 0%, #8b5cf6 50%, #22d3ee 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
@@ -129,7 +130,8 @@ export default function HomePage() {
           </h1>
 
           <p className="text-white/60 text-lg sm:text-xl leading-relaxed mb-10 max-w-lg">
-            Stellt euch in verrückten Spielen, sammelt Punkte und kämpft um die Krone der Party Olympiade!
+            Stellt euch in verrückten Spielen, sammelt Punkte und kämpft um die
+            Krone der Party Olympiade!
           </p>
 
           {/* CTA buttons */}
@@ -141,7 +143,9 @@ export default function HomePage() {
               <span className="text-lg">+</span>
               <div className="text-left">
                 <div className="font-black">Lobby erstellen</div>
-                <div className="text-xs font-normal opacity-70">Neue Olympiade starten</div>
+                <div className="text-xs font-normal opacity-70">
+                  Neue Olympiade starten
+                </div>
               </div>
             </button>
             <button
@@ -151,7 +155,9 @@ export default function HomePage() {
               <span className="text-lg">👥</span>
               <div className="text-left">
                 <div className="font-black">Lobby beitreten</div>
-                <div className="text-xs font-normal opacity-70">Mit Code beitreten</div>
+                <div className="text-xs font-normal opacity-70">
+                  Mit Code beitreten
+                </div>
               </div>
             </button>
           </div>
@@ -259,7 +265,8 @@ export default function HomePage() {
               </span>
             </h2>
             <p className="text-white/50 mb-8 max-w-sm mx-auto">
-              Starte jetzt dein Event und finde heraus, wer der wahre Champion ist.
+              Starte jetzt dein Event und finde heraus, wer der wahre Champion
+              ist.
             </p>
             <button
               className="btn-primary !px-10 !py-4 !rounded-2xl text-base shadow-[0_0_40px_rgba(139,92,246,0.4)]"
@@ -273,4 +280,3 @@ export default function HomePage() {
     </div>
   );
 }
-

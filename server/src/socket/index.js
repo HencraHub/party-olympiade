@@ -227,9 +227,9 @@ export function initSocket(io) {
           return socket.emit("error", { message: "Olympic not found" });
         if (olympic.hostToken !== hostToken)
           return socket.emit("error", { message: "Unauthorized" });
-        if (olympic.status !== "lobby")
+        if (olympic.status !== "lobby" && olympic.status !== "active")
           return socket.emit("error", {
-            message: "Can only revert from lobby",
+            message: "Can only revert from lobby or active",
           });
 
         olympic.status = "draft";
@@ -248,6 +248,109 @@ export function initSocket(io) {
 
     socket.on("disconnect", () => {
       console.log(`Socket disconnected: ${socket.id}`);
+      // If a participant disconnects from the lobby, remove them from participants
+      const roomCode = socket.data.code;
+      const playerName = socket.data.name;
+      const isHost = socket.data.isHost;
+      if (roomCode && playerName && !isHost) {
+        Olympic.findOne({ code: roomCode, status: "lobby" })
+          .then(async (olympic) => {
+            if (!olympic) return;
+            const before = olympic.participants.length;
+            olympic.participants = olympic.participants.filter(
+              (p) => p.name !== playerName,
+            );
+            if (olympic.participants.length !== before) {
+              await olympic.save();
+              const safe = olympic.toObject();
+              delete safe.hostToken;
+              io.to(roomCode).emit("room-update", {
+                olympic: safe,
+                leaderboard: computeLeaderboard(safe),
+              });
+            }
+          })
+          .catch(() => {});
+      }
+    });
+
+    /**
+     * edit-games — host reorders or removes games during active olympic
+     * payload: { code, hostToken, games }
+     */
+    socket.on("edit-games", async ({ code, hostToken, games }) => {
+      try {
+        const upperCode = code.toUpperCase();
+        const olympic = await Olympic.findOne({ code: upperCode });
+        if (!olympic)
+          return socket.emit("error", { message: "Olympic not found" });
+        if (olympic.hostToken !== hostToken)
+          return socket.emit("error", { message: "Unauthorized" });
+        if (!Array.isArray(games) || games.length === 0)
+          return socket.emit("error", { message: "At least one game required" });
+
+        // Map to _id strings for quick lookup
+        const allowedIds = new Set(olympic.games.map((g) => String(g._id)));
+        const newGames = games.filter((g) => allowedIds.has(String(g._id)));
+        if (newGames.length === 0)
+          return socket.emit("error", { message: "No valid games provided" });
+
+        olympic.games = newGames;
+        // Clamp currentGameIndex to valid range
+        if (olympic.currentGameIndex >= newGames.length) {
+          olympic.currentGameIndex = newGames.length - 1;
+        }
+        await olympic.save();
+
+        const safe = olympic.toObject();
+        delete safe.hostToken;
+        io.to(upperCode).emit("room-update", {
+          olympic: safe,
+          leaderboard: computeLeaderboard(safe),
+        });
+      } catch (err) {
+        console.error("edit-games error:", err);
+        socket.emit("error", { message: "Server error" });
+      }
+    });
+
+    /**
+     * kick-player — host removes a player from the lobby
+     * payload: { code, hostToken, playerName }
+     */
+    socket.on("kick-player", async ({ code, hostToken, playerName }) => {
+      try {
+        const upperCode = code.toUpperCase();
+        const olympic = await Olympic.findOne({ code: upperCode });
+        if (!olympic)
+          return socket.emit("error", { message: "Olympic not found" });
+        if (olympic.hostToken !== hostToken)
+          return socket.emit("error", { message: "Unauthorized" });
+
+        olympic.participants = olympic.participants.filter(
+          (p) => p.name !== playerName,
+        );
+        await olympic.save();
+
+        // Notify the kicked player's socket to leave
+        const sockets = await io.in(upperCode).fetchSockets();
+        for (const s of sockets) {
+          if (s.data.name === playerName && !s.data.isHost) {
+            s.emit("kicked", { playerName });
+            s.leave(upperCode);
+          }
+        }
+
+        const safe = olympic.toObject();
+        delete safe.hostToken;
+        io.to(upperCode).emit("room-update", {
+          olympic: safe,
+          leaderboard: computeLeaderboard(safe),
+        });
+      } catch (err) {
+        console.error("kick-player error:", err);
+        socket.emit("error", { message: "Server error" });
+      }
     });
   });
 }

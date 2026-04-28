@@ -11,18 +11,22 @@ export default function JoinPage() {
   const { code: paramCode } = useParams();
   const [searchParams] = useSearchParams();
   const wasReverted = searchParams.get("reverted") === "1";
+  const wasKicked = searchParams.get("kicked") === "1";
+  const { user } = useAuthStore();
+
   const [code, setCode] = useState((paramCode || "").toUpperCase());
-  const [name, setName] = useState("");
+  const [name, setName] = useState(user?.username || "");
   const [error, setError] = useState(
-    wasReverted
-      ? "The host reverted the Olympic back to draft. You can rejoin when it's relaunched."
-      : "",
+    wasKicked
+      ? "Du wurdest vom Host aus der Lobby entfernt."
+      : wasReverted
+        ? "The host reverted the Olympic back to draft. You can rejoin when it's relaunched."
+        : "",
   );
   const [loading, setLoading] = useState(false);
 
   const { updateFromRoomEvent, setParticipantName, setIsHost, setConnected } =
     useOlympicStore();
-  const { user } = useAuthStore();
 
   function handleJoin() {
     const trimCode = code.trim().toUpperCase();

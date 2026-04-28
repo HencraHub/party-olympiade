@@ -45,7 +45,7 @@ router.get("/:id", async (req, res) => {
 // POST /api/game-presets — create preset (auth required)
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { title, mode, icon, rules, imageBase64, addons } = req.body;
+    const { title, mode, icon, rules, addons } = req.body;
     if (!title?.trim())
       return res.status(400).json({ error: "Title is required" });
 
@@ -58,7 +58,6 @@ router.post("/", requireAuth, async (req, res) => {
       mode: mode || "ffa",
       icon: icon || "🎮",
       rules: rules || "",
-      imageBase64: imageBase64 || "",
       addons: addons || {},
       createdBy: req.user.id,
       createdByUsername: user.username,
@@ -68,6 +67,28 @@ router.post("/", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("create preset error:", err);
     res.status(500).json({ error: "Failed to create preset" });
+  }
+});
+
+// PATCH /api/game-presets/:id — update own preset (auth required)
+router.patch("/:id", requireAuth, async (req, res) => {
+  try {
+    const preset = await GamePreset.findById(req.params.id);
+    if (!preset) return res.status(404).json({ error: "Preset not found" });
+    if (String(preset.createdBy) !== String(req.user.id))
+      return res.status(403).json({ error: "Not your preset" });
+
+    const { title, mode, icon, rules, addons } = req.body;
+    if (title !== undefined) preset.title = title.trim();
+    if (mode !== undefined) preset.mode = mode;
+    if (icon !== undefined) preset.icon = icon || "🎮";
+    if (rules !== undefined) preset.rules = rules;
+    if (addons !== undefined) preset.addons = addons;
+
+    await preset.save();
+    res.json(preset);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
   }
 });
 

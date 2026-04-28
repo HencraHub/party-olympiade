@@ -332,11 +332,13 @@ export default function ProfilePage() {
             <div className="space-y-3">
               {participated.map((o) => {
                 const lb = o.finalLeaderboard || [];
-                const myEntry = lb.find((e) =>
-                  o.participants.some(
-                    (p) => p.name === e.name && String(p.userId) === user.id,
-                  ),
+                // Find my participant entry (match by userId first, then by name)
+                const myParticipant = o.participants.find(
+                  (p) => String(p.userId) === user.id,
                 );
+                const myEntry = myParticipant
+                  ? lb.find((e) => e.name === myParticipant.name)
+                  : null;
                 const myRank = myEntry ? lb.indexOf(myEntry) + 1 : null;
                 const rankEmoji =
                   myRank === 1

@@ -54,24 +54,41 @@ export default function Header() {
 
         {/* Center nav */}
         <nav className="hidden sm:flex items-center gap-1">
-          <button
-            className="btn-ghost text-sm font-semibold text-white/80 hover:text-white underline underline-offset-4 decoration-pink-500"
-            onClick={() => navigate("/create")}
-          >
-            Lobby erstellen
-          </button>
-          <button
-            className="btn-ghost text-sm font-semibold text-white/60 hover:text-white flex items-center gap-1.5"
-            onClick={() => navigate("/join")}
-          >
-            <span className="text-cyan-400">👥</span> Lobby beitreten
-          </button>
-          <button
-            className="btn-ghost text-sm font-semibold text-white/60 hover:text-white flex items-center gap-1.5"
-            onClick={() => navigate("/library")}
-          >
-            <span className="text-purple-400">📋</span> Regeln
-          </button>
+          {[
+            { label: "Lobby erstellen", path: "/create" },
+            { label: "Lobby beitreten", path: "/join" },
+            { label: "Game Library", path: "/library" },
+          ].map(({ label, path }) => {
+            const isActive =
+              location.pathname === path ||
+              location.pathname.startsWith(path + "/");
+            return (
+              <button
+                key={path}
+                className="relative px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150"
+                style={{
+                  color: isActive ? "#fff" : "rgba(255,255,255,0.55)",
+                  background: isActive
+                    ? "rgba(139,92,246,0.15)"
+                    : "transparent",
+                  border: isActive
+                    ? "1px solid rgba(139,92,246,0.35)"
+                    : "1px solid transparent",
+                }}
+                onClick={() => navigate(path)}
+              >
+                {label}
+                {isActive && (
+                  <span
+                    className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full"
+                    style={{
+                      background: "linear-gradient(90deg, #ec4899, #8b5cf6)",
+                    }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         {/* Right side */}
