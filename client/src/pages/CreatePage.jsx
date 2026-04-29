@@ -306,7 +306,8 @@ function StepEventSetup({ data, onChange }) {
                 🔒 Spielplan verstecken
               </span>
               <p className="text-xs text-muted mt-0.5">
-                Spieler sehen nur verschwommene Spieltitel – Anzahl bleibt sichtbar.
+                Spieler sehen nur verschwommene Spieltitel – Anzahl bleibt
+                sichtbar.
               </p>
             </div>
             <span className="text-xs font-black flex-shrink-0 text-yellow-400">

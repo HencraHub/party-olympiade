@@ -25,7 +25,11 @@ export default function HostRoomPage() {
   const [managingGames, setManagingGames] = useState(null);
   const [showManageModal, setShowManageModal] = useState(false);
   const [managingSettings, setManagingSettings] = useState(null); // local copy of settings while modal is open
-  const [addGameForm, setAddGameForm] = useState({ title: "", icon: "🎮", mode: "ffa" });
+  const [addGameForm, setAddGameForm] = useState({
+    title: "",
+    icon: "🎮",
+    mode: "ffa",
+  });
 
   const hostToken = localStorage.getItem(`hostToken_${code?.toUpperCase()}`);
 
@@ -186,295 +190,301 @@ export default function HostRoomPage() {
 
     return (
       <>
-      <div className="min-h-screen px-4 py-10">
-        <div className="max-w-2xl mx-auto space-y-6 animate-slide-up">
-          {/* ── Room code hero card ── */}
-          <div
-            className="relative rounded-2xl p-6 overflow-hidden"
-            style={{
-              background:
-                "linear-gradient(145deg, rgba(10,10,28,0.97), rgba(16,14,40,0.97))",
-              border: "1px solid rgba(139,92,246,0.45)",
-              boxShadow:
-                "0 0 60px rgba(139,92,246,0.18), 0 0 0 1px rgba(255,255,255,0.04)",
-            }}
-          >
-            {/* Confetti dots decorative */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              {[...Array(10)].map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute w-1.5 h-1.5 rounded-sm"
-                  style={{
-                    left: `${10 + i * 9}%`,
-                    top: `${15 + (i % 3) * 25}%`,
-                    background: [
-                      "#ec4899",
-                      "#8b5cf6",
-                      "#22d3ee",
-                      "#facc15",
-                      "#f472b6",
-                    ][i % 5],
-                    opacity: 0.6,
-                    transform: `rotate(${i * 37}deg)`,
-                  }}
-                />
-              ))}
-            </div>
-
-            <div className="relative text-center">
-              {/* People icon */}
-              <div className="flex justify-center mb-2">
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.15))",
-                    border: "1px solid rgba(139,92,246,0.35)",
-                  }}
-                >
-                  👥
-                </div>
-              </div>
-
-              <h1
-                className="text-2xl font-black mb-1"
-                style={{
-                  background: "linear-gradient(90deg, #ec4899, #a78bfa)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                }}
-              >
-                Lobby bereit
-              </h1>
-              <p className="text-white/55 text-sm mb-4">
-                Teile den Code mit deinen Freunden, damit sie beitreten können.
-              </p>
-
-              {/* Room code */}
-              <div
-                className="text-7xl font-black tracking-[0.15em] mb-5 select-all"
-                style={{
-                  background: "linear-gradient(90deg, #facc15, #f59e0b)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  textShadow: "none",
-                  filter: "drop-shadow(0 0 20px rgba(250,204,21,0.4))",
-                }}
-              >
-                {code?.toUpperCase()}
-              </div>
-
-              {/* Copy button */}
-              <button
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-[1.02]"
-                style={{
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.14)",
-                }}
-                onClick={() => navigator.clipboard.writeText(inviteLink)}
-              >
-                <span>📋</span> Einladungslink kopieren
-              </button>
-            </div>
-          </div>
-
-          {/* ── Players in lobby ── */}
-          <div
-            className="rounded-2xl p-6"
-            style={{
-              background: "rgba(10,12,30,0.9)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-            }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-purple-400">🎮</span>
-                <h2 className="font-black text-white text-sm uppercase tracking-wider">
-                  Spieler in der Lobby
-                </h2>
-              </div>
-              <span className="text-sm text-muted">
-                <span className="text-white font-bold">{playerCount}</span> /{" "}
-                {maxPlayers} Spieler
-              </span>
-            </div>
-
-            {/* Avatar grid — slot 0 always reserved for host */}
-            <div className="flex flex-wrap gap-4">
-              {/* Host slot (always first, always shown) */}
-              <div className="flex flex-col items-center gap-1.5 animate-fade-in">
-                <div className="relative">
+        <div className="min-h-screen px-4 py-10">
+          <div className="max-w-2xl mx-auto space-y-6 animate-slide-up">
+            {/* ── Room code hero card ── */}
+            <div
+              className="relative rounded-2xl p-6 overflow-hidden"
+              style={{
+                background:
+                  "linear-gradient(145deg, rgba(10,10,28,0.97), rgba(16,14,40,0.97))",
+                border: "1px solid rgba(139,92,246,0.45)",
+                boxShadow:
+                  "0 0 60px rgba(139,92,246,0.18), 0 0 0 1px rgba(255,255,255,0.04)",
+              }}
+            >
+              {/* Confetti dots decorative */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {[...Array(10)].map((_, i) => (
                   <div
-                    className={`w-[70px] h-[70px] rounded-2xl bg-gradient-to-br ${avatarGradients[0]} flex items-center justify-center font-black text-xl text-white`}
-                    style={{ border: "2px solid rgba(255,255,255,0.12)" }}
-                  >
-                    {(hostName || "H")[0]?.toUpperCase()}
-                  </div>
-                  <span className="absolute -top-2 -right-1 text-base">👑</span>
-                  <span
-                    className="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2"
-                    style={{ background: "#22c55e", borderColor: "#0a0c1e" }}
+                    key={i}
+                    className="absolute w-1.5 h-1.5 rounded-sm"
+                    style={{
+                      left: `${10 + i * 9}%`,
+                      top: `${15 + (i % 3) * 25}%`,
+                      background: [
+                        "#ec4899",
+                        "#8b5cf6",
+                        "#22d3ee",
+                        "#facc15",
+                        "#f472b6",
+                      ][i % 5],
+                      opacity: 0.6,
+                      transform: `rotate(${i * 37}deg)`,
+                    }}
                   />
+                ))}
+              </div>
+
+              <div className="relative text-center">
+                {/* People icon */}
+                <div className="flex justify-center mb-2">
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.15))",
+                      border: "1px solid rgba(139,92,246,0.35)",
+                    }}
+                  >
+                    👥
+                  </div>
                 </div>
-                <span className="text-white text-xs font-semibold max-w-[72px] truncate text-center">
-                  {hostName || "Host"}
-                </span>
-                <span
-                  className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full"
+
+                <h1
+                  className="text-2xl font-black mb-1"
                   style={{
-                    background: "rgba(139,92,246,0.25)",
-                    border: "1px solid rgba(139,92,246,0.4)",
-                    color: "#a78bfa",
+                    background: "linear-gradient(90deg, #ec4899, #a78bfa)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
                   }}
                 >
-                  👑 Host
+                  Lobby bereit
+                </h1>
+                <p className="text-white/55 text-sm mb-4">
+                  Teile den Code mit deinen Freunden, damit sie beitreten
+                  können.
+                </p>
+
+                {/* Room code */}
+                <div
+                  className="text-7xl font-black tracking-[0.15em] mb-5 select-all"
+                  style={{
+                    background: "linear-gradient(90deg, #facc15, #f59e0b)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    textShadow: "none",
+                    filter: "drop-shadow(0 0 20px rgba(250,204,21,0.4))",
+                  }}
+                >
+                  {code?.toUpperCase()}
+                </div>
+
+                {/* Copy button */}
+                <button
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:scale-[1.02]"
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.14)",
+                  }}
+                  onClick={() => navigator.clipboard.writeText(inviteLink)}
+                >
+                  <span>📋</span> Einladungslink kopieren
+                </button>
+              </div>
+            </div>
+
+            {/* ── Players in lobby ── */}
+            <div
+              className="rounded-2xl p-6"
+              style={{
+                background: "rgba(10,12,30,0.9)",
+                border: "1px solid rgba(255,255,255,0.07)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+              }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-purple-400">🎮</span>
+                  <h2 className="font-black text-white text-sm uppercase tracking-wider">
+                    Spieler in der Lobby
+                  </h2>
+                </div>
+                <span className="text-sm text-muted">
+                  <span className="text-white font-bold">{playerCount}</span> /{" "}
+                  {maxPlayers} Spieler
                 </span>
               </div>
 
-              {/* Participant slots */}
-              {olympic.participants.map((p, i) => (
-                <div
-                  key={p.name}
-                  className="flex flex-col items-center gap-1.5 animate-fade-in group relative"
-                >
+              {/* Avatar grid — slot 0 always reserved for host */}
+              <div className="flex flex-wrap gap-4">
+                {/* Host slot (always first, always shown) */}
+                <div className="flex flex-col items-center gap-1.5 animate-fade-in">
                   <div className="relative">
                     <div
-                      className={`w-[70px] h-[70px] rounded-2xl bg-gradient-to-br ${avatarGradients[(i + 1) % avatarGradients.length]} flex items-center justify-center font-black text-xl text-white`}
+                      className={`w-[70px] h-[70px] rounded-2xl bg-gradient-to-br ${avatarGradients[0]} flex items-center justify-center font-black text-xl text-white`}
                       style={{ border: "2px solid rgba(255,255,255,0.12)" }}
                     >
-                      {p.name[0]?.toUpperCase()}
+                      {(hostName || "H")[0]?.toUpperCase()}
                     </div>
-                    {/* Online dot */}
+                    <span className="absolute -top-2 -right-1 text-base">
+                      👑
+                    </span>
                     <span
                       className="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2"
                       style={{ background: "#22c55e", borderColor: "#0a0c1e" }}
                     />
-                    {/* Kick button (hover) */}
-                    <button
-                      className="absolute -top-2 -left-1 w-5 h-5 rounded-full bg-pink-500 text-white text-[10px] font-black items-center justify-center hidden group-hover:flex shadow-lg z-10"
-                      onClick={() => kickPlayer(p.name)}
-                      title={`Kick ${p.name}`}
-                    >
-                      ×
-                    </button>
                   </div>
                   <span className="text-white text-xs font-semibold max-w-[72px] truncate text-center">
-                    {p.name}
+                    {hostName || "Host"}
                   </span>
-                </div>
-              ))}
-
-              {/* Empty slots */}
-              {Array.from({
-                length: Math.min(maxPlayers - playerCount - 1, 12),
-              }).map((_, i) => (
-                <div
-                  key={`empty-${i}`}
-                  className="flex flex-col items-center gap-1.5"
-                >
-                  <div
-                    className="w-[70px] h-[70px] rounded-2xl flex items-center justify-center text-white/20 text-2xl font-light"
+                  <span
+                    className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full"
                     style={{
-                      border: "2px dashed rgba(255,255,255,0.12)",
-                      background: "rgba(255,255,255,0.025)",
+                      background: "rgba(139,92,246,0.25)",
+                      border: "1px solid rgba(139,92,246,0.4)",
+                      color: "#a78bfa",
                     }}
                   >
-                    +
-                  </div>
+                    👑 Host
+                  </span>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* ── Hint card ── */}
-          <div
-            className="rounded-2xl px-5 py-4 flex items-start gap-4"
-            style={{
-              background: "rgba(10,12,30,0.9)",
-              border: "1px solid rgba(255,255,255,0.07)",
-            }}
-          >
+                {/* Participant slots */}
+                {olympic.participants.map((p, i) => (
+                  <div
+                    key={p.name}
+                    className="flex flex-col items-center gap-1.5 animate-fade-in group relative"
+                  >
+                    <div className="relative">
+                      <div
+                        className={`w-[70px] h-[70px] rounded-2xl bg-gradient-to-br ${avatarGradients[(i + 1) % avatarGradients.length]} flex items-center justify-center font-black text-xl text-white`}
+                        style={{ border: "2px solid rgba(255,255,255,0.12)" }}
+                      >
+                        {p.name[0]?.toUpperCase()}
+                      </div>
+                      {/* Online dot */}
+                      <span
+                        className="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2"
+                        style={{
+                          background: "#22c55e",
+                          borderColor: "#0a0c1e",
+                        }}
+                      />
+                      {/* Kick button (hover) */}
+                      <button
+                        className="absolute -top-2 -left-1 w-5 h-5 rounded-full bg-pink-500 text-white text-[10px] font-black items-center justify-center hidden group-hover:flex shadow-lg z-10"
+                        onClick={() => kickPlayer(p.name)}
+                        title={`Kick ${p.name}`}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <span className="text-white text-xs font-semibold max-w-[72px] truncate text-center">
+                      {p.name}
+                    </span>
+                  </div>
+                ))}
+
+                {/* Empty slots */}
+                {Array.from({
+                  length: Math.min(maxPlayers - playerCount - 1, 12),
+                }).map((_, i) => (
+                  <div
+                    key={`empty-${i}`}
+                    className="flex flex-col items-center gap-1.5"
+                  >
+                    <div
+                      className="w-[70px] h-[70px] rounded-2xl flex items-center justify-center text-white/20 text-2xl font-light"
+                      style={{
+                        border: "2px dashed rgba(255,255,255,0.12)",
+                        background: "rgba(255,255,255,0.025)",
+                      }}
+                    >
+                      +
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Hint card ── */}
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+              className="rounded-2xl px-5 py-4 flex items-start gap-4"
               style={{
-                background: "rgba(34,211,238,0.1)",
-                border: "1px solid rgba(34,211,238,0.3)",
+                background: "rgba(10,12,30,0.9)",
+                border: "1px solid rgba(255,255,255,0.07)",
               }}
             >
-              <span className="text-cyan-400 text-sm">ℹ</span>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                style={{
+                  background: "rgba(34,211,238,0.1)",
+                  border: "1px solid rgba(34,211,238,0.3)",
+                }}
+              >
+                <span className="text-cyan-400 text-sm">ℹ</span>
+              </div>
+              <div>
+                <h3 className="font-black text-cyan-400 text-sm mb-1">
+                  Hinweis für Spieler
+                </h3>
+                <p className="text-white/50 text-xs leading-relaxed">
+                  Warte, bis der Host das Spiel startet.
+                  <br />
+                  Nur der Host kann Spiele und Regeln ändern.
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-black text-cyan-400 text-sm mb-1">
-                Hinweis für Spieler
-              </h3>
-              <p className="text-white/50 text-xs leading-relaxed">
-                Warte, bis der Host das Spiel startet.
-                <br />
-                Nur der Host kann Spiele und Regeln ändern.
-              </p>
-            </div>
-          </div>
 
-          {socketError && (
-            <div className="text-pink-400 text-sm bg-pink-500/10 border border-pink-500/20 rounded-xl px-4 py-3">
-              ⚠ {socketError}
-            </div>
-          )}
-
-          {/* ── Start button ── */}
-          <button
-            className="w-full py-4 rounded-2xl font-black text-base uppercase tracking-widest transition-all duration-200"
-            style={
-              canStart && !starting
-                ? {
-                    background: "linear-gradient(90deg, #7c3aed, #ec4899)",
-                    color: "#fff",
-                    boxShadow: "0 0 40px rgba(236,72,153,0.4)",
-                  }
-                : {
-                    background:
-                      "linear-gradient(90deg, rgba(124,58,237,0.35), rgba(236,72,153,0.25))",
-                    color: "rgba(255,255,255,0.35)",
-                    cursor: "not-allowed",
-                  }
-            }
-            onClick={startOlympic}
-            disabled={!canStart || starting}
-          >
-            {starting ? (
-              "Startet…"
-            ) : !canStart ? (
-              <span className="flex items-center justify-center gap-2">
-                <span>👥</span> Mindestens 2 Spieler benötigt, um zu starten
-              </span>
-            ) : (
-              `🚀 Olympiade starten mit ${playerCount} Spieler${playerCount !== 1 ? "n" : ""}`
+            {socketError && (
+              <div className="text-pink-400 text-sm bg-pink-500/10 border border-pink-500/20 rounded-xl px-4 py-3">
+                ⚠ {socketError}
+              </div>
             )}
-          </button>
 
-          {/* Back to draft */}
-          <button
-            className="w-full py-2 text-sm font-semibold transition-colors"
-            style={{ color: "#facc15" }}
-            onClick={revertToDraft}
-            disabled={reverting}
-          >
-            {reverting ? "Wird zurückgesetzt…" : "← Zurück zum Entwurf"}
-          </button>
+            {/* ── Start button ── */}
+            <button
+              className="w-full py-4 rounded-2xl font-black text-base uppercase tracking-widest transition-all duration-200"
+              style={
+                canStart && !starting
+                  ? {
+                      background: "linear-gradient(90deg, #7c3aed, #ec4899)",
+                      color: "#fff",
+                      boxShadow: "0 0 40px rgba(236,72,153,0.4)",
+                    }
+                  : {
+                      background:
+                        "linear-gradient(90deg, rgba(124,58,237,0.35), rgba(236,72,153,0.25))",
+                      color: "rgba(255,255,255,0.35)",
+                      cursor: "not-allowed",
+                    }
+              }
+              onClick={startOlympic}
+              disabled={!canStart || starting}
+            >
+              {starting ? (
+                "Startet…"
+              ) : !canStart ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span>👥</span> Mindestens 2 Spieler benötigt, um zu starten
+                </span>
+              ) : (
+                `🚀 Olympiade starten mit ${playerCount} Spieler${playerCount !== 1 ? "n" : ""}`
+              )}
+            </button>
+
+            {/* Back to draft */}
+            <button
+              className="w-full py-2 text-sm font-semibold transition-colors"
+              style={{ color: "#facc15" }}
+              onClick={revertToDraft}
+              disabled={reverting}
+            >
+              {reverting ? "Wird zurückgesetzt…" : "← Zurück zum Entwurf"}
+            </button>
+          </div>
         </div>
-      </div>
-      {confirmModal && (
-        <ConfirmModal
-          title={confirmModal.title}
-          message={confirmModal.message}
-          confirmLabel={confirmModal.confirmLabel}
-          danger={confirmModal.danger}
-          onConfirm={confirmModal.onConfirm}
-          onCancel={() => setConfirmModal(null)}
-        />
-      )}
+        {confirmModal && (
+          <ConfirmModal
+            title={confirmModal.title}
+            message={confirmModal.message}
+            confirmLabel={confirmModal.confirmLabel}
+            danger={confirmModal.danger}
+            onConfirm={confirmModal.onConfirm}
+            onCancel={() => setConfirmModal(null)}
+          />
+        )}
       </>
     );
   }
@@ -484,7 +494,6 @@ export default function HostRoomPage() {
     <>
       <div className="min-h-screen px-4 py-6">
         <div className="max-w-6xl mx-auto space-y-5">
-
           {/* ── Header bar ── */}
           <div
             className="flex items-center justify-between gap-4 rounded-2xl px-6 py-4"
@@ -580,10 +589,8 @@ export default function HostRoomPage() {
 
           {/* ── Two-column main layout ── */}
           <div className="grid lg:grid-cols-[1fr_380px] gap-5 items-start">
-
             {/* ── Left column: current game + games list ── */}
             <div className="space-y-4">
-
               {currentGame ? (
                 <div
                   className="rounded-2xl p-6"
@@ -749,7 +756,9 @@ export default function HostRoomPage() {
                         >
                           {i + 1}
                         </span>
-                        <span className="text-base flex-shrink-0">{g.icon}</span>
+                        <span className="text-base flex-shrink-0">
+                          {g.icon}
+                        </span>
                         <span
                           className={`flex-1 text-sm font-semibold truncate ${isCur ? "text-white" : "text-white/40"}`}
                         >
@@ -871,7 +880,10 @@ export default function HostRoomPage() {
       {showManageModal && managingSettings && (
         <div
           className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-          style={{ backdropFilter: "blur(6px)", background: "rgba(0,0,0,0.65)" }}
+          style={{
+            backdropFilter: "blur(6px)",
+            background: "rgba(0,0,0,0.65)",
+          }}
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowManageModal(false);
           }}
@@ -910,7 +922,6 @@ export default function HostRoomPage() {
             </div>
 
             <div className="p-6 space-y-7">
-
               {/* ── Spieler ── */}
               <div>
                 <p
@@ -1074,7 +1085,10 @@ export default function HostRoomPage() {
                       maxLength={2}
                       value={addGameForm.icon}
                       onChange={(e) =>
-                        setAddGameForm((f) => ({ ...f, icon: e.target.value || "🎮" }))
+                        setAddGameForm((f) => ({
+                          ...f,
+                          icon: e.target.value || "🎮",
+                        }))
                       }
                     />
                     <input
@@ -1089,9 +1103,17 @@ export default function HostRoomPage() {
                         if (e.key === "Enter" && addGameForm.title.trim()) {
                           setManagingGames([
                             ...(managingGames ?? olympic.games),
-                            { ...addGameForm, title: addGameForm.title.trim(), order: (managingGames ?? olympic.games).length },
+                            {
+                              ...addGameForm,
+                              title: addGameForm.title.trim(),
+                              order: (managingGames ?? olympic.games).length,
+                            },
                           ]);
-                          setAddGameForm({ title: "", icon: "🎮", mode: "ffa" });
+                          setAddGameForm({
+                            title: "",
+                            icon: "🎮",
+                            mode: "ffa",
+                          });
                         }
                       }}
                     />
@@ -1116,7 +1138,11 @@ export default function HostRoomPage() {
                       onClick={() => {
                         setManagingGames([
                           ...(managingGames ?? olympic.games),
-                          { ...addGameForm, title: addGameForm.title.trim(), order: (managingGames ?? olympic.games).length },
+                          {
+                            ...addGameForm,
+                            title: addGameForm.title.trim(),
+                            order: (managingGames ?? olympic.games).length,
+                          },
                         ]);
                         setAddGameForm({ title: "", icon: "🎮", mode: "ffa" });
                       }}
@@ -1159,7 +1185,6 @@ export default function HostRoomPage() {
                   Einstellungen
                 </p>
                 <div className="space-y-4">
-
                   {/* Name */}
                   <div>
                     <label className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-1.5">
@@ -1170,7 +1195,10 @@ export default function HostRoomPage() {
                       maxLength={60}
                       value={managingSettings.name}
                       onChange={(e) =>
-                        setManagingSettings((s) => ({ ...s, name: e.target.value }))
+                        setManagingSettings((s) => ({
+                          ...s,
+                          name: e.target.value,
+                        }))
                       }
                     />
                   </div>
@@ -1189,7 +1217,10 @@ export default function HostRoomPage() {
                       onChange={(e) =>
                         setManagingSettings((s) => ({
                           ...s,
-                          maxPlayers: Math.max(2, Math.min(50, Number(e.target.value))),
+                          maxPlayers: Math.max(
+                            2,
+                            Math.min(50, Number(e.target.value)),
+                          ),
                         }))
                       }
                     />
@@ -1281,10 +1312,34 @@ export default function HostRoomPage() {
                     </label>
                     <div className="space-y-1.5">
                       {[
-                        { key: "comebackPenalty", emoji: "↩️", label: "Comeback Malus", badge: "−2 PT", cls: "text-pink-400" },
-                        { key: "lastPlaceBonus", emoji: "🎯", label: "Last Place Bonus", badge: "+1 PT", cls: "text-green-400" },
-                        { key: "winStreakBonus", emoji: "🔥", label: "Win Streak Bonus", badge: "+1 PT", cls: "text-green-400" },
-                        { key: "finalDoublePoints", emoji: "⭐", label: "Final Double Points", badge: "2×", cls: "text-yellow-400" },
+                        {
+                          key: "comebackPenalty",
+                          emoji: "↩️",
+                          label: "Comeback Malus",
+                          badge: "−2 PT",
+                          cls: "text-pink-400",
+                        },
+                        {
+                          key: "lastPlaceBonus",
+                          emoji: "🎯",
+                          label: "Last Place Bonus",
+                          badge: "+1 PT",
+                          cls: "text-green-400",
+                        },
+                        {
+                          key: "winStreakBonus",
+                          emoji: "🔥",
+                          label: "Win Streak Bonus",
+                          badge: "+1 PT",
+                          cls: "text-green-400",
+                        },
+                        {
+                          key: "finalDoublePoints",
+                          emoji: "⭐",
+                          label: "Final Double Points",
+                          badge: "2×",
+                          cls: "text-yellow-400",
+                        },
                       ].map(({ key, emoji, label, badge, cls }) => (
                         <button
                           key={key}
@@ -1310,24 +1365,44 @@ export default function HostRoomPage() {
                             }))
                           }
                         >
-                          <span className="text-base w-5 flex-shrink-0">{emoji}</span>
+                          <span className="text-base w-5 flex-shrink-0">
+                            {emoji}
+                          </span>
                           <span className="flex-1 text-xs font-semibold text-white/70">
                             {label}
                           </span>
-                          <span className={`text-xs font-black flex-shrink-0 ${cls}`}>
+                          <span
+                            className={`text-xs font-black flex-shrink-0 ${cls}`}
+                          >
                             {badge}
                           </span>
                           <span
                             className="w-4 h-4 rounded-md border flex items-center justify-center flex-shrink-0 transition-all"
                             style={
                               managingSettings.extraRules?.[key]
-                                ? { background: "rgba(139,92,246,0.5)", borderColor: "rgba(139,92,246,0.8)" }
-                                : { background: "transparent", borderColor: "rgba(255,255,255,0.2)" }
+                                ? {
+                                    background: "rgba(139,92,246,0.5)",
+                                    borderColor: "rgba(139,92,246,0.8)",
+                                  }
+                                : {
+                                    background: "transparent",
+                                    borderColor: "rgba(255,255,255,0.2)",
+                                  }
                             }
                           >
                             {managingSettings.extraRules?.[key] && (
-                              <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 12 12" fill="none">
-                                <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <svg
+                                className="w-2.5 h-2.5 text-white"
+                                viewBox="0 0 12 12"
+                                fill="none"
+                              >
+                                <path
+                                  d="M2 6l3 3 5-5"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
                               </svg>
                             )}
                           </span>
@@ -1339,13 +1414,19 @@ export default function HostRoomPage() {
                   {/* Host participates */}
                   <div className="flex items-center justify-between px-1">
                     <div>
-                      <p className="text-xs font-semibold text-white/70">🎮 Host spielt mit</p>
-                      <p className="text-[10px] text-white/30 mt-0.5">Score des Hosts wird mitgezählt</p>
+                      <p className="text-xs font-semibold text-white/70">
+                        🎮 Host spielt mit
+                      </p>
+                      <p className="text-[10px] text-white/30 mt-0.5">
+                        Score des Hosts wird mitgezählt
+                      </p>
                     </div>
                     <button
                       className="relative w-11 h-6 rounded-full transition-all flex-shrink-0"
                       style={{
-                        background: managingSettings.hostParticipates ? "rgba(34,211,238,0.5)" : "rgba(255,255,255,0.1)",
+                        background: managingSettings.hostParticipates
+                          ? "rgba(34,211,238,0.5)"
+                          : "rgba(255,255,255,0.1)",
                         border: `1px solid ${managingSettings.hostParticipates ? "rgba(34,211,238,0.7)" : "rgba(255,255,255,0.15)"}`,
                       }}
                       onClick={() =>
@@ -1358,8 +1439,12 @@ export default function HostRoomPage() {
                       <span
                         className="absolute top-0.5 w-5 h-5 rounded-full transition-all"
                         style={{
-                          background: managingSettings.hostParticipates ? "#22d3ee" : "rgba(255,255,255,0.4)",
-                          left: managingSettings.hostParticipates ? "calc(100% - 22px)" : "2px",
+                          background: managingSettings.hostParticipates
+                            ? "#22d3ee"
+                            : "rgba(255,255,255,0.4)",
+                          left: managingSettings.hostParticipates
+                            ? "calc(100% - 22px)"
+                            : "2px",
                         }}
                       />
                     </button>
@@ -1376,7 +1461,10 @@ export default function HostRoomPage() {
                         placeholder="z.B. Alex"
                         value={managingSettings.hostPlayerName}
                         onChange={(e) =>
-                          setManagingSettings((s) => ({ ...s, hostPlayerName: e.target.value }))
+                          setManagingSettings((s) => ({
+                            ...s,
+                            hostPlayerName: e.target.value,
+                          }))
                         }
                       />
                     </div>
@@ -1385,13 +1473,19 @@ export default function HostRoomPage() {
                   {/* Hide game plan */}
                   <div className="flex items-center justify-between px-1">
                     <div>
-                      <p className="text-xs font-semibold text-white/70">🔒 Spielplan verstecken</p>
-                      <p className="text-[10px] text-white/30 mt-0.5">Spieltitel werden bei Teilnehmern unscharf</p>
+                      <p className="text-xs font-semibold text-white/70">
+                        🔒 Spielplan verstecken
+                      </p>
+                      <p className="text-[10px] text-white/30 mt-0.5">
+                        Spieltitel werden bei Teilnehmern unscharf
+                      </p>
                     </div>
                     <button
                       className="relative w-11 h-6 rounded-full transition-all flex-shrink-0"
                       style={{
-                        background: managingSettings.hideGamePlan ? "rgba(250,204,21,0.5)" : "rgba(255,255,255,0.1)",
+                        background: managingSettings.hideGamePlan
+                          ? "rgba(250,204,21,0.5)"
+                          : "rgba(255,255,255,0.1)",
                         border: `1px solid ${managingSettings.hideGamePlan ? "rgba(250,204,21,0.7)" : "rgba(255,255,255,0.15)"}`,
                       }}
                       onClick={() =>
@@ -1404,13 +1498,16 @@ export default function HostRoomPage() {
                       <span
                         className="absolute top-0.5 w-5 h-5 rounded-full transition-all"
                         style={{
-                          background: managingSettings.hideGamePlan ? "#facc15" : "rgba(255,255,255,0.4)",
-                          left: managingSettings.hideGamePlan ? "calc(100% - 22px)" : "2px",
+                          background: managingSettings.hideGamePlan
+                            ? "#facc15"
+                            : "rgba(255,255,255,0.4)",
+                          left: managingSettings.hideGamePlan
+                            ? "calc(100% - 22px)"
+                            : "2px",
                         }}
                       />
                     </button>
                   </div>
-
                 </div>
 
                 <button

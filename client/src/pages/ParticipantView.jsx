@@ -323,7 +323,6 @@ export default function ParticipantView() {
   return (
     <div className="min-h-screen px-4 py-8">
       <div className="max-w-6xl mx-auto space-y-5">
-
         {/* ── Header bar ── */}
         <div
           className="flex items-center justify-between gap-4 rounded-2xl px-6 py-4"
@@ -373,19 +372,32 @@ export default function ParticipantView() {
         </div>
 
         {/* ── Progress bar (mobile) ── */}
-        <div className="sm:hidden rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div
+          className="sm:hidden rounded-xl px-4 py-3"
+          style={{
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.07)",
+          }}
+        >
           <div className="flex justify-between text-xs text-white/35 mb-2">
             <span>Fortschritt</span>
-            <span>{scoredCount} / {totalGames}</span>
+            <span>
+              {scoredCount} / {totalGames}
+            </span>
           </div>
           <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: "linear-gradient(90deg,#8b5cf6,#ec4899)" }} />
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{
+                width: `${progress}%`,
+                background: "linear-gradient(90deg,#8b5cf6,#ec4899)",
+              }}
+            />
           </div>
         </div>
 
         {/* ── Two-column: 2/3 game | 1/3 scoreboard ── */}
         <div className="grid lg:grid-cols-[2fr_1fr] gap-5 items-start">
-
           {/* ── Left 2/3: current game ── */}
           <div className="space-y-4">
             {currentGame ? (
@@ -490,7 +502,9 @@ export default function ParticipantView() {
                 )}
 
                 {/* Equipment / handicap / time limit */}
-                {(currentGame.addons?.equipment || currentGame.addons?.handicap || currentGame.addons?.timeLimit > 0) && (
+                {(currentGame.addons?.equipment ||
+                  currentGame.addons?.handicap ||
+                  currentGame.addons?.timeLimit > 0) && (
                   <div className="flex flex-wrap gap-3 mt-2">
                     {currentGame.addons?.timeLimit > 0 && (
                       <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8">

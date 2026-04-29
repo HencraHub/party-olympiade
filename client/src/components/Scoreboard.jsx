@@ -1,8 +1,20 @@
 const MEDAL = ["🥇", "🥈", "🥉"];
 const RANK_STYLES = [
-  { bg: "rgba(250,204,21,0.08)", border: "rgba(250,204,21,0.22)", num: "#facc15" },
-  { bg: "rgba(148,163,184,0.07)", border: "rgba(148,163,184,0.2)", num: "#94a3b8" },
-  { bg: "rgba(205,127,50,0.07)", border: "rgba(205,127,50,0.2)", num: "#cd7f32" },
+  {
+    bg: "rgba(250,204,21,0.08)",
+    border: "rgba(250,204,21,0.22)",
+    num: "#facc15",
+  },
+  {
+    bg: "rgba(148,163,184,0.07)",
+    border: "rgba(148,163,184,0.2)",
+    num: "#94a3b8",
+  },
+  {
+    bg: "rgba(205,127,50,0.07)",
+    border: "rgba(205,127,50,0.2)",
+    num: "#cd7f32",
+  },
 ];
 const AVATAR_GRADIENTS = [
   "from-pink-500 to-purple-600",
@@ -23,7 +35,9 @@ export default function Scoreboard({
 }) {
   if (leaderboard.length === 0) {
     return (
-      <p className="text-center text-white/25 text-xs py-4">Noch keine Punkte</p>
+      <p className="text-center text-white/25 text-xs py-4">
+        Noch keine Punkte
+      </p>
     );
   }
 
@@ -35,15 +49,25 @@ export default function Scoreboard({
           <span className="w-5 flex-shrink-0" />
           <span className="w-7 flex-shrink-0" />
           <span className="flex-1" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-white/20 w-8 text-right">Pts</span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-white/20 w-8 text-right">Base</span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-white/20 w-8 text-right">+/−</span>
-          <span className="text-[10px] font-black uppercase tracking-widest text-white/20 w-6 text-right">W</span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/20 w-8 text-right">
+            Pts
+          </span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/20 w-8 text-right">
+            Base
+          </span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/20 w-8 text-right">
+            +/−
+          </span>
+          <span className="text-[10px] font-black uppercase tracking-widest text-white/20 w-6 text-right">
+            W
+          </span>
         </div>
       )}
 
       {leaderboard.map((entry, i) => {
-        const participantIdx = participants.findIndex((p) => p.name === entry.name);
+        const participantIdx = participants.findIndex(
+          (p) => p.name === entry.name,
+        );
         const participant = participants[participantIdx];
         const isMe = entry.name === myName;
         const rankStyle = RANK_STYLES[i];
@@ -57,21 +81,23 @@ export default function Scoreboard({
               background: isMe
                 ? "rgba(139,92,246,0.12)"
                 : rankStyle
-                ? rankStyle.bg
-                : "rgba(255,255,255,0.03)",
+                  ? rankStyle.bg
+                  : "rgba(255,255,255,0.03)",
               border: `1px solid ${
                 isMe
                   ? "rgba(139,92,246,0.3)"
                   : rankStyle
-                  ? rankStyle.border
-                  : "rgba(255,255,255,0.06)"
+                    ? rankStyle.border
+                    : "rgba(255,255,255,0.06)"
               }`,
             }}
           >
             {/* Rank */}
             <span
               className="text-sm w-5 flex-shrink-0 text-center"
-              style={{ color: rankStyle ? rankStyle.num : "rgba(255,255,255,0.2)" }}
+              style={{
+                color: rankStyle ? rankStyle.num : "rgba(255,255,255,0.2)",
+              }}
             >
               {medal ?? <span className="text-xs font-mono">{i + 1}</span>}
             </span>
@@ -86,7 +112,10 @@ export default function Scoreboard({
             ) : (
               <div
                 className={`w-7 h-7 rounded-full bg-gradient-to-br ${
-                  AVATAR_GRADIENTS[(participantIdx >= 0 ? participantIdx : i) % AVATAR_GRADIENTS.length]
+                  AVATAR_GRADIENTS[
+                    (participantIdx >= 0 ? participantIdx : i) %
+                      AVATAR_GRADIENTS.length
+                  ]
                 } flex items-center justify-center text-xs font-black text-white flex-shrink-0`}
               >
                 {entry.name[0]?.toUpperCase()}
@@ -101,7 +130,9 @@ export default function Scoreboard({
             >
               {entry.name}
               {isMe && (
-                <span className="ml-1 text-[10px] font-black text-purple-400/70">(you)</span>
+                <span className="ml-1 text-[10px] font-black text-purple-400/70">
+                  (you)
+                </span>
               )}
             </span>
 
@@ -123,8 +154,8 @@ export default function Scoreboard({
                     entry.bonus > 0
                       ? "text-green-400"
                       : entry.bonus < 0
-                      ? "text-pink-400"
-                      : "text-white/20"
+                        ? "text-pink-400"
+                        : "text-white/20"
                   }`}
                 >
                   {entry.bonus > 0 ? `+${entry.bonus}` : entry.bonus}
