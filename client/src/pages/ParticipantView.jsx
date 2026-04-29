@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { connectSocket, getSocket } from "../socket/socket.js";
 import useOlympicStore from "../store/useOlympicStore.js";
 import GlassCard from "../components/ui/GlassCard.jsx";
-import GameCard from "../components/GameCard.jsx";
 import Scoreboard from "../components/Scoreboard.jsx";
 
 export default function ParticipantView() {
@@ -17,7 +16,6 @@ export default function ParticipantView() {
     setConnected,
   } = useOlympicStore();
   const [joined, setJoined] = useState(!!olympic);
-  const [tab, setTab] = useState("game");
   const [socketError, setSocketError] = useState("");
 
   useEffect(() => {
@@ -101,7 +99,7 @@ export default function ParticipantView() {
 
     return (
       <div className="min-h-screen px-4 py-8 flex flex-col items-center">
-        <div className="w-full max-w-lg space-y-4 animate-slide-up">
+        <div className="w-full max-w-lg space-y-6 animate-slide-up">
           {/* ── Waiting hero card ── */}
           <div
             className="relative rounded-2xl p-6 overflow-hidden text-center"
@@ -173,14 +171,14 @@ export default function ParticipantView() {
 
           {/* ── Player grid ── */}
           <div
-            className="rounded-2xl p-5"
+            className="rounded-2xl p-6"
             style={{
               background: "rgba(10,12,30,0.9)",
               border: "1px solid rgba(255,255,255,0.07)",
               boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
             }}
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <span className="text-purple-400">🎮</span>
                 <h2 className="font-black text-white text-sm uppercase tracking-wider">
@@ -193,18 +191,18 @@ export default function ParticipantView() {
               </span>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-4">
               {olympic.participants.map((p, i) => {
                 const isMe = p.name === participantName;
                 const isHost = i === 0;
                 return (
                   <div
                     key={p.name}
-                    className="flex flex-col items-center gap-1 animate-fade-in"
+                    className="flex flex-col items-center gap-1.5 animate-fade-in"
                   >
                     <div className="relative">
                       <div
-                        className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${avatarGradients[i % avatarGradients.length]} flex items-center justify-center font-black text-lg text-white`}
+                        className={`w-[70px] h-[70px] rounded-2xl bg-gradient-to-br ${avatarGradients[i % avatarGradients.length]} flex items-center justify-center font-black text-xl text-white`}
                         style={{
                           border: isMe
                             ? "2px solid rgba(236,72,153,0.7)"
@@ -223,14 +221,14 @@ export default function ParticipantView() {
                       )}
                       {/* Online dot */}
                       <span
-                        className="absolute bottom-0.5 right-0.5 w-3 h-3 rounded-full border-2"
+                        className="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2"
                         style={{
                           background: "#22c55e",
                           borderColor: "#0a0c1e",
                         }}
                       />
                     </div>
-                    <span className="text-white text-xs font-semibold max-w-[56px] truncate text-center">
+                    <span className="text-white text-xs font-semibold max-w-[72px] truncate text-center">
                       {p.name}
                     </span>
                     {isMe && (
@@ -255,13 +253,13 @@ export default function ParticipantView() {
               }).map((_, i) => (
                 <div
                   key={`empty-${i}`}
-                  className="flex flex-col items-center gap-1"
+                  className="flex flex-col items-center gap-1.5"
                 >
                   <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-white/20 text-lg"
+                    className="w-[70px] h-[70px] rounded-2xl flex items-center justify-center text-white/20 text-2xl"
                     style={{
-                      border: "2px dashed rgba(255,255,255,0.1)",
-                      background: "rgba(255,255,255,0.02)",
+                      border: "2px dashed rgba(255,255,255,0.12)",
+                      background: "rgba(255,255,255,0.025)",
                     }}
                   >
                     +
@@ -323,127 +321,314 @@ export default function ParticipantView() {
     totalGames > 0 ? Math.round((scoredCount / totalGames) * 100) : 0;
 
   return (
-    <div className="min-h-screen px-4 py-6">
-      <div className="max-w-lg mx-auto space-y-4">
-        {/* Header */}
-        <GlassCard className="text-center py-4">
-          <div className="text-3xl mb-1">🏅</div>
-          <h1 className="font-black text-white text-xl">{olympic.name}</h1>
-          {participantName && (
-            <p className="text-sm text-muted mt-1">
-              You're in as{" "}
-              <span className="text-purple-light font-semibold">
-                {participantName}
-              </span>
-            </p>
-          )}
-          <div className="flex items-center justify-center gap-2 mt-2">
-            <span className="text-yellow-400 font-mono font-bold tracking-widest">
-              {code?.toUpperCase()}
-            </span>
-          </div>
-        </GlassCard>
+    <div className="min-h-screen px-4 py-8">
+      <div className="max-w-6xl mx-auto space-y-5">
 
-        {/* Progress */}
-        <div className="glass rounded-xl px-4 py-3">
-          <div className="flex justify-between text-xs text-muted mb-1.5">
-            <span>Progress</span>
-            <span>
-              {scoredCount}/{totalGames} games
-            </span>
+        {/* ── Header bar ── */}
+        <div
+          className="flex items-center justify-between gap-4 rounded-2xl px-6 py-4"
+          style={{
+            background: "rgba(10,12,30,0.95)",
+            border: "1px solid rgba(139,92,246,0.35)",
+            boxShadow: "0 0 30px rgba(139,92,246,0.1)",
+          }}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-2xl flex-shrink-0">🏅</span>
+            <div className="min-w-0">
+              <h1 className="font-black text-white text-lg truncate leading-tight">
+                {olympic.name}
+              </h1>
+              {participantName && (
+                <p className="text-xs text-white/40 mt-0.5">
+                  Du spielst als{" "}
+                  <span className="text-purple-300 font-semibold">
+                    {participantName}
+                  </span>
+                </p>
+              )}
+            </div>
           </div>
-          <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-500"
-              style={{
-                width: `${progress}%`,
-                background: "linear-gradient(90deg, #8b5cf6, #ec4899)",
-              }}
-            />
+
+          {/* Progress (desktop) */}
+          <div className="hidden sm:flex flex-col items-end gap-1.5 flex-shrink-0">
+            <span className="text-xs text-white/30">
+              {scoredCount} / {totalGames} bewertet
+            </span>
+            <div className="w-32 h-1.5 bg-white/8 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${progress}%`,
+                  background: "linear-gradient(90deg,#8b5cf6,#ec4899)",
+                  boxShadow: "0 0 8px rgba(236,72,153,0.5)",
+                }}
+              />
+            </div>
+          </div>
+
+          <span className="text-sm font-mono text-yellow-400 tracking-widest flex-shrink-0">
+            {code?.toUpperCase()}
+          </span>
+        </div>
+
+        {/* ── Progress bar (mobile) ── */}
+        <div className="sm:hidden rounded-xl px-4 py-3" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+          <div className="flex justify-between text-xs text-white/35 mb-2">
+            <span>Fortschritt</span>
+            <span>{scoredCount} / {totalGames}</span>
+          </div>
+          <div className="h-1.5 bg-white/8 rounded-full overflow-hidden">
+            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: "linear-gradient(90deg,#8b5cf6,#ec4899)" }} />
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 glass rounded-xl p-1">
-          {[
-            { key: "game", label: "▶ Current Game" },
-            { key: "board", label: "📊 Leaderboard" },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                tab === key
-                  ? "bg-purple-500/30 text-white"
-                  : "text-muted hover:text-white"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {/* ── Two-column: 2/3 game | 1/3 scoreboard ── */}
+        <div className="grid lg:grid-cols-[2fr_1fr] gap-5 items-start">
 
-        {/* Tab: Game */}
-        {tab === "game" && (
-          <div className="space-y-4 animate-fade-in">
+          {/* ── Left 2/3: current game ── */}
+          <div className="space-y-4">
             {currentGame ? (
-              <>
-                <GameCard
-                  game={currentGame}
-                  isCurrent
-                  isScored={
-                    !!olympic.results.find(
-                      (r) => String(r.gameId) === String(currentGame._id),
-                    )
-                  }
-                />
+              <div
+                className="rounded-2xl p-7"
+                style={{
+                  background: "rgba(10,12,30,0.97)",
+                  border: "1px solid rgba(139,92,246,0.4)",
+                  boxShadow: "0 0 50px rgba(139,92,246,0.12)",
+                }}
+              >
+                {/* Game identity */}
+                <div className="flex items-start gap-5 mb-6">
+                  <div
+                    className="w-20 h-20 rounded-2xl flex items-center justify-center text-5xl flex-shrink-0"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.12))",
+                      border: "1px solid rgba(139,92,246,0.32)",
+                    }}
+                  >
+                    {currentGame.icon}
+                  </div>
+                  <div className="flex-1 min-w-0 pt-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 mb-1.5">
+                      Spiel {olympic.currentGameIndex + 1} von {totalGames}
+                    </p>
+                    <h2 className="text-3xl font-black text-white leading-tight mb-2">
+                      {currentGame.title}
+                    </h2>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className="inline-block text-xs font-black uppercase px-3 py-1 rounded-full"
+                        style={{
+                          background:
+                            currentGame.mode === "team"
+                              ? "rgba(139,92,246,0.2)"
+                              : "rgba(236,72,153,0.2)",
+                          color:
+                            currentGame.mode === "team" ? "#a78bfa" : "#f472b6",
+                          border: `1px solid ${currentGame.mode === "team" ? "rgba(139,92,246,0.4)" : "rgba(236,72,153,0.4)"}`,
+                        }}
+                      >
+                        {currentGame.mode === "team" ? "👥 Teams" : "⚔ FFA"}
+                      </span>
+                      {olympic.results.find(
+                        (r) => String(r.gameId) === String(currentGame._id),
+                      ) && (
+                        <span className="text-green-400 text-sm font-bold">
+                          ✅ Bewertet
+                        </span>
+                      )}
+                      <span
+                        className="inline-flex items-center gap-1 text-xs font-black uppercase px-3 py-1 rounded-full"
+                        style={{
+                          background: "rgba(250,204,21,0.12)",
+                          border: "1px solid rgba(250,204,21,0.3)",
+                          color: "#facc15",
+                        }}
+                      >
+                        ▶ Live
+                      </span>
+                    </div>
+                  </div>
+                </div>
 
+                {/* Rules */}
                 {currentGame.rules && (
-                  <GlassCard>
-                    <h3 className="text-sm font-semibold text-muted mb-2">
-                      Rules
-                    </h3>
-                    <p className="text-sm text-white whitespace-pre-line">
+                  <div
+                    className="rounded-xl p-5 mb-4"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-white/30 mb-2">
+                      Regeln
+                    </p>
+                    <p className="text-sm text-white/85 whitespace-pre-line leading-relaxed">
                       {currentGame.rules}
                     </p>
-                  </GlassCard>
+                  </div>
                 )}
 
+                {/* Drinking rules */}
                 {currentGame.addons?.drinkingGame?.enabled && (
-                  <GlassCard className="border-orange-500/30">
-                    <h3 className="text-sm font-semibold text-orange-400 mb-1">
-                      🍺 Drinking Rules
-                    </h3>
-                    <p className="text-sm text-white whitespace-pre-line">
-                      {currentGame.addons.drinkingGame.rules ||
-                        "Enabled — ask the host for rules."}
+                  <div
+                    className="rounded-xl p-5 mb-4"
+                    style={{
+                      background: "rgba(251,146,60,0.06)",
+                      border: "1px solid rgba(251,146,60,0.25)",
+                    }}
+                  >
+                    <p className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-400/70 mb-2">
+                      🍺 Trinkregeln
                     </p>
-                  </GlassCard>
+                    <p className="text-sm text-white/85 whitespace-pre-line leading-relaxed">
+                      {currentGame.addons.drinkingGame.rules ||
+                        "Aktiviert — frag den Host nach den Regeln."}
+                    </p>
+                  </div>
                 )}
 
-                <div className="text-center text-sm text-muted">
-                  Game {olympic.currentGameIndex + 1} of {totalGames}
-                </div>
-              </>
+                {/* Equipment / handicap / time limit */}
+                {(currentGame.addons?.equipment || currentGame.addons?.handicap || currentGame.addons?.timeLimit > 0) && (
+                  <div className="flex flex-wrap gap-3 mt-2">
+                    {currentGame.addons?.timeLimit > 0 && (
+                      <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8">
+                        ⏱ {currentGame.addons.timeLimit} Min
+                      </span>
+                    )}
+                    {currentGame.addons?.equipment && (
+                      <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8">
+                        🎒 {currentGame.addons.equipment}
+                      </span>
+                    )}
+                    {currentGame.addons?.handicap && (
+                      <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8">
+                        ⚖ {currentGame.addons.handicap}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
             ) : (
-              <GlassCard className="text-center py-8">
-                <p className="text-muted">No games available.</p>
-              </GlassCard>
+              <div
+                className="rounded-2xl p-10 text-center"
+                style={{
+                  background: "rgba(10,12,30,0.9)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                }}
+              >
+                <p className="text-white/30">Kein Spiel ausgewählt</p>
+              </div>
             )}
           </div>
-        )}
 
-        {/* Tab: Leaderboard */}
-        {tab === "board" && (
-          <GlassCard className="animate-fade-in">
-            <h2 className="font-bold text-white mb-4">Live Leaderboard</h2>
-            <Scoreboard
-              leaderboard={leaderboard}
-              participants={olympic.participants}
-              myName={participantName}
-            />
-          </GlassCard>
-        )}
+          {/* ── Right 1/3: leaderboard + spielplan (sticky) ── */}
+          <div className="lg:sticky lg:top-6 space-y-4">
+            <div
+              className="rounded-2xl p-5"
+              style={{
+                background: "rgba(10,12,30,0.95)",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/30 mb-4">
+                📊 Live Tabelle
+              </p>
+              <Scoreboard
+                leaderboard={leaderboard}
+                participants={olympic.participants}
+                myName={participantName}
+              />
+            </div>
+
+            {/* Spielplan */}
+            <div
+              className="rounded-2xl p-5"
+              style={{
+                background: "rgba(10,12,30,0.9)",
+                border: "1px solid rgba(255,255,255,0.07)",
+              }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/30">
+                  Spielplan
+                </p>
+                <span className="text-[10px] text-white/25">
+                  {olympic.games.length} Spiele
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {olympic.games.map((g, i) => {
+                  const scored = !!olympic.results.find(
+                    (r) => String(r.gameId) === String(g._id),
+                  );
+                  const isCur = i === olympic.currentGameIndex;
+                  const hidden = olympic.hideGamePlan && !isCur && !scored;
+                  return (
+                    <div
+                      key={String(g._id)}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                      style={
+                        isCur
+                          ? {
+                              background: "rgba(139,92,246,0.15)",
+                              border: "1px solid rgba(139,92,246,0.35)",
+                            }
+                          : {
+                              background: "rgba(255,255,255,0.02)",
+                              border: "1px solid transparent",
+                            }
+                      }
+                    >
+                      <span
+                        className="text-xs font-black w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0"
+                        style={{
+                          background: isCur
+                            ? "rgba(139,92,246,0.4)"
+                            : "rgba(255,255,255,0.05)",
+                          color: isCur ? "#c4b5fd" : "#555",
+                        }}
+                      >
+                        {i + 1}
+                      </span>
+                      {/* Icon — always visible */}
+                      <span className="text-sm flex-shrink-0">
+                        {hidden ? "🎮" : g.icon}
+                      </span>
+                      {/* Title — blurred when hidden */}
+                      <span
+                        className={`flex-1 text-xs font-semibold truncate select-none ${isCur ? "text-white" : "text-white/45"}`}
+                        style={
+                          hidden
+                            ? { filter: "blur(5px)", pointerEvents: "none" }
+                            : undefined
+                        }
+                      >
+                        {hidden ? "???????????" : g.title}
+                      </span>
+                      {scored && !hidden && (
+                        <span className="text-green-400 text-xs flex-shrink-0">
+                          ✅
+                        </span>
+                      )}
+                      {isCur && (
+                        <span className="text-yellow-400 text-[9px] font-black uppercase flex-shrink-0">
+                          ▶
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {olympic.hideGamePlan && (
+                <p className="text-[10px] text-white/20 text-center mt-3">
+                  🔒 Spielplan ausgeblendet
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -72,7 +72,10 @@ export default function GameLibraryPage() {
     try {
       if (editingPreset) {
         // Update existing preset
-        const { data } = await api.patch(`/game-presets/${editingPreset._id}`, form);
+        const { data } = await api.patch(
+          `/game-presets/${editingPreset._id}`,
+          form,
+        );
         setPresets((prev) =>
           prev
             .map((p) => (p._id === data._id ? data : p))
@@ -89,7 +92,12 @@ export default function GameLibraryPage() {
       setForm({ ...BLANK_FORM });
       setShowForm(false);
     } catch (err) {
-      setSubmitError(err.response?.data?.error || (editingPreset ? "Failed to update preset" : "Failed to submit preset"));
+      setSubmitError(
+        err.response?.data?.error ||
+          (editingPreset
+            ? "Failed to update preset"
+            : "Failed to submit preset"),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -183,7 +191,9 @@ export default function GameLibraryPage() {
         {/* Submit form */}
         {showForm && user && (
           <GlassCard className="space-y-4 border-purple-500/30">
-            <h2 className="font-bold text-white">{editingPreset ? "✏️ Edit Preset" : "New Preset"}</h2>
+            <h2 className="font-bold text-white">
+              {editingPreset ? "✏️ Edit Preset" : "New Preset"}
+            </h2>
 
             <div className="flex gap-2">
               <Input
@@ -277,7 +287,13 @@ export default function GameLibraryPage() {
               onClick={handleSubmit}
               disabled={submitting || !form.title.trim()}
             >
-              {submitting ? (editingPreset ? "Saving…" : "Submitting…") : (editingPreset ? "💾 Save Changes" : "📤 Submit to Library")}
+              {submitting
+                ? editingPreset
+                  ? "Saving…"
+                  : "Submitting…"
+                : editingPreset
+                  ? "💾 Save Changes"
+                  : "📤 Submit to Library"}
             </button>
           </GlassCard>
         )}

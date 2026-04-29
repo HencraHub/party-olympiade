@@ -262,6 +262,57 @@ function StepEventSetup({ data, onChange }) {
               />
             </div>
           )}
+
+          {/* Hide game plan */}
+          <label
+            className="checkbox-card"
+            style={{
+              borderColor: data.hideGamePlan
+                ? "rgba(250,204,21,0.3)"
+                : undefined,
+              background: data.hideGamePlan
+                ? "rgba(250,204,21,0.04)"
+                : undefined,
+            }}
+          >
+            <div
+              className={`checkbox-dot ${data.hideGamePlan ? "checked" : ""}`}
+              aria-hidden="true"
+            >
+              {data.hideGamePlan && (
+                <svg
+                  className="w-3 h-3 text-white"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                >
+                  <path
+                    d="M2 6l3 3 5-5"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </div>
+            <input
+              type="checkbox"
+              className="sr-only"
+              checked={!!data.hideGamePlan}
+              onChange={(e) => onChange({ hideGamePlan: e.target.checked })}
+            />
+            <div className="flex-1 min-w-0">
+              <span className="text-xs font-black text-white/80 uppercase tracking-wide">
+                🔒 Spielplan verstecken
+              </span>
+              <p className="text-xs text-muted mt-0.5">
+                Spieler sehen nur verschwommene Spieltitel – Anzahl bleibt sichtbar.
+              </p>
+            </div>
+            <span className="text-xs font-black flex-shrink-0 text-yellow-400">
+              Blur
+            </span>
+          </label>
         </div>
       </div>
     </div>
@@ -541,66 +592,66 @@ function StepGames({ games, onChange }) {
     <div className="grid lg:grid-cols-[1fr_320px] gap-5 items-start">
       {/* ── Left column: tabs + form/library ── */}
       <div className="space-y-4">
-      {/* ── Tab switcher ── */}
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          {
-            key: "create",
-            icon: "+",
-            label: "Eigenes Spiel erstellen",
-            sub: "Individuelle Regeln & Einstellungen",
-            pencil: true,
-          },
-          {
-            key: "library",
-            icon: "⬡",
-            label: "Aus Bibliothek wählen",
-            sub: "Bewährte Spiele & Vorlagen",
-          },
-        ].map(({ key, label, sub }) => (
-          <button
-            key={key}
-            onClick={() => setTab(key)}
-            className="text-left p-4 rounded-2xl transition-all duration-200"
-            style={
-              tab === key
-                ? {
-                    background: "rgba(139,92,246,0.12)",
-                    border: "1.5px solid rgba(139,92,246,0.55)",
-                    boxShadow: "0 0 24px rgba(139,92,246,0.15)",
-                  }
-                : {
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1.5px solid rgba(255,255,255,0.08)",
-                  }
-            }
-          >
-            <div
-              className={`font-black text-sm mb-0.5 ${tab === key ? "text-white" : "text-muted"}`}
+        {/* ── Tab switcher ── */}
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            {
+              key: "create",
+              icon: "+",
+              label: "Eigenes Spiel erstellen",
+              sub: "Individuelle Regeln & Einstellungen",
+              pencil: true,
+            },
+            {
+              key: "library",
+              icon: "⬡",
+              label: "Aus Bibliothek wählen",
+              sub: "Bewährte Spiele & Vorlagen",
+            },
+          ].map(({ key, label, sub }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className="text-left p-4 rounded-2xl transition-all duration-200"
+              style={
+                tab === key
+                  ? {
+                      background: "rgba(139,92,246,0.12)",
+                      border: "1.5px solid rgba(139,92,246,0.55)",
+                      boxShadow: "0 0 24px rgba(139,92,246,0.15)",
+                    }
+                  : {
+                      background: "rgba(255,255,255,0.03)",
+                      border: "1.5px solid rgba(255,255,255,0.08)",
+                    }
+              }
             >
-              {key === "create" ? "＋ " : "🗂 "}
-              {label} {key === "create" && "✏️"}
-            </div>
-            <div className="text-xs text-white/35">{sub}</div>
-          </button>
-        ))}
-      </div>
+              <div
+                className={`font-black text-sm mb-0.5 ${tab === key ? "text-white" : "text-muted"}`}
+              >
+                {key === "create" ? "＋ " : "🗂 "}
+                {label} {key === "create" && "✏️"}
+              </div>
+              <div className="text-xs text-white/35">{sub}</div>
+            </button>
+          ))}
+        </div>
 
-      {/* ── Library tab: single panel, full-width in left column ── */}
-      {tab === "library" && (
-        <div
-          className="rounded-2xl p-4 flex flex-col gap-4"
-          style={{
-            background: "rgba(10,12,30,0.95)",
-            border: "1px solid rgba(139,92,246,0.22)",
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <span className="text-purple-400">🗂</span>
-            <h3 className="font-black text-white text-xs uppercase tracking-[0.15em]">
-              Spielbibliothek
-            </h3>
-          </div>
+        {/* ── Library tab: single panel, full-width in left column ── */}
+        {tab === "library" && (
+          <div
+            className="rounded-2xl p-4 flex flex-col gap-4"
+            style={{
+              background: "rgba(10,12,30,0.95)",
+              border: "1px solid rgba(139,92,246,0.22)",
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-purple-400">🗂</span>
+              <h3 className="font-black text-white text-xs uppercase tracking-[0.15em]">
+                Spielbibliothek
+              </h3>
+            </div>
 
             {/* Search */}
             <div className="relative">
@@ -728,209 +779,212 @@ function StepGames({ games, onChange }) {
               })}
             </div>
           </div>
-      )}
+        )}
 
-      {/* ── Create tab ── */}
-      {tab === "create" && (
-        <div
-          className="rounded-2xl p-5 space-y-4"
-          style={{
-            background: "rgba(10,12,30,0.97)",
-            border: "1px solid rgba(139,92,246,0.28)",
-            boxShadow: "0 0 30px rgba(139,92,246,0.08)",
-          }}
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-purple-400">✏️</span>
-            <h3 className="font-black text-white text-xs uppercase tracking-[0.15em]">
-              Spiel hinzufügen
-            </h3>
-          </div>
-
-          <div className="flex gap-2">
-            <Input
-              placeholder="Spieltitel"
-              maxLength={60}
-              value={form.title}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, title: e.target.value }))
-              }
-              className="flex-1"
-            />
-            <input
-              className="input-field w-16 text-center text-xl"
-              placeholder="🎮"
-              maxLength={2}
-              value={form.icon}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, icon: e.target.value || "🎮" }))
-              }
-            />
-          </div>
-
-          <div className="flex gap-3">
-            {["ffa", "team"].map((m) => (
-              <button
-                key={m}
-                onClick={() => setForm((f) => ({ ...f, mode: m }))}
-                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
-                style={
-                  form.mode === m
-                    ? {
-                        background: "linear-gradient(90deg, #8b5cf6, #6d28d9)",
-                        color: "#fff",
-                        border: "1px solid rgba(139,92,246,0.5)",
-                        boxShadow: "0 0 16px rgba(139,92,246,0.3)",
-                      }
-                    : {
-                        background: "rgba(255,255,255,0.04)",
-                        color: "rgba(255,255,255,0.5)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                      }
-                }
-              >
-                {m === "ffa" ? "⚔ FFA" : "👥 Teams"}
-              </button>
-            ))}
-          </div>
-
-          <textarea
-            className="textarea-field h-24"
-            placeholder="Regeln (optional, max 1000 Zeichen)"
-            maxLength={1000}
-            value={form.rules}
-            onChange={(e) => setForm((f) => ({ ...f, rules: e.target.value }))}
-          />
-
-          <button
-            className="text-sm text-purple-light hover:text-purple transition-colors"
-            onClick={() => setShowAddons((s) => !s)}
+        {/* ── Create tab ── */}
+        {tab === "create" && (
+          <div
+            className="rounded-2xl p-5 space-y-4"
+            style={{
+              background: "rgba(10,12,30,0.97)",
+              border: "1px solid rgba(139,92,246,0.28)",
+              boxShadow: "0 0 30px rgba(139,92,246,0.08)",
+            }}
           >
-            {showAddons
-              ? "▲ Add-ons ausblenden"
-              : "▼ Add-ons anzeigen (optional)"}
-          </button>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-purple-400">✏️</span>
+              <h3 className="font-black text-white text-xs uppercase tracking-[0.15em]">
+                Spiel hinzufügen
+              </h3>
+            </div>
 
-          {showAddons && (
-            <div className="space-y-3 pt-1">
-              <label className="flex items-center gap-3 text-sm text-white">
-                <input
-                  type="checkbox"
-                  className="accent-purple w-4 h-4"
-                  checked={form.addons.drinkingGame.enabled}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      addons: {
-                        ...f.addons,
-                        drinkingGame: {
-                          ...f.addons.drinkingGame,
-                          enabled: e.target.checked,
-                        },
-                      },
-                    }))
+            <div className="flex gap-2">
+              <Input
+                placeholder="Spieltitel"
+                maxLength={60}
+                value={form.title}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, title: e.target.value }))
+                }
+                className="flex-1"
+              />
+              <input
+                className="input-field w-16 text-center text-xl"
+                placeholder="🎮"
+                maxLength={2}
+                value={form.icon}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, icon: e.target.value || "🎮" }))
+                }
+              />
+            </div>
+
+            <div className="flex gap-3">
+              {["ffa", "team"].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setForm((f) => ({ ...f, mode: m }))}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
+                  style={
+                    form.mode === m
+                      ? {
+                          background:
+                            "linear-gradient(90deg, #8b5cf6, #6d28d9)",
+                          color: "#fff",
+                          border: "1px solid rgba(139,92,246,0.5)",
+                          boxShadow: "0 0 16px rgba(139,92,246,0.3)",
+                        }
+                      : {
+                          background: "rgba(255,255,255,0.04)",
+                          color: "rgba(255,255,255,0.5)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                        }
                   }
-                />
-                🍺 Trinkspiel-Modus
-              </label>
-              {form.addons.drinkingGame.enabled && (
-                <textarea
-                  className="textarea-field h-16 text-sm"
-                  placeholder="Trinkregeln…"
-                  maxLength={500}
-                  value={form.addons.drinkingGame.rules}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      addons: {
-                        ...f.addons,
-                        drinkingGame: {
-                          ...f.addons.drinkingGame,
-                          rules: e.target.value,
-                        },
-                      },
-                    }))
-                  }
-                />
-              )}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="label">⏱ Zeitlimit (min, 0=∞)</label>
+                >
+                  {m === "ffa" ? "⚔ FFA" : "👥 Teams"}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              className="textarea-field h-24"
+              placeholder="Regeln (optional, max 1000 Zeichen)"
+              maxLength={1000}
+              value={form.rules}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, rules: e.target.value }))
+              }
+            />
+
+            <button
+              className="text-sm text-purple-light hover:text-purple transition-colors"
+              onClick={() => setShowAddons((s) => !s)}
+            >
+              {showAddons
+                ? "▲ Add-ons ausblenden"
+                : "▼ Add-ons anzeigen (optional)"}
+            </button>
+
+            {showAddons && (
+              <div className="space-y-3 pt-1">
+                <label className="flex items-center gap-3 text-sm text-white">
                   <input
-                    type="number"
-                    className="input-field"
-                    min={0}
-                    value={form.addons.timeLimit}
+                    type="checkbox"
+                    className="accent-purple w-4 h-4"
+                    checked={form.addons.drinkingGame.enabled}
                     onChange={(e) =>
                       setForm((f) => ({
                         ...f,
                         addons: {
                           ...f.addons,
-                          timeLimit: Number(e.target.value),
+                          drinkingGame: {
+                            ...f.addons.drinkingGame,
+                            enabled: e.target.checked,
+                          },
                         },
                       }))
                     }
                   />
-                </div>
-                {form.mode === "team" && (
+                  🍺 Trinkspiel-Modus
+                </label>
+                {form.addons.drinkingGame.enabled && (
+                  <textarea
+                    className="textarea-field h-16 text-sm"
+                    placeholder="Trinkregeln…"
+                    maxLength={500}
+                    value={form.addons.drinkingGame.rules}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        addons: {
+                          ...f.addons,
+                          drinkingGame: {
+                            ...f.addons.drinkingGame,
+                            rules: e.target.value,
+                          },
+                        },
+                      }))
+                    }
+                  />
+                )}
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="label">👥 Teamgröße</label>
+                    <label className="label">⏱ Zeitlimit (min, 0=∞)</label>
                     <input
                       type="number"
                       className="input-field"
-                      min={1}
-                      value={form.addons.teamSize}
+                      min={0}
+                      value={form.addons.timeLimit}
                       onChange={(e) =>
                         setForm((f) => ({
                           ...f,
                           addons: {
                             ...f.addons,
-                            teamSize: Number(e.target.value),
+                            timeLimit: Number(e.target.value),
                           },
                         }))
                       }
                     />
                   </div>
-                )}
+                  {form.mode === "team" && (
+                    <div>
+                      <label className="label">👥 Teamgröße</label>
+                      <input
+                        type="number"
+                        className="input-field"
+                        min={1}
+                        value={form.addons.teamSize}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            addons: {
+                              ...f.addons,
+                              teamSize: Number(e.target.value),
+                            },
+                          }))
+                        }
+                      />
+                    </div>
+                  )}
+                </div>
+                <Input
+                  label="🛠 Benötigtes Equipment"
+                  placeholder="z.B. Controller, 2 TVs"
+                  maxLength={200}
+                  value={form.addons.equipment}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      addons: { ...f.addons, equipment: e.target.value },
+                    }))
+                  }
+                />
+                <Input
+                  label="⚖ Handicap-Regeln"
+                  placeholder="z.B. Bester Spieler nutzt Tastatur"
+                  maxLength={200}
+                  value={form.addons.handicap}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      addons: { ...f.addons, handicap: e.target.value },
+                    }))
+                  }
+                />
               </div>
-              <Input
-                label="🛠 Benötigtes Equipment"
-                placeholder="z.B. Controller, 2 TVs"
-                maxLength={200}
-                value={form.addons.equipment}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    addons: { ...f.addons, equipment: e.target.value },
-                  }))
-                }
-              />
-              <Input
-                label="⚖ Handicap-Regeln"
-                placeholder="z.B. Bester Spieler nutzt Tastatur"
-                maxLength={200}
-                value={form.addons.handicap}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    addons: { ...f.addons, handicap: e.target.value },
-                  }))
-                }
-              />
-            </div>
-          )}
+            )}
 
-          <button
-            className="btn-primary w-full"
-            onClick={addGame}
-            disabled={!form.title.trim()}
-          >
-            + Spiel hinzufügen
-          </button>
-        </div>
-      )}
+            <button
+              className="btn-primary w-full"
+              onClick={addGame}
+              disabled={!form.title.trim()}
+            >
+              + Spiel hinzufügen
+            </button>
+          </div>
+        )}
 
-      {/* end left column */}
+        {/* end left column */}
       </div>
 
       {/* ── Right column: persistent selected games ── */}
@@ -1001,16 +1055,24 @@ function StepGames({ games, onChange }) {
                     className="text-white/25 hover:text-white/70 text-xs px-1 py-0.5 rounded disabled:opacity-20"
                     onClick={() => moveGame(i, -1)}
                     disabled={i === 0}
-                  >▲</button>
+                  >
+                    ▲
+                  </button>
                   <button
                     className="text-white/25 hover:text-white/70 text-xs px-1 py-0.5 rounded disabled:opacity-20"
                     onClick={() => moveGame(i, 1)}
                     disabled={i === games.length - 1}
-                  >▼</button>
+                  >
+                    ▼
+                  </button>
                   <button
                     className="text-pink-400/60 hover:text-pink-400 text-base leading-none ml-0.5 px-1"
-                    onClick={() => onChange(games.filter((_, idx) => idx !== i))}
-                  >×</button>
+                    onClick={() =>
+                      onChange(games.filter((_, idx) => idx !== i))
+                    }
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
             ))}
@@ -1325,6 +1387,7 @@ export default function CreatePage() {
     scoringEnabled: true,
     hostParticipates: false,
     hostPlayerName: "",
+    hideGamePlan: false,
     extraRules: {
       comebackPenalty: false,
       lastPlaceBonus: false,
@@ -1348,6 +1411,7 @@ export default function CreatePage() {
           scoringEnabled: data.scoringEnabled !== false,
           hostParticipates: !!data.hostParticipates,
           hostPlayerName: data.hostPlayerName || "",
+          hideGamePlan: !!data.hideGamePlan,
           extraRules: data.extraRules,
           maxPlayers: data.maxPlayers,
         });
@@ -1380,6 +1444,7 @@ export default function CreatePage() {
           scoringEnabled: eventData.scoringEnabled,
           hostParticipates: eventData.hostParticipates,
           hostPlayerName: eventData.hostPlayerName,
+          hideGamePlan: eventData.hideGamePlan,
           extraRules: eventData.extraRules,
           maxPlayers: eventData.maxPlayers,
           games,
@@ -1393,6 +1458,7 @@ export default function CreatePage() {
           scoringEnabled: eventData.scoringEnabled,
           hostParticipates: eventData.hostParticipates,
           hostPlayerName: eventData.hostPlayerName,
+          hideGamePlan: eventData.hideGamePlan,
           extraRules: eventData.extraRules,
           maxPlayers: eventData.maxPlayers,
           games,

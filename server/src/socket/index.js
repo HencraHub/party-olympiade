@@ -275,8 +275,116 @@ export function initSocket(io) {
     });
 
     /**
-     * edit-games — host reorders or removes games during active olympic
+     * update-settings — host edits event settings during active olympic
+     * payload: { code, hostToken, settings }
+     * settings: { name, maxPlayers, scoringMode, tieRule, extraRules,
+     *             hostParticipates, hostPlayerName, hideGamePlan }
+     */
+    socket.on(
+      "update-settings",
+      async ({ code, hostToken, settings }) => {
+        try {
+          const upperCode = code.toUpperCase();
+          const olympic = await Olympic.findOne({ code: upperCode });
+          if (!olympic)
+            return socket.emit("error", { message: "Olympic not found" });
+          if (olympic.hostToken !== hostToken)
+            return socket.emit("error", { message: "Unauthorized" });
+
+          const {
+            name,
+            maxPlayers,
+            scoringMode,
+            tieRule,
+            extraRules,
+            hostParticipates,
+            hostPlayerName,
+            hideGamePlan,
+          } = settings || {};
+
+          if (name !== undefined) {
+            const n = String(name).trim().slice(0, 60);
+            if (n.length > 0) olympic.name = n;
+          }
+          if (maxPlayers !== undefined) {
+            olympic.maxPlayers = Math.max(2, Math.min(50, Number(maxPlayers)));
+          }
+          if (
+            scoringMode !== undefined &&
+            ["linear", "top3", "f1"].includes(scoringMode)
+          ) {
+            olympic.scoringMode = scoringMode;
+          }
+          if (
+            tieRule !== undefined &&
+            ["tiebreaker", "shared_points"].includes(tieRule)
+          ) {
+            olympic.tieRule = tieRule;
+          }
+          if (extraRules !== undefined && typeof extraRules === "object") {
+            olympic.extraRules = {
+              comebackPenalty: !!extraRules.comebackPenalty,
+              lastPlaceBonus: !!extraRules.lastPlaceBonus,
+              winStreakBonus: !!extraRules.winStreakBonus,
+              finalDoublePoints: !!extraRules.finalDoublePoints,
+            };
+          }
+          if (hostParticipates !== undefined) {
+            olympic.hostParticipates = !!hostParticipates;
+          }
+          if (hostPlayerName !== undefined) {
+            olympic.hostPlayerName = String(hostPlayerName)
+              .trim()
+              .slice(0, 30);
+          }
+          if (hideGamePlan !== undefined) {
+            olympic.hideGamePlan = !!hideGamePlan;
+          }
+
+          await olympic.save();
+          const safe = olympic.toObject();
+          delete safe.hostToken;
+          io.to(upperCode).emit("room-update", {
+            olympic: safe,
+            leaderboard: computeLeaderboard(safe),
+          });
+        } catch (err) {
+          console.error("update-settings error:", err);
+          socket.emit("error", { message: "Server error" });
+        }
+      },
+    );
+
+    /**
+     * toggle-game-plan — host shows/hides game titles for participants
+     * payload: { code, hostToken, hide }
+     */
+    socket.on("toggle-game-plan", async ({ code, hostToken, hide }) => {
+      try {
+        const upperCode = code.toUpperCase();
+        const olympic = await Olympic.findOne({ code: upperCode });
+        if (!olympic)
+          return socket.emit("error", { message: "Olympic not found" });
+        if (olympic.hostToken !== hostToken)
+          return socket.emit("error", { message: "Unauthorized" });
+        olympic.hideGamePlan = !!hide;
+        await olympic.save();
+        const safe = olympic.toObject();
+        delete safe.hostToken;
+        io.to(upperCode).emit("room-update", {
+          olympic: safe,
+          leaderboard: computeLeaderboard(safe),
+        });
+      } catch (err) {
+        console.error("toggle-game-plan error:", err);
+        socket.emit("error", { message: "Server error" });
+      }
+    });
+
+    /**
+     * edit-games — host reorders, removes, or adds games during active olympic
      * payload: { code, hostToken, games }
+     * Games with an existing _id are kept as-is; games without _id are new entries.
      */
     socket.on("edit-games", async ({ code, hostToken, games }) => {
       try {
@@ -287,18 +395,21 @@ export function initSocket(io) {
         if (olympic.hostToken !== hostToken)
           return socket.emit("error", { message: "Unauthorized" });
         if (!Array.isArray(games) || games.length === 0)
-          return socket.emit("error", { message: "At least one game required" });
+          return socket.emit("error", {
+            message: "At least one game required",
+          });
 
-        // Map to _id strings for quick lookup
-        const allowedIds = new Set(olympic.games.map((g) => String(g._id)));
-        const newGames = games.filter((g) => allowedIds.has(String(g._id)));
-        if (newGames.length === 0)
+        // Validate each entry: must have a non-empty title
+        const validGames = games.filter(
+          (g) => g && typeof g.title === "string" && g.title.trim().length > 0,
+        );
+        if (validGames.length === 0)
           return socket.emit("error", { message: "No valid games provided" });
 
-        olympic.games = newGames;
+        olympic.games = validGames;
         // Clamp currentGameIndex to valid range
-        if (olympic.currentGameIndex >= newGames.length) {
-          olympic.currentGameIndex = newGames.length - 1;
+        if (olympic.currentGameIndex >= validGames.length) {
+          olympic.currentGameIndex = validGames.length - 1;
         }
         await olympic.save();
 

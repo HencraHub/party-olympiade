@@ -117,6 +117,7 @@ const OlympicSchema = new mongoose.Schema(
     scoringEnabled: { type: Boolean, default: true },
     hostParticipates: { type: Boolean, default: false },
     hostPlayerName: { type: String, default: "", trim: true, maxlength: 30 },
+    hideGamePlan: { type: Boolean, default: false },
     extraRules: { type: ExtraRulesSchema, default: () => ({}) },
     participants: [ParticipantSchema],
     games: [GameSchema],
