@@ -123,15 +123,24 @@ export default function Scoreboard({
             )}
 
             {/* Name */}
-            <span
-              className={`flex-1 text-sm font-semibold truncate ${
-                isMe ? "text-purple-300" : "text-white/85"
-              }`}
-            >
-              {entry.name}
+            <span className="flex-1 flex items-center gap-1.5 min-w-0">
+              <span
+                className={`text-sm font-semibold truncate ${
+                  isMe ? "text-purple-300" : "text-white/85"
+                }`}
+              >
+                {entry.name}
+              </span>
               {isMe && (
-                <span className="ml-1 text-[10px] font-black text-purple-400/70">
-                  (you)
+                <span
+                  className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full flex-shrink-0"
+                  style={{
+                    background: "rgba(139,92,246,0.35)",
+                    border: "1px solid rgba(139,92,246,0.6)",
+                    color: "#c4b5fd",
+                  }}
+                >
+                  ich
                 </span>
               )}
             </span>

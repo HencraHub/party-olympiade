@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { connectSocket, getSocket } from "../socket/socket.js";
 import useOlympicStore from "../store/useOlympicStore.js";
+import api from "../api/client.js";
 import GlassCard from "../components/ui/GlassCard.jsx";
 import Select from "../components/ui/Select.jsx";
 import ConfirmModal from "../components/ui/ConfirmModal.jsx";
@@ -30,6 +31,10 @@ export default function HostRoomPage() {
     icon: "🎮",
     mode: "ffa",
   });
+  const [addGameTab, setAddGameTab] = useState("create"); // "create" | "library"
+  const [libraryPresets, setLibraryPresets] = useState([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [librarySearch, setLibrarySearch] = useState("");
 
   const hostToken = localStorage.getItem(`hostToken_${code?.toUpperCase()}`);
 
@@ -72,6 +77,17 @@ export default function HostRoomPage() {
       socket.off("error");
     };
   }, [code]);
+
+  // Fetch library presets when library tab in manage modal is opened
+  useEffect(() => {
+    if (addGameTab !== "library" || libraryPresets.length > 0) return;
+    setLibraryLoading(true);
+    api
+      .get("/game-presets")
+      .then(({ data }) => setLibraryPresets(data))
+      .catch(() => {})
+      .finally(() => setLibraryLoading(false));
+  }, [addGameTab]); // eslint-disable-line
 
   // Sync score panel with current game when navigating
   useEffect(() => {
@@ -857,6 +873,11 @@ export default function HostRoomPage() {
                     <Scoreboard
                       leaderboard={leaderboard}
                       participants={olympic.participants}
+                      myName={
+                        olympic.hostParticipates
+                          ? olympic.hostPlayerName || null
+                          : null
+                      }
                     />
                   </div>
                 </>
@@ -1067,7 +1088,7 @@ export default function HostRoomPage() {
                   })}
                 </div>
 
-                {/* Add game inline form */}
+                {/* Add game section with create/library tabs */}
                 <div
                   className="rounded-xl p-3 mb-3 space-y-2"
                   style={{
@@ -1075,32 +1096,112 @@ export default function HostRoomPage() {
                     border: "1px solid rgba(139,92,246,0.18)",
                   }}
                 >
-                  <p className="text-[10px] font-black uppercase tracking-widest text-purple-400/70">
-                    + Spiel hinzufügen
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      className="w-12 text-center rounded-lg px-2 py-1.5 text-base bg-white/5 border border-white/10 focus:outline-none focus:border-purple-500/50"
-                      placeholder="🎮"
-                      maxLength={2}
-                      value={addGameForm.icon}
-                      onChange={(e) =>
-                        setAddGameForm((f) => ({
-                          ...f,
-                          icon: e.target.value || "🎮",
-                        }))
-                      }
-                    />
-                    <input
-                      className="flex-1 rounded-lg px-3 py-1.5 text-sm bg-white/5 border border-white/10 text-white placeholder-white/25 focus:outline-none focus:border-purple-500/50"
-                      placeholder="Spielname…"
-                      maxLength={60}
-                      value={addGameForm.title}
-                      onChange={(e) =>
-                        setAddGameForm((f) => ({ ...f, title: e.target.value }))
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && addGameForm.title.trim()) {
+                  {/* Tab switcher */}
+                  <div className="flex gap-1.5 mb-2">
+                    {[
+                      { key: "create", label: "✏ Eigenes" },
+                      { key: "library", label: "🗂 Bibliothek" },
+                    ].map(({ key, label }) => (
+                      <button
+                        key={key}
+                        className="px-3 py-1 rounded-lg text-xs font-bold transition-all"
+                        style={
+                          addGameTab === key
+                            ? {
+                                background: "rgba(139,92,246,0.35)",
+                                border: "1px solid rgba(139,92,246,0.6)",
+                                color: "#c4b5fd",
+                              }
+                            : {
+                                background: "rgba(255,255,255,0.04)",
+                                border: "1px solid rgba(255,255,255,0.08)",
+                                color: "rgba(255,255,255,0.35)",
+                              }
+                        }
+                        onClick={() => setAddGameTab(key)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Create tab */}
+                  {addGameTab === "create" && (
+                    <div className="flex gap-2">
+                      <input
+                        className="w-12 text-center rounded-lg px-2 py-1.5 text-base bg-white/5 border border-white/10 focus:outline-none focus:border-purple-500/50"
+                        placeholder="🎮"
+                        maxLength={2}
+                        value={addGameForm.icon}
+                        onChange={(e) =>
+                          setAddGameForm((f) => ({
+                            ...f,
+                            icon: e.target.value || "🎮",
+                          }))
+                        }
+                      />
+                      <input
+                        className="flex-1 rounded-lg px-3 py-1.5 text-sm bg-white/5 border border-white/10 text-white placeholder-white/25 focus:outline-none focus:border-purple-500/50"
+                        placeholder="Spielname…"
+                        maxLength={60}
+                        value={addGameForm.title}
+                        onChange={(e) =>
+                          setAddGameForm((f) => ({
+                            ...f,
+                            title: e.target.value,
+                          }))
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && addGameForm.title.trim()) {
+                            setManagingGames([
+                              ...(managingGames ?? olympic.games),
+                              {
+                                ...addGameForm,
+                                title: addGameForm.title.trim(),
+                                order: (managingGames ?? olympic.games).length,
+                              },
+                            ]);
+                            setAddGameForm({
+                              title: "",
+                              icon: "🎮",
+                              mode: "ffa",
+                            });
+                          }
+                        }}
+                      />
+                      {["ffa", "team"].map((m) => (
+                        <button
+                          key={m}
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all"
+                          style={
+                            addGameForm.mode === m
+                              ? {
+                                  background: "rgba(139,92,246,0.35)",
+                                  border: "1px solid rgba(139,92,246,0.6)",
+                                  color: "#c4b5fd",
+                                }
+                              : {
+                                  background: "rgba(255,255,255,0.05)",
+                                  border: "1px solid rgba(255,255,255,0.1)",
+                                  color: "rgba(255,255,255,0.35)",
+                                }
+                          }
+                          onClick={() =>
+                            setAddGameForm((f) => ({ ...f, mode: m }))
+                          }
+                        >
+                          {m === "ffa" ? "⚔ FFA" : "👥 Team"}
+                        </button>
+                      ))}
+                      <button
+                        className="px-3 py-1.5 rounded-lg text-sm font-bold transition-all disabled:opacity-30"
+                        style={{
+                          background: "rgba(139,92,246,0.25)",
+                          border: "1px solid rgba(139,92,246,0.45)",
+                          color: "#c4b5fd",
+                        }}
+                        disabled={!addGameForm.title.trim()}
+                        onClick={() => {
                           setManagingGames([
                             ...(managingGames ?? olympic.games),
                             {
@@ -1114,42 +1215,123 @@ export default function HostRoomPage() {
                             icon: "🎮",
                             mode: "ffa",
                           });
-                        }
-                      }}
-                    />
-                    <select
-                      className="rounded-lg px-2 py-1.5 text-xs bg-white/5 border border-white/10 text-white/70 focus:outline-none focus:border-purple-500/50"
-                      value={addGameForm.mode}
-                      onChange={(e) =>
-                        setAddGameForm((f) => ({ ...f, mode: e.target.value }))
-                      }
-                    >
-                      <option value="ffa">FFA</option>
-                      <option value="team">Team</option>
-                    </select>
-                    <button
-                      className="px-3 py-1.5 rounded-lg text-sm font-bold transition-all disabled:opacity-30"
-                      style={{
-                        background: "rgba(139,92,246,0.25)",
-                        border: "1px solid rgba(139,92,246,0.45)",
-                        color: "#c4b5fd",
-                      }}
-                      disabled={!addGameForm.title.trim()}
-                      onClick={() => {
-                        setManagingGames([
-                          ...(managingGames ?? olympic.games),
-                          {
-                            ...addGameForm,
-                            title: addGameForm.title.trim(),
-                            order: (managingGames ?? olympic.games).length,
-                          },
-                        ]);
-                        setAddGameForm({ title: "", icon: "🎮", mode: "ffa" });
-                      }}
-                    >
-                      ＋
-                    </button>
-                  </div>
+                        }}
+                      >
+                        ＋
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Library tab */}
+                  {addGameTab === "library" && (
+                    <div className="space-y-2">
+                      <input
+                        className="w-full rounded-lg px-3 py-1.5 text-sm bg-white/5 border border-white/10 text-white placeholder-white/25 focus:outline-none focus:border-purple-500/50"
+                        placeholder="🔍 Suchen…"
+                        value={librarySearch}
+                        onChange={(e) => setLibrarySearch(e.target.value)}
+                      />
+                      {libraryLoading && (
+                        <p className="text-xs text-white/30 text-center py-2 animate-pulse">
+                          Lade Bibliothek…
+                        </p>
+                      )}
+                      <div className="space-y-1 max-h-44 overflow-y-auto pr-0.5">
+                        {libraryPresets
+                          .filter((p) =>
+                            p.title
+                              .toLowerCase()
+                              .includes(librarySearch.toLowerCase()),
+                          )
+                          .map((preset) => {
+                            const curGames = managingGames ?? olympic.games;
+                            const already = curGames.some(
+                              (g) => g.title === preset.title,
+                            );
+                            return (
+                              <div
+                                key={preset._id}
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
+                                style={{
+                                  background: "rgba(255,255,255,0.02)",
+                                  border: "1px solid rgba(255,255,255,0.05)",
+                                }}
+                              >
+                                <span className="text-base flex-shrink-0">
+                                  {preset.icon}
+                                </span>
+                                <span className="flex-1 text-xs text-white/80 truncate">
+                                  {preset.title}
+                                </span>
+                                <span
+                                  className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded flex-shrink-0"
+                                  style={{
+                                    background:
+                                      preset.mode === "team"
+                                        ? "rgba(139,92,246,0.2)"
+                                        : "rgba(236,72,153,0.2)",
+                                    color:
+                                      preset.mode === "team"
+                                        ? "#a78bfa"
+                                        : "#f472b6",
+                                  }}
+                                >
+                                  {preset.mode}
+                                </span>
+                                <button
+                                  className="px-2 py-0.5 rounded-lg text-xs font-bold transition-all flex-shrink-0 disabled:opacity-40"
+                                  style={
+                                    already
+                                      ? {
+                                          background: "rgba(236,72,153,0.15)",
+                                          border:
+                                            "1px solid rgba(236,72,153,0.4)",
+                                          color: "#f472b6",
+                                        }
+                                      : {
+                                          background: "rgba(139,92,246,0.25)",
+                                          border:
+                                            "1px solid rgba(139,92,246,0.5)",
+                                          color: "#c4b5fd",
+                                        }
+                                  }
+                                  disabled={already}
+                                  onClick={() => {
+                                    if (already) return;
+                                    const cur = managingGames ?? olympic.games;
+                                    setManagingGames([
+                                      ...cur,
+                                      {
+                                        title: preset.title,
+                                        icon: preset.icon,
+                                        mode: preset.mode,
+                                        rules: preset.rules,
+                                        addons: preset.addons || {},
+                                        order: cur.length,
+                                      },
+                                    ]);
+                                  }}
+                                >
+                                  {already ? "✓" : "+"}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        {!libraryLoading &&
+                          libraryPresets.filter((p) =>
+                            p.title
+                              .toLowerCase()
+                              .includes(librarySearch.toLowerCase()),
+                          ).length === 0 && (
+                            <p className="text-xs text-white/25 text-center py-3">
+                              {librarySearch
+                                ? `Keine Ergebnisse für "${librarySearch}"`
+                                : "Bibliothek leer"}
+                            </p>
+                          )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
@@ -1227,83 +1409,59 @@ export default function HostRoomPage() {
                   </div>
 
                   {/* Scoring Mode */}
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-1.5">
-                      Wertungssystem
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { value: "linear", label: "Linear" },
-                        { value: "top3", label: "Top 3" },
-                        { value: "f1", label: "F1" },
-                      ].map((opt) => (
-                        <button
-                          key={opt.value}
-                          className="py-2 rounded-xl text-xs font-bold transition-all"
-                          style={
-                            managingSettings.scoringMode === opt.value
-                              ? {
-                                  background: "rgba(34,211,238,0.15)",
-                                  border: "1px solid rgba(34,211,238,0.4)",
-                                  color: "#22d3ee",
-                                }
-                              : {
-                                  background: "rgba(255,255,255,0.04)",
-                                  border: "1px solid rgba(255,255,255,0.08)",
-                                  color: "rgba(255,255,255,0.4)",
-                                }
-                          }
-                          onClick={() =>
-                            setManagingSettings((s) => ({
-                              ...s,
-                              scoringMode: opt.value,
-                            }))
-                          }
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <Select
+                    label={
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white/35">
+                        Wertungssystem
+                      </span>
+                    }
+                    value={managingSettings.scoringMode}
+                    onChange={(val) =>
+                      setManagingSettings((s) => ({ ...s, scoringMode: val }))
+                    }
+                    options={[
+                      {
+                        value: "linear",
+                        label: "Linear",
+                        description:
+                          "Jeder Platz gibt Punkte: 1. = n Pkt., letzter = 1 Pkt.",
+                      },
+                      {
+                        value: "top3",
+                        label: "Top 3 Only",
+                        description:
+                          "1.: 3 Pkt. · 2.: 2 Pkt. · 3.: 1 Pkt. · Rest: 0",
+                      },
+                      {
+                        value: "f1",
+                        label: "F1 Format",
+                        description: "10 · 8 · 6 · 5 · 4 · 3 · 2 · 1 Pkt.",
+                      },
+                    ]}
+                  />
 
                   {/* Tie Rule */}
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-1.5">
-                      Tie-Breaker Regel
-                    </label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { value: "tiebreaker", label: "Tiebreaker Frage" },
-                        { value: "shared_points", label: "Punkte teilen" },
-                      ].map((opt) => (
-                        <button
-                          key={opt.value}
-                          className="py-2 rounded-xl text-xs font-bold transition-all"
-                          style={
-                            managingSettings.tieRule === opt.value
-                              ? {
-                                  background: "rgba(34,211,238,0.15)",
-                                  border: "1px solid rgba(34,211,238,0.4)",
-                                  color: "#22d3ee",
-                                }
-                              : {
-                                  background: "rgba(255,255,255,0.04)",
-                                  border: "1px solid rgba(255,255,255,0.08)",
-                                  color: "rgba(255,255,255,0.4)",
-                                }
-                          }
-                          onClick={() =>
-                            setManagingSettings((s) => ({
-                              ...s,
-                              tieRule: opt.value,
-                            }))
-                          }
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                  <Select
+                    label={
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white/35">
+                        Tie-Breaker Regel
+                      </span>
+                    }
+                    value={managingSettings.tieRule}
+                    onChange={(val) =>
+                      setManagingSettings((s) => ({ ...s, tieRule: val }))
+                    }
+                    options={[
+                      {
+                        value: "tiebreaker",
+                        label: "Tiebreaker Frage entscheidet",
+                      },
+                      {
+                        value: "shared_points",
+                        label: "Punkte werden aufgeteilt",
+                      },
+                    ]}
+                  />
 
                   {/* Bonus / Malus Rules */}
                   <div>

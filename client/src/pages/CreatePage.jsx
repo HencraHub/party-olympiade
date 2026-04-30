@@ -56,101 +56,91 @@ const BONUS_RULES = [
 // ─── Step 1: Event Setup ───────────────────────────────────────────────────
 function StepEventSetup({ data, onChange }) {
   return (
-    <div className="space-y-6">
-      {/* Olympic Name */}
-      <div>
-        <label className="label-upper">Olympic Name</label>
-        <div className="relative">
-          <input
-            className="input-field pr-12"
-            placeholder="z.B. Summer Gaming Olympics 2025"
-            maxLength={60}
-            value={data.name}
-            onChange={(e) => onChange({ name: e.target.value })}
-          />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-pink-500 text-lg select-none pointer-events-none">
-            👑
-          </span>
+    <div className="space-y-5">
+      {/* Row 1: Name + Max Players side by side */}
+      <div className="grid sm:grid-cols-[1fr_auto] gap-4 items-end">
+        <div>
+          <label className="label-upper">Olympic Name</label>
+          <div className="relative">
+            <input
+              className="input-field pr-12"
+              placeholder="z.B. Summer Gaming Olympics 2025"
+              maxLength={60}
+              value={data.name}
+              onChange={(e) => onChange({ name: e.target.value })}
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-pink-500 text-lg select-none pointer-events-none">
+              👑
+            </span>
+          </div>
         </div>
-        <p className="field-hint">
-          Wähle einen coolen Namen für deine Olympiade!
-        </p>
+        <div className="sm:w-28">
+          <label className="label-upper">Max. Spieler</label>
+          <div className="relative">
+            <input
+              type="number"
+              className="input-field text-center"
+              min={2}
+              max={50}
+              value={data.maxPlayers}
+              onChange={(e) =>
+                onChange({
+                  maxPlayers: Math.max(2, Math.min(50, Number(e.target.value))),
+                })
+              }
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Max Players */}
-      <div>
-        <label className="label-upper">Max. Spieler</label>
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-base select-none pointer-events-none">
-            👥
-          </span>
-          <input
-            type="number"
-            className="input-field pl-11"
-            min={2}
-            max={50}
-            value={data.maxPlayers}
-            onChange={(e) =>
-              onChange({
-                maxPlayers: Math.max(2, Math.min(50, Number(e.target.value))),
-              })
-            }
-          />
-        </div>
-        <p className="field-hint">
-          Spieler können per Code beitreten. Min. 2, max. 50.
-        </p>
+      {/* Row 2: Scoring + Tie-Breaker side by side */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Select
+          label={
+            <span className="label-upper" style={{ marginBottom: 0 }}>
+              Wertungssystem
+            </span>
+          }
+          value={data.scoringMode}
+          onChange={(val) => onChange({ scoringMode: val })}
+          options={[
+            {
+              value: "linear",
+              label: "Linear",
+              description:
+                "Jeder Platz gibt Punkte: 1. = n Pkt., letzter = 1 Pkt.",
+            },
+            {
+              value: "top3",
+              label: "Top 3 Only",
+              description: "1.: 3 Pkt. · 2.: 2 Pkt. · 3.: 1 Pkt. · Rest: 0",
+            },
+            {
+              value: "f1",
+              label: "F1 Format",
+              description: "10 · 8 · 6 · 5 · 4 · 3 · 2 · 1 Pkt.",
+            },
+          ]}
+        />
+        <Select
+          label={
+            <span className="label-upper" style={{ marginBottom: 0 }}>
+              Tie-Breaker Regel
+            </span>
+          }
+          value={data.tieRule}
+          onChange={(val) => onChange({ tieRule: val })}
+          options={[
+            { value: "tiebreaker", label: "Tiebreaker Frage entscheidet" },
+            { value: "shared_points", label: "Punkte werden aufgeteilt" },
+          ]}
+        />
       </div>
-
-      {/* Scoring System */}
-      <Select
-        label={
-          <span className="label-upper" style={{ marginBottom: 0 }}>
-            Wertungssystem
-          </span>
-        }
-        value={data.scoringMode}
-        onChange={(val) => onChange({ scoringMode: val })}
-        options={[
-          {
-            value: "linear",
-            label: "Linear",
-            description:
-              "Jeder Platz gibt Punkte: 1. = n Pkt., letzter = 1 Pkt.",
-          },
-          {
-            value: "top3",
-            label: "Top 3 Only",
-            description: "1.: 3 Pkt. · 2.: 2 Pkt. · 3.: 1 Pkt. · Rest: 0",
-          },
-          {
-            value: "f1",
-            label: "F1 Format",
-            description: "10 · 8 · 6 · 5 · 4 · 3 · 2 · 1 Pkt.",
-          },
-        ]}
-        description="Team-Spiele: das Gewinner-Team erhält die Hälfte der Max-Punkte."
-      />
-
-      {/* Tie-Breaker */}
-      <Select
-        label={
-          <span className="label-upper" style={{ marginBottom: 0 }}>
-            Tie-Breaker Regel
-          </span>
-        }
-        value={data.tieRule}
-        onChange={(val) => onChange({ tieRule: val })}
-        options={[
-          { value: "tiebreaker", label: "Tiebreaker Frage entscheidet" },
-          { value: "shared_points", label: "Punkte werden aufgeteilt" },
-        ]}
-      />
 
       {/* Bonus / Malus Rules */}
       <div>
         <p className="label-upper">Optionale Bonus / Malus Regeln</p>
-        <div className="space-y-2 mt-3">
+        <div className="grid sm:grid-cols-2 gap-4 mt-3">
           {BONUS_RULES.map(({ key, emoji, label, desc, badge, badgeClass }) => (
             <label key={key} className="checkbox-card">
               {/* Custom visual checkbox */}
@@ -199,7 +189,13 @@ function StepEventSetup({ data, onChange }) {
               </span>
             </label>
           ))}
+        </div>
+      </div>
 
+      {/* Host options */}
+      <div>
+        <p className="label-upper">Host-Optionen</p>
+        <div className="grid sm:grid-cols-2 gap-4 mt-3">
           {/* Host participates */}
           <label
             className="checkbox-card"
@@ -242,26 +238,12 @@ function StepEventSetup({ data, onChange }) {
               <span className="text-xs font-black text-white/80 uppercase tracking-wide">
                 🎮 Host spielt mit
               </span>
-              <p className="text-xs text-muted mt-0.5">
-                Du nimmst als Spieler teil – dein Score zählt mit.
-              </p>
+              <p className="text-xs text-muted mt-0.5">Dein Score zählt mit.</p>
             </div>
             <span className="text-xs font-semibold flex-shrink-0 text-cyan-400">
               Score zählt
             </span>
           </label>
-
-          {data.hostParticipates && (
-            <div className="ml-8">
-              <Input
-                label="Dein Spielername"
-                placeholder="z.B. Alex"
-                maxLength={30}
-                value={data.hostPlayerName || ""}
-                onChange={(e) => onChange({ hostPlayerName: e.target.value })}
-              />
-            </div>
-          )}
 
           {/* Hide game plan */}
           <label
@@ -306,8 +288,7 @@ function StepEventSetup({ data, onChange }) {
                 🔒 Spielplan verstecken
               </span>
               <p className="text-xs text-muted mt-0.5">
-                Spieler sehen nur verschwommene Spieltitel – Anzahl bleibt
-                sichtbar.
+                Spieltitel verschwommen bis zum Start.
               </p>
             </div>
             <span className="text-xs font-black flex-shrink-0 text-yellow-400">
@@ -315,6 +296,18 @@ function StepEventSetup({ data, onChange }) {
             </span>
           </label>
         </div>
+
+        {data.hostParticipates && (
+          <div className="mt-3">
+            <Input
+              label="Dein Spielername"
+              placeholder="z.B. Alex"
+              maxLength={30}
+              value={data.hostPlayerName || ""}
+              onChange={(e) => onChange({ hostPlayerName: e.target.value })}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -534,7 +527,6 @@ function StepGames({ games, onChange }) {
   const [presetsLoading, setPresetsLoading] = useState(false);
   const [presetsError, setPresetsError] = useState("");
   const [search, setSearch] = useState("");
-  const [addedIds, setAddedIds] = useState(new Set());
 
   // Load presets when library tab is first opened
   useEffect(() => {
@@ -574,7 +566,6 @@ function StepGames({ games, onChange }) {
         order: games.length,
       },
     ]);
-    setAddedIds((s) => new Set([...s, preset._id]));
   }
 
   function moveGame(i, dir) {
@@ -709,9 +700,7 @@ function StepGames({ games, onChange }) {
 
             <div className="space-y-2 overflow-y-auto max-h-[520px] pr-1">
               {filteredPresets.map((preset) => {
-                const already =
-                  addedIds.has(preset._id) ||
-                  games.some((g) => g.title === preset.title);
+                const already = games.some((g) => g.title === preset.title);
                 return (
                   <div
                     key={preset._id}
@@ -1583,7 +1572,7 @@ export default function CreatePage() {
 
       {/* ── Step content ── */}
       {step === 0 && (
-        <div className="max-w-5xl mx-auto px-4 grid lg:grid-cols-2 gap-5">
+        <div className="max-w-6xl mx-auto px-4 grid lg:grid-cols-[3fr_2fr] gap-5">
           {/* Form panel */}
           <div className="panel-glass rounded-2xl p-6">
             <div className="flex items-center gap-2.5 mb-6">
@@ -1603,19 +1592,19 @@ export default function CreatePage() {
       )}
 
       {step === 1 && (
-        <div className="max-w-5xl mx-auto px-4">
+        <div className="max-w-6xl mx-auto px-4">
           <StepGames games={games} onChange={setGames} />
         </div>
       )}
 
       {step === 2 && (
-        <div className="max-w-5xl mx-auto px-4">
+        <div className="max-w-6xl mx-auto px-4">
           <StepPreview data={{ ...eventData, games }} />
         </div>
       )}
 
       {apiError && (
-        <div className="max-w-5xl mx-auto mt-4 px-4">
+        <div className="max-w-6xl mx-auto mt-4 px-4">
           <div className="p-3 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400 text-sm">
             {apiError}
           </div>
@@ -1630,7 +1619,7 @@ export default function CreatePage() {
             "linear-gradient(to top, rgba(7,7,20,0.97) 55%, transparent)",
         }}
       >
-        <div className="flex items-center justify-between gap-4 max-w-5xl mx-auto mb-3">
+        <div className="flex items-center justify-between gap-4 max-w-6xl mx-auto mb-3">
           {step > 0 ? (
             <button
               className="btn-secondary !px-6"

@@ -116,7 +116,7 @@ export default function WinnerPage() {
   if (!scoringEnabled) {
     return (
       <div className="min-h-screen px-4 py-10">
-        <div className="max-w-2xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto space-y-8">
           <div className="text-center animate-fade-in">
             <h1 className="text-4xl sm:text-5xl font-black text-white mb-2">
               🎉 Event Complete!
@@ -169,7 +169,7 @@ export default function WinnerPage() {
 
   return (
     <div className="min-h-screen px-4 py-10">
-      <div className="max-w-2xl mx-auto space-y-8">
+      <div className="max-w-4xl mx-auto space-y-8">
         {/* Hero */}
         <div className="text-center animate-fade-in">
           <h1 className="text-4xl sm:text-5xl font-black text-white mb-2">

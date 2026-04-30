@@ -108,7 +108,7 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-      <div className="max-w-2xl mx-auto space-y-6 animate-slide-up">
+      <div className="max-w-4xl mx-auto space-y-6 animate-slide-up">
         {/* Profile card */}
         <GlassCard>
           <div className="flex items-center gap-4">
