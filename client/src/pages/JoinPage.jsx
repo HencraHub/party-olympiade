@@ -5,6 +5,7 @@ import Input from "../components/ui/Input.jsx";
 import { connectSocket, disconnectSocket } from "../socket/socket.js";
 import useOlympicStore from "../store/useOlympicStore.js";
 import { useAuthStore } from "../store/useAuthStore.js";
+import { Gamepad2, ArrowLeft } from "lucide-react";
 
 export default function JoinPage() {
   const navigate = useNavigate();
@@ -71,7 +72,7 @@ export default function JoinPage() {
     <div className="min-h-screen flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md animate-slide-up">
         <button className="btn-ghost mb-8" onClick={() => navigate("/")}>
-          ← Zurück
+          <span className="flex items-center gap-1.5"><ArrowLeft size={14} /> Zurück</span>
         </button>
 
         <GlassCard glow>
@@ -110,7 +111,7 @@ export default function JoinPage() {
               onClick={handleJoin}
               disabled={loading}
             >
-              {loading ? "Beitreten…" : "🎮 Beitreten"}
+              {loading ? "Beitreten…" : <span className="flex items-center justify-center gap-2"><Gamepad2 size={15} />Beitreten</span>}
             </button>
           </div>
         </GlassCard>

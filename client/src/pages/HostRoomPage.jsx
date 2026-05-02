@@ -9,6 +9,134 @@ import ConfirmModal from "../components/ui/ConfirmModal.jsx";
 import GameCard from "../components/GameCard.jsx";
 import Scoreboard from "../components/Scoreboard.jsx";
 import ScoreEntry from "../components/ScoreEntry.jsx";
+import FloatingRoomNav from "../components/ui/FloatingRoomNav.jsx";
+import TiebreakerModal from "../components/ui/TiebreakerModal.jsx";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+  Check,
+  X,
+  ChevronRight,
+  Users,
+  Crown,
+  Gamepad2,
+  Medal,
+  Trophy,
+  Rocket,
+  ClipboardList,
+  Settings,
+  Swords,
+  Beer,
+  Clock,
+  Scale,
+  Wrench,
+  Save,
+  BarChart2,
+  FolderOpen,
+  Search,
+  Plus,
+  Pencil,
+  Undo2,
+  Target,
+  Flame,
+  Star,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  RotateCcw,
+  Lock,
+} from "lucide-react";
+
+function ManageGameRow({
+  dndId,
+  game,
+  index,
+  total,
+  isCur,
+  scored,
+  onMoveUp,
+  onMoveDown,
+  onRemove,
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: dndId });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        background: isCur ? "rgba(139,92,246,0.1)" : "rgba(255,255,255,0.04)",
+        border: `1px solid ${isCur ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.07)"}`,
+      }}
+      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        className="text-white/20 hover:text-white/50 cursor-grab active:cursor-grabbing touch-none"
+        tabIndex={-1}
+      >
+        <GripVertical size={16} />
+      </button>
+      <span className="text-xl w-8 text-center flex-shrink-0">{game.icon}</span>
+      <span
+        className={`flex-1 text-sm truncate ${isCur ? "text-white font-bold" : "text-white/70"}`}
+      >
+        {game.title}
+      </span>
+      {isCur && (
+        <ChevronRight size={14} className="text-yellow-400 flex-shrink-0" />
+      )}
+      {scored && <Check size={14} className="text-green-400 flex-shrink-0" />}
+      <button
+        className="text-white/25 hover:text-white/80 transition-colors disabled:opacity-20 flex-shrink-0"
+        disabled={index === 0}
+        onClick={onMoveUp}
+      >
+        <ChevronUp size={14} />
+      </button>
+      <button
+        className="text-white/25 hover:text-white/80 transition-colors disabled:opacity-20 flex-shrink-0"
+        disabled={index === total - 1}
+        onClick={onMoveDown}
+      >
+        <ChevronDown size={14} />
+      </button>
+      <button
+        className="text-pink-400/50 hover:text-pink-400 transition-colors disabled:opacity-20 flex-shrink-0"
+        disabled={total <= 1}
+        onClick={onRemove}
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
 
 export default function HostRoomPage() {
   const { code } = useParams();
@@ -35,8 +163,18 @@ export default function HostRoomPage() {
   const [libraryPresets, setLibraryPresets] = useState([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [librarySearch, setLibrarySearch] = useState("");
+  const [tiebreaker, setTiebreaker] = useState(null);
+  const [tiebreakerAnswers, setTiebreakerAnswers] = useState({});
+  const [tiebreakerResolved, setTiebreakerResolved] = useState(null);
 
   const hostToken = localStorage.getItem(`hostToken_${code?.toUpperCase()}`);
+
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   // Connect & join room
   useEffect(() => {
@@ -46,6 +184,11 @@ export default function HostRoomPage() {
       return;
     }
 
+    localStorage.setItem(
+      "lastRoom",
+      JSON.stringify({ code: code.toUpperCase(), role: "host" }),
+    );
+
     const socket = connectSocket();
 
     socket.on("room-update", (data) => {
@@ -54,14 +197,28 @@ export default function HostRoomPage() {
     });
 
     socket.on("olympic-finished", () => {
+      localStorage.removeItem("lastRoom");
       navigate(`/room/${code}/winner`);
     });
 
     socket.on("olympic-reverted", () => {
+      localStorage.removeItem("lastRoom");
       navigate(`/edit/${code?.toUpperCase()}`);
     });
 
     socket.on("error", ({ message }) => setSocketError(message));
+
+    socket.on("tiebreaker-start", (data) => {
+      setTiebreaker(data);
+      setTiebreakerAnswers({});
+      setTiebreakerResolved(null);
+    });
+    socket.on("tiebreaker-answers-update", ({ answers }) =>
+      setTiebreakerAnswers(answers),
+    );
+    socket.on("tiebreaker-resolved", ({ winner }) =>
+      setTiebreakerResolved(winner),
+    );
 
     socket.emit("join-room", {
       code: code.toUpperCase(),
@@ -75,6 +232,9 @@ export default function HostRoomPage() {
       socket.off("olympic-finished");
       socket.off("olympic-reverted");
       socket.off("error");
+      socket.off("tiebreaker-start");
+      socket.off("tiebreaker-answers-update");
+      socket.off("tiebreaker-resolved");
     };
   }, [code]);
 
@@ -104,6 +264,23 @@ export default function HostRoomPage() {
     });
   }
 
+  function confirmKick(playerName) {
+    setConfirmModal({
+      title: "Spieler kicken?",
+      message: `${playerName} wird aus der Lobby entfernt.`,
+      confirmLabel: (
+        <span className="flex items-center justify-center gap-1.5">
+          <X size={13} /> Kicken
+        </span>
+      ),
+      danger: true,
+      onConfirm: () => {
+        setConfirmModal(null);
+        kickPlayer(playerName);
+      },
+    });
+  }
+
   function navigate_game(direction) {
     const socket = getSocket();
     socket.emit("navigate", { code: code.toUpperCase(), direction, hostToken });
@@ -120,7 +297,11 @@ export default function HostRoomPage() {
       title: "Revert to Draft?",
       message:
         "All players will be kicked from the lobby and the Olympic will return to draft status.",
-      confirmLabel: "↩ Revert",
+      confirmLabel: (
+        <span className="flex items-center justify-center gap-1.5">
+          <RotateCcw size={13} /> Zurücksetzen
+        </span>
+      ),
       danger: false,
       onConfirm: () => {
         setConfirmModal(null);
@@ -148,7 +329,7 @@ export default function HostRoomPage() {
     setConfirmModal({
       title: "End the Olympic?",
       message: "This will reveal the final winner. This cannot be undone.",
-      confirmLabel: "🏆 End Event",
+      confirmLabel: "End Event",
       danger: true,
       onConfirm: () => {
         setConfirmModal(null);
@@ -246,14 +427,14 @@ export default function HostRoomPage() {
                 {/* People icon */}
                 <div className="flex justify-center mb-2">
                   <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
                     style={{
                       background:
                         "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.15))",
                       border: "1px solid rgba(139,92,246,0.35)",
                     }}
                   >
-                    👥
+                    <Users size={22} className="text-purple-400" />
                   </div>
                 </div>
 
@@ -295,7 +476,7 @@ export default function HostRoomPage() {
                   }}
                   onClick={() => navigator.clipboard.writeText(inviteLink)}
                 >
-                  <span>📋</span> Einladungslink kopieren
+                  <ClipboardList size={15} /> Einladungslink kopieren
                 </button>
               </div>
             </div>
@@ -311,7 +492,7 @@ export default function HostRoomPage() {
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-purple-400">🎮</span>
+                  <Gamepad2 size={14} className="text-purple-400" />
                   <h2 className="font-black text-white text-sm uppercase tracking-wider">
                     Spieler in der Lobby
                   </h2>
@@ -333,8 +514,8 @@ export default function HostRoomPage() {
                     >
                       {(hostName || "H")[0]?.toUpperCase()}
                     </div>
-                    <span className="absolute -top-2 -right-1 text-base">
-                      👑
+                    <span className="absolute -top-2 -right-1">
+                      <Crown size={14} className="text-yellow-400" />
                     </span>
                     <span
                       className="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2"
@@ -352,49 +533,62 @@ export default function HostRoomPage() {
                       color: "#a78bfa",
                     }}
                   >
-                    👑 Host
+                    <Crown size={9} className="inline mr-0.5" /> Host
                   </span>
                 </div>
 
-                {/* Participant slots */}
-                {olympic.participants.map((p, i) => (
-                  <div
-                    key={p.name}
-                    className="flex flex-col items-center gap-1.5 animate-fade-in group relative"
-                  >
-                    <div className="relative">
-                      <div
-                        className={`w-[70px] h-[70px] rounded-2xl bg-gradient-to-br ${avatarGradients[(i + 1) % avatarGradients.length]} flex items-center justify-center font-black text-xl text-white`}
-                        style={{ border: "2px solid rgba(255,255,255,0.12)" }}
-                      >
-                        {p.name[0]?.toUpperCase()}
+                {/* Participant slots — exclude host when hostParticipates (already shown above) */}
+                {olympic.participants
+                  .filter(
+                    (p) =>
+                      !(
+                        olympic.hostParticipates &&
+                        p.name === olympic.hostPlayerName
+                      ),
+                  )
+                  .map((p, i) => (
+                    <div
+                      key={p.name}
+                      className="flex flex-col items-center gap-1.5 animate-fade-in group relative"
+                    >
+                      <div className="relative">
+                        <div
+                          className={`w-[70px] h-[70px] rounded-2xl bg-gradient-to-br ${avatarGradients[(i + 1) % avatarGradients.length]} flex items-center justify-center font-black text-xl text-white`}
+                          style={{ border: "2px solid rgba(255,255,255,0.12)" }}
+                        >
+                          {p.name[0]?.toUpperCase()}
+                        </div>
+                        {/* Online dot */}
+                        <span
+                          className="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2"
+                          style={{
+                            background: "#22c55e",
+                            borderColor: "#0a0c1e",
+                          }}
+                        />
+                        {/* Kick button (hover) */}
+                        <button
+                          className="absolute -top-2 -left-1 w-5 h-5 rounded-full bg-pink-500 text-white text-[10px] font-black items-center justify-center hidden group-hover:flex shadow-lg z-10"
+                          onClick={() => kickPlayer(p.name)}
+                          title={`Kick ${p.name}`}
+                        >
+                          ×
+                        </button>
                       </div>
-                      {/* Online dot */}
-                      <span
-                        className="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2"
-                        style={{
-                          background: "#22c55e",
-                          borderColor: "#0a0c1e",
-                        }}
-                      />
-                      {/* Kick button (hover) */}
-                      <button
-                        className="absolute -top-2 -left-1 w-5 h-5 rounded-full bg-pink-500 text-white text-[10px] font-black items-center justify-center hidden group-hover:flex shadow-lg z-10"
-                        onClick={() => kickPlayer(p.name)}
-                        title={`Kick ${p.name}`}
-                      >
-                        ×
-                      </button>
+                      <span className="text-white text-xs font-semibold max-w-[72px] truncate text-center">
+                        {p.name}
+                      </span>
                     </div>
-                    <span className="text-white text-xs font-semibold max-w-[72px] truncate text-center">
-                      {p.name}
-                    </span>
-                  </div>
-                ))}
+                  ))}
 
-                {/* Empty slots */}
+                {/* Empty slots — when hostParticipates the host is in playerCount but already shown above */}
                 {Array.from({
-                  length: Math.min(maxPlayers - playerCount - 1, 12),
+                  length: Math.min(
+                    maxPlayers -
+                      playerCount -
+                      (olympic.hostParticipates ? 0 : 1),
+                    12,
+                  ),
                 }).map((_, i) => (
                   <div
                     key={`empty-${i}`}
@@ -473,10 +667,14 @@ export default function HostRoomPage() {
                 "Startet…"
               ) : !canStart ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span>👥</span> Mindestens 2 Spieler benötigt, um zu starten
+                  <Users size={16} /> Mindestens 2 Spieler benötigt, um zu
+                  starten
                 </span>
               ) : (
-                `🚀 Olympiade starten mit ${playerCount} Spieler${playerCount !== 1 ? "n" : ""}`
+                <span className="flex items-center justify-center gap-2">
+                  <Rocket size={16} /> Olympiade starten mit {playerCount}{" "}
+                  Spieler{playerCount !== 1 ? "n" : ""}
+                </span>
               )}
             </button>
 
@@ -487,7 +685,13 @@ export default function HostRoomPage() {
               onClick={revertToDraft}
               disabled={reverting}
             >
-              {reverting ? "Wird zurückgesetzt…" : "← Zurück zum Entwurf"}
+              {reverting ? (
+                "Wird zurückgesetzt…"
+              ) : (
+                <span className="flex items-center justify-center gap-1.5">
+                  <ArrowLeft size={14} /> Zurück zum Entwurf
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -501,6 +705,7 @@ export default function HostRoomPage() {
             onCancel={() => setConfirmModal(null)}
           />
         )}
+        <FloatingRoomNav code={code} />
       </>
     );
   }
@@ -521,7 +726,7 @@ export default function HostRoomPage() {
           >
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-xl">🏅</span>
+                <Medal size={20} className="text-pink-400" />
                 <h1 className="font-black text-white text-xl truncate">
                   {olympic.name}
                 </h1>
@@ -538,7 +743,9 @@ export default function HostRoomPage() {
                     )
                   }
                 >
-                  📋 Link kopieren
+                  <span className="flex items-center gap-1">
+                    <ClipboardList size={12} /> Link kopieren
+                  </span>
                 </button>
               </div>
             </div>
@@ -585,14 +792,20 @@ export default function HostRoomPage() {
                   setShowManageModal(true);
                 }}
               >
-                ⚙️ Verwalten
+                <Settings size={14} /> Verwalten
               </button>
               <button
-                className="btn-primary text-sm !py-2 !px-4"
+                className="btn-primary text-sm !py-2 !px-4 flex items-center gap-2"
                 onClick={finishOlympic}
                 disabled={finishing}
               >
-                {finishing ? "…" : "🏆 Beenden"}
+                {finishing ? (
+                  "…"
+                ) : (
+                  <>
+                    <Trophy size={14} /> Beenden
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -650,16 +863,25 @@ export default function HostRoomPage() {
                             border: `1px solid ${currentGame.mode === "team" ? "rgba(139,92,246,0.4)" : "rgba(236,72,153,0.4)"}`,
                           }}
                         >
-                          {currentGame.mode === "team" ? "👥 Teams" : "⚔ FFA"}
+                          {currentGame.mode === "team" ? (
+                            <div className="flex items-center gap-2">
+                              <Users size={11} /> Teams
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <Swords size={11} /> FFA
+                            </div>
+                          )}
                         </span>
                       </div>
                     </div>
                     {olympic.results.find(
                       (r) => String(r.gameId) === String(currentGame._id),
                     ) && (
-                      <span className="text-green-400 text-2xl flex-shrink-0">
-                        ✅
-                      </span>
+                      <Check
+                        size={22}
+                        className="text-green-400 flex-shrink-0"
+                      />
                     )}
                   </div>
 
@@ -689,8 +911,8 @@ export default function HostRoomPage() {
                           border: "1px solid rgba(251,146,60,0.25)",
                         }}
                       >
-                        <p className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-400/70 mb-1.5">
-                          🍺 Trinkregeln
+                        <p className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-400/70 mb-1.5 flex items-center gap-1">
+                          <Beer size={10} /> Trinkregeln
                         </p>
                         <p className="text-sm text-white/80 whitespace-pre-line leading-relaxed">
                           {currentGame.addons.drinkingGame.rules}
@@ -701,21 +923,21 @@ export default function HostRoomPage() {
                   {/* Navigation */}
                   <div className="flex items-center gap-3 mt-2">
                     <button
-                      className="btn-secondary flex-1"
+                      className="btn-secondary flex-1 flex items-center justify-center gap-1.5"
                       onClick={() => navigate_game("prev")}
                       disabled={olympic.currentGameIndex === 0}
                     >
-                      ← Zurück
+                      <ArrowLeft size={14} /> Zurück
                     </button>
                     <span className="text-white/25 text-sm font-mono whitespace-nowrap">
                       {olympic.currentGameIndex + 1} / {totalGames}
                     </span>
                     <button
-                      className="btn-primary flex-1"
+                      className="btn-primary flex-1 flex items-center justify-center gap-1.5"
                       onClick={() => navigate_game("next")}
                       disabled={olympic.currentGameIndex >= totalGames - 1}
                     >
-                      Weiter →
+                      Weiter <ArrowRight size={14} />
                     </button>
                   </div>
                 </div>
@@ -781,13 +1003,14 @@ export default function HostRoomPage() {
                           {g.title}
                         </span>
                         {scored && (
-                          <span className="text-green-400 text-xs flex-shrink-0">
-                            ✅
-                          </span>
+                          <Check
+                            size={13}
+                            className="text-green-400 flex-shrink-0"
+                          />
                         )}
                         {isCur && (
-                          <span className="text-yellow-400 text-[10px] font-black uppercase flex-shrink-0">
-                            ▶ Aktiv
+                          <span className="text-yellow-400 text-[10px] font-black uppercase flex-shrink-0 flex items-center gap-0.5">
+                            <ChevronRight size={11} /> Aktiv
                           </span>
                         )}
                       </button>
@@ -815,14 +1038,18 @@ export default function HostRoomPage() {
                         className="text-[10px] font-black uppercase tracking-[0.2em]"
                         style={{ color: "#ec4899" }}
                       >
-                        ✏️ Ergebnis eintragen
+                        <span className="flex items-center gap-1.5">
+                          <Pencil size={11} /> Ergebnis eintragen
+                        </span>
                       </p>
                       {scoreGame && scoreGame._id !== currentGame?._id && (
                         <button
                           className="text-xs text-white/30 hover:text-white/60 transition-colors"
                           onClick={() => setScoreGame(currentGame)}
                         >
-                          → Aktuelles Spiel
+                          <span className="flex items-center gap-1">
+                            <ArrowRight size={11} /> Aktuelles Spiel
+                          </span>
                         </button>
                       )}
                     </div>
@@ -838,7 +1065,7 @@ export default function HostRoomPage() {
                         }}
                         options={olympic.games.map((g) => ({
                           value: String(g._id),
-                          label: `${g.icon} ${g.title}${olympic.results.find((r) => String(r.gameId) === String(g._id)) ? " ✅" : ""}`,
+                          label: `${g.icon} ${g.title}${olympic.results.find((r) => String(r.gameId) === String(g._id)) ? " ✓" : ""}`,
                         }))}
                       />
                     </div>
@@ -851,10 +1078,13 @@ export default function HostRoomPage() {
                           (r) => String(r.gameId) === String(scoreGame._id),
                         )}
                         onSubmit={submitScore}
+                        tieRule={olympic.tieRule}
                       />
                     ) : (
                       <p className="text-white/25 text-sm text-center py-4">
-                        Spiel auswählen ↑
+                        <span className="flex items-center justify-center gap-1.5">
+                          Spiel auswählen <ArrowUp size={11} />
+                        </span>
                       </p>
                     )}
                   </div>
@@ -867,8 +1097,8 @@ export default function HostRoomPage() {
                       border: "1px solid rgba(255,255,255,0.08)",
                     }}
                   >
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/30 mb-4">
-                      📊 Live Tabelle
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/30 mb-4 flex items-center gap-1.5">
+                      <BarChart2 size={11} /> Live Tabelle
                     </p>
                     <Scoreboard
                       leaderboard={leaderboard}
@@ -910,7 +1140,7 @@ export default function HostRoomPage() {
           }}
         >
           <div
-            className="relative w-full max-w-lg animate-slide-up"
+            className="relative w-full max-w-5xl animate-slide-up"
             style={{
               background:
                 "linear-gradient(145deg, rgba(12,15,35,0.99), rgba(18,22,50,0.99))",
@@ -918,7 +1148,7 @@ export default function HostRoomPage() {
               boxShadow:
                 "0 0 80px rgba(139,92,246,0.22), 0 40px 80px rgba(0,0,0,0.6)",
               borderRadius: "24px",
-              maxHeight: "85vh",
+              maxHeight: "92vh",
               overflowY: "auto",
             }}
           >
@@ -931,228 +1161,295 @@ export default function HostRoomPage() {
                 borderRadius: "24px 24px 0 0",
               }}
             >
-              <h2 className="font-black text-white text-lg">
-                ⚙️ Olympiade verwalten
+              <h2 className="font-black text-white text-lg flex items-center gap-2">
+                <Settings size={18} /> Olympiade verwalten
               </h2>
               <button
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all"
                 onClick={() => setShowManageModal(false)}
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
-            <div className="p-6 space-y-7">
-              {/* ── Spieler ── */}
-              <div>
-                <p
-                  className="text-[10px] font-black uppercase tracking-[0.2em] mb-3"
-                  style={{ color: "#ec4899" }}
-                >
-                  Spieler ({olympic.participants.length})
-                </p>
-                <div className="space-y-2">
-                  {olympic.participants.length === 0 ? (
-                    <p className="text-white/25 text-sm text-center py-3">
-                      Keine Spieler
-                    </p>
-                  ) : (
-                    olympic.participants.map((p, i) => {
-                      const gradients = [
-                        "from-pink-500 to-purple-600",
-                        "from-purple-500 to-blue-600",
-                        "from-cyan-500 to-blue-500",
-                        "from-green-400 to-teal-500",
-                        "from-orange-400 to-pink-500",
-                        "from-yellow-400 to-orange-500",
-                      ];
-                      return (
-                        <div
-                          key={p.name}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                          style={{
-                            background: "rgba(255,255,255,0.04)",
-                            border: "1px solid rgba(255,255,255,0.07)",
-                          }}
-                        >
+            <div className="p-6 space-y-5">
+              <div className="grid grid-cols-[2fr_3fr] gap-6">
+                {/* ── Spieler ── */}
+                <div>
+                  <p
+                    className="text-[10px] font-black uppercase tracking-[0.2em] mb-3"
+                    style={{ color: "#ec4899" }}
+                  >
+                    Spieler ({olympic.participants.length})
+                  </p>
+                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    {olympic.participants.length === 0 ? (
+                      <p className="text-white/25 text-sm text-center py-3">
+                        Keine Spieler
+                      </p>
+                    ) : (
+                      olympic.participants.map((p, i) => {
+                        const gradients = [
+                          "from-pink-500 to-purple-600",
+                          "from-purple-500 to-blue-600",
+                          "from-cyan-500 to-blue-500",
+                          "from-green-400 to-teal-500",
+                          "from-orange-400 to-pink-500",
+                          "from-yellow-400 to-orange-500",
+                        ];
+                        return (
                           <div
-                            className={`w-9 h-9 rounded-xl bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center font-black text-sm text-white flex-shrink-0`}
-                          >
-                            {p.name[0]?.toUpperCase()}
-                          </div>
-                          <span className="flex-1 font-semibold text-white text-sm truncate">
-                            {p.name}
-                          </span>
-                          <button
-                            className="text-xs px-2.5 py-1 rounded-lg font-bold transition-all flex-shrink-0"
+                            key={p.name}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
                             style={{
-                              background: "rgba(236,72,153,0.1)",
-                              color: "#f472b6",
-                              border: "1px solid rgba(236,72,153,0.22)",
+                              background: "rgba(255,255,255,0.04)",
+                              border: "1px solid rgba(255,255,255,0.07)",
                             }}
-                            onClick={() => kickPlayer(p.name)}
                           >
-                            Kick ✕
-                          </button>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              {/* ── Spiele ── */}
-              <div>
-                <p
-                  className="text-[10px] font-black uppercase tracking-[0.2em] mb-3"
-                  style={{ color: "#a78bfa" }}
-                >
-                  Spiele ({(managingGames ?? olympic.games).length})
-                </p>
-                <div className="space-y-2 mb-3">
-                  {(managingGames ?? olympic.games).map((g, i) => {
-                    const scored = !!olympic.results.find(
-                      (r) => String(r.gameId) === String(g._id),
-                    );
-                    const isCur = i === olympic.currentGameIndex;
-                    return (
-                      <div
-                        key={g._id ? String(g._id) : `new-${i}`}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-                        style={{
-                          background: isCur
-                            ? "rgba(139,92,246,0.1)"
-                            : "rgba(255,255,255,0.04)",
-                          border: `1px solid ${isCur ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.07)"}`,
-                        }}
-                      >
-                        <span className="text-xl w-8 text-center flex-shrink-0">
-                          {g.icon}
-                        </span>
-                        <span
-                          className={`flex-1 text-sm truncate ${isCur ? "text-white font-bold" : "text-white/70"}`}
-                        >
-                          {g.title}
-                        </span>
-                        {isCur && (
-                          <span className="text-yellow-400 text-[10px] font-black flex-shrink-0">
-                            ▶
-                          </span>
-                        )}
-                        {scored && (
-                          <span className="text-green-400 text-xs flex-shrink-0">
-                            ✅
-                          </span>
-                        )}
-                        <button
-                          className="text-white/25 hover:text-white/80 transition-colors w-5 text-xs disabled:opacity-20 flex-shrink-0"
-                          disabled={i === 0}
-                          onClick={() => {
-                            const arr = [...(managingGames ?? olympic.games)];
-                            [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
-                            setManagingGames(arr);
-                          }}
-                        >
-                          ▲
-                        </button>
-                        <button
-                          className="text-white/25 hover:text-white/80 transition-colors w-5 text-xs disabled:opacity-20 flex-shrink-0"
-                          disabled={
-                            i === (managingGames ?? olympic.games).length - 1
-                          }
-                          onClick={() => {
-                            const arr = [...(managingGames ?? olympic.games)];
-                            [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]];
-                            setManagingGames(arr);
-                          }}
-                        >
-                          ▼
-                        </button>
-                        <button
-                          className="text-pink-400/50 hover:text-pink-400 transition-colors w-5 text-sm disabled:opacity-20 flex-shrink-0"
-                          disabled={
-                            (managingGames ?? olympic.games).length <= 1
-                          }
-                          onClick={() =>
-                            setManagingGames(
-                              (managingGames ?? olympic.games).filter(
-                                (_, idx) => idx !== i,
-                              ),
-                            )
-                          }
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Add game section with create/library tabs */}
-                <div
-                  className="rounded-xl p-3 mb-3 space-y-2"
-                  style={{
-                    background: "rgba(139,92,246,0.06)",
-                    border: "1px solid rgba(139,92,246,0.18)",
-                  }}
-                >
-                  {/* Tab switcher */}
-                  <div className="flex gap-1.5 mb-2">
-                    {[
-                      { key: "create", label: "✏ Eigenes" },
-                      { key: "library", label: "🗂 Bibliothek" },
-                    ].map(({ key, label }) => (
-                      <button
-                        key={key}
-                        className="px-3 py-1 rounded-lg text-xs font-bold transition-all"
-                        style={
-                          addGameTab === key
-                            ? {
-                                background: "rgba(139,92,246,0.35)",
-                                border: "1px solid rgba(139,92,246,0.6)",
-                                color: "#c4b5fd",
-                              }
-                            : {
-                                background: "rgba(255,255,255,0.04)",
-                                border: "1px solid rgba(255,255,255,0.08)",
-                                color: "rgba(255,255,255,0.35)",
-                              }
-                        }
-                        onClick={() => setAddGameTab(key)}
-                      >
-                        {label}
-                      </button>
-                    ))}
+                            <div
+                              className={`w-9 h-9 rounded-xl bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center font-black text-sm text-white flex-shrink-0`}
+                            >
+                              {p.name[0]?.toUpperCase()}
+                            </div>
+                            <span className="flex-1 font-semibold text-white text-sm truncate">
+                              {p.name}
+                            </span>
+                            <button
+                              className="text-xs px-2.5 py-1 rounded-lg font-bold transition-all flex-shrink-0"
+                              style={{
+                                background: "rgba(236,72,153,0.1)",
+                                color: "#f472b6",
+                                border: "1px solid rgba(236,72,153,0.22)",
+                              }}
+                              onClick={() => kickPlayer(p.name)}
+                            >
+                              <span className="flex items-center gap-1">
+                                Kick <X size={11} />
+                              </span>
+                            </button>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
+                </div>
 
-                  {/* Create tab */}
-                  {addGameTab === "create" && (
-                    <div className="flex gap-2">
-                      <input
-                        className="w-12 text-center rounded-lg px-2 py-1.5 text-base bg-white/5 border border-white/10 focus:outline-none focus:border-purple-500/50"
-                        placeholder="🎮"
-                        maxLength={2}
-                        value={addGameForm.icon}
-                        onChange={(e) =>
-                          setAddGameForm((f) => ({
-                            ...f,
-                            icon: e.target.value || "🎮",
-                          }))
-                        }
-                      />
-                      <input
-                        className="flex-1 rounded-lg px-3 py-1.5 text-sm bg-white/5 border border-white/10 text-white placeholder-white/25 focus:outline-none focus:border-purple-500/50"
-                        placeholder="Spielname…"
-                        maxLength={60}
-                        value={addGameForm.title}
-                        onChange={(e) =>
-                          setAddGameForm((f) => ({
-                            ...f,
-                            title: e.target.value,
-                          }))
-                        }
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && addGameForm.title.trim()) {
+                {/* ── Spiele ── */}
+                <div>
+                  <p
+                    className="text-[10px] font-black uppercase tracking-[0.2em] mb-3"
+                    style={{ color: "#a78bfa" }}
+                  >
+                    Spiele ({(managingGames ?? olympic.games).length})
+                  </p>
+                  <DndContext
+                    sensors={dndSensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={({ active, over }) => {
+                      if (!over || active.id === over.id) return;
+                      const list = managingGames ?? olympic.games;
+                      const oldIdx = list.findIndex(
+                        (g, i) =>
+                          (g._id ? String(g._id) : `new-${i}`) === active.id,
+                      );
+                      const newIdx = list.findIndex(
+                        (g, i) =>
+                          (g._id ? String(g._id) : `new-${i}`) === over.id,
+                      );
+                      setManagingGames(arrayMove([...list], oldIdx, newIdx));
+                    }}
+                  >
+                    <SortableContext
+                      items={(managingGames ?? olympic.games).map((g, i) =>
+                        g._id ? String(g._id) : `new-${i}`,
+                      )}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <div className="space-y-2 mb-3 max-h-52 overflow-y-auto pr-1">
+                        {(managingGames ?? olympic.games).map((g, i) => {
+                          const dndId = g._id ? String(g._id) : `new-${i}`;
+                          const scored = !!olympic.results.find(
+                            (r) => String(r.gameId) === String(g._id),
+                          );
+                          const isCur = i === olympic.currentGameIndex;
+                          return (
+                            <ManageGameRow
+                              key={dndId}
+                              dndId={dndId}
+                              game={g}
+                              index={i}
+                              total={(managingGames ?? olympic.games).length}
+                              isCur={isCur}
+                              scored={scored}
+                              onMoveUp={() => {
+                                const arr = [
+                                  ...(managingGames ?? olympic.games),
+                                ];
+                                [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+                                setManagingGames(arr);
+                              }}
+                              onMoveDown={() => {
+                                const arr = [
+                                  ...(managingGames ?? olympic.games),
+                                ];
+                                [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]];
+                                setManagingGames(arr);
+                              }}
+                              onRemove={() =>
+                                setManagingGames(
+                                  (managingGames ?? olympic.games).filter(
+                                    (_, idx) => idx !== i,
+                                  ),
+                                )
+                              }
+                            />
+                          );
+                        })}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+
+                  {/* Add game section with create/library tabs */}
+                  <div
+                    className="rounded-xl p-3 mb-3 space-y-2"
+                    style={{
+                      background: "rgba(139,92,246,0.06)",
+                      border: "1px solid rgba(139,92,246,0.18)",
+                    }}
+                  >
+                    {/* Tab switcher */}
+                    <div className="flex gap-1.5 mb-2">
+                      {[
+                        {
+                          key: "create",
+                          label: (
+                            <span className="flex items-center gap-1">
+                              <Pencil size={11} />
+                              Eigenes
+                            </span>
+                          ),
+                        },
+                        {
+                          key: "library",
+                          label: (
+                            <span className="flex items-center gap-1">
+                              <FolderOpen size={11} />
+                              Bibliothek
+                            </span>
+                          ),
+                        },
+                      ].map(({ key, label }) => (
+                        <button
+                          key={key}
+                          className="px-3 py-1 rounded-lg text-xs font-bold transition-all"
+                          style={
+                            addGameTab === key
+                              ? {
+                                  background: "rgba(139,92,246,0.35)",
+                                  border: "1px solid rgba(139,92,246,0.6)",
+                                  color: "#c4b5fd",
+                                }
+                              : {
+                                  background: "rgba(255,255,255,0.04)",
+                                  border: "1px solid rgba(255,255,255,0.08)",
+                                  color: "rgba(255,255,255,0.35)",
+                                }
+                          }
+                          onClick={() => setAddGameTab(key)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Create tab */}
+                    {addGameTab === "create" && (
+                      <div className="flex gap-2">
+                        <input
+                          className="w-12 text-center rounded-lg px-2 py-1.5 text-base bg-white/5 border border-white/10 focus:outline-none focus:border-purple-500/50"
+                          placeholder="🎮"
+                          maxLength={2}
+                          value={addGameForm.icon}
+                          onChange={(e) =>
+                            setAddGameForm((f) => ({
+                              ...f,
+                              icon: e.target.value || "🎮",
+                            }))
+                          }
+                        />
+                        <input
+                          className="flex-1 rounded-lg px-3 py-1.5 text-sm bg-white/5 border border-white/10 text-white placeholder-white/25 focus:outline-none focus:border-purple-500/50"
+                          placeholder="Spielname…"
+                          maxLength={60}
+                          value={addGameForm.title}
+                          onChange={(e) =>
+                            setAddGameForm((f) => ({
+                              ...f,
+                              title: e.target.value,
+                            }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && addGameForm.title.trim()) {
+                              setManagingGames([
+                                ...(managingGames ?? olympic.games),
+                                {
+                                  ...addGameForm,
+                                  title: addGameForm.title.trim(),
+                                  order: (managingGames ?? olympic.games)
+                                    .length,
+                                },
+                              ]);
+                              setAddGameForm({
+                                title: "",
+                                icon: "🎮",
+                                mode: "ffa",
+                              });
+                            }
+                          }}
+                        />
+                        {["ffa", "team"].map((m) => (
+                          <button
+                            key={m}
+                            className="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all"
+                            style={
+                              addGameForm.mode === m
+                                ? {
+                                    background: "rgba(139,92,246,0.35)",
+                                    border: "1px solid rgba(139,92,246,0.6)",
+                                    color: "#c4b5fd",
+                                  }
+                                : {
+                                    background: "rgba(255,255,255,0.05)",
+                                    border: "1px solid rgba(255,255,255,0.1)",
+                                    color: "rgba(255,255,255,0.35)",
+                                  }
+                            }
+                            onClick={() =>
+                              setAddGameForm((f) => ({ ...f, mode: m }))
+                            }
+                          >
+                            {m === "ffa" ? (
+                              <span className="flex items-center gap-1">
+                                <Swords size={10} />
+                                FFA
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1">
+                                <Users size={10} />
+                                Team
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                        <button
+                          className="px-3 py-1.5 rounded-lg text-sm font-bold transition-all disabled:opacity-30"
+                          style={{
+                            background: "rgba(139,92,246,0.25)",
+                            border: "1px solid rgba(139,92,246,0.45)",
+                            color: "#c4b5fd",
+                          }}
+                          disabled={!addGameForm.title.trim()}
+                          onClick={() => {
                             setManagingGames([
                               ...(managingGames ?? olympic.games),
                               {
@@ -1166,195 +1463,152 @@ export default function HostRoomPage() {
                               icon: "🎮",
                               mode: "ffa",
                             });
-                          }
-                        }}
-                      />
-                      {["ffa", "team"].map((m) => (
-                        <button
-                          key={m}
-                          className="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all"
-                          style={
-                            addGameForm.mode === m
-                              ? {
-                                  background: "rgba(139,92,246,0.35)",
-                                  border: "1px solid rgba(139,92,246,0.6)",
-                                  color: "#c4b5fd",
-                                }
-                              : {
-                                  background: "rgba(255,255,255,0.05)",
-                                  border: "1px solid rgba(255,255,255,0.1)",
-                                  color: "rgba(255,255,255,0.35)",
-                                }
-                          }
-                          onClick={() =>
-                            setAddGameForm((f) => ({ ...f, mode: m }))
-                          }
+                          }}
                         >
-                          {m === "ffa" ? "⚔ FFA" : "👥 Team"}
+                          ＋
                         </button>
-                      ))}
-                      <button
-                        className="px-3 py-1.5 rounded-lg text-sm font-bold transition-all disabled:opacity-30"
-                        style={{
-                          background: "rgba(139,92,246,0.25)",
-                          border: "1px solid rgba(139,92,246,0.45)",
-                          color: "#c4b5fd",
-                        }}
-                        disabled={!addGameForm.title.trim()}
-                        onClick={() => {
-                          setManagingGames([
-                            ...(managingGames ?? olympic.games),
-                            {
-                              ...addGameForm,
-                              title: addGameForm.title.trim(),
-                              order: (managingGames ?? olympic.games).length,
-                            },
-                          ]);
-                          setAddGameForm({
-                            title: "",
-                            icon: "🎮",
-                            mode: "ffa",
-                          });
-                        }}
-                      >
-                        ＋
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Library tab */}
-                  {addGameTab === "library" && (
-                    <div className="space-y-2">
-                      <input
-                        className="w-full rounded-lg px-3 py-1.5 text-sm bg-white/5 border border-white/10 text-white placeholder-white/25 focus:outline-none focus:border-purple-500/50"
-                        placeholder="🔍 Suchen…"
-                        value={librarySearch}
-                        onChange={(e) => setLibrarySearch(e.target.value)}
-                      />
-                      {libraryLoading && (
-                        <p className="text-xs text-white/30 text-center py-2 animate-pulse">
-                          Lade Bibliothek…
-                        </p>
-                      )}
-                      <div className="space-y-1 max-h-44 overflow-y-auto pr-0.5">
-                        {libraryPresets
-                          .filter((p) =>
-                            p.title
-                              .toLowerCase()
-                              .includes(librarySearch.toLowerCase()),
-                          )
-                          .map((preset) => {
-                            const curGames = managingGames ?? olympic.games;
-                            const already = curGames.some(
-                              (g) => g.title === preset.title,
-                            );
-                            return (
-                              <div
-                                key={preset._id}
-                                className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
-                                style={{
-                                  background: "rgba(255,255,255,0.02)",
-                                  border: "1px solid rgba(255,255,255,0.05)",
-                                }}
-                              >
-                                <span className="text-base flex-shrink-0">
-                                  {preset.icon}
-                                </span>
-                                <span className="flex-1 text-xs text-white/80 truncate">
-                                  {preset.title}
-                                </span>
-                                <span
-                                  className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded flex-shrink-0"
-                                  style={{
-                                    background:
-                                      preset.mode === "team"
-                                        ? "rgba(139,92,246,0.2)"
-                                        : "rgba(236,72,153,0.2)",
-                                    color:
-                                      preset.mode === "team"
-                                        ? "#a78bfa"
-                                        : "#f472b6",
-                                  }}
-                                >
-                                  {preset.mode}
-                                </span>
-                                <button
-                                  className="px-2 py-0.5 rounded-lg text-xs font-bold transition-all flex-shrink-0 disabled:opacity-40"
-                                  style={
-                                    already
-                                      ? {
-                                          background: "rgba(236,72,153,0.15)",
-                                          border:
-                                            "1px solid rgba(236,72,153,0.4)",
-                                          color: "#f472b6",
-                                        }
-                                      : {
-                                          background: "rgba(139,92,246,0.25)",
-                                          border:
-                                            "1px solid rgba(139,92,246,0.5)",
-                                          color: "#c4b5fd",
-                                        }
-                                  }
-                                  disabled={already}
-                                  onClick={() => {
-                                    if (already) return;
-                                    const cur = managingGames ?? olympic.games;
-                                    setManagingGames([
-                                      ...cur,
-                                      {
-                                        title: preset.title,
-                                        icon: preset.icon,
-                                        mode: preset.mode,
-                                        rules: preset.rules,
-                                        addons: preset.addons || {},
-                                        order: cur.length,
-                                      },
-                                    ]);
-                                  }}
-                                >
-                                  {already ? "✓" : "+"}
-                                </button>
-                              </div>
-                            );
-                          })}
-                        {!libraryLoading &&
-                          libraryPresets.filter((p) =>
-                            p.title
-                              .toLowerCase()
-                              .includes(librarySearch.toLowerCase()),
-                          ).length === 0 && (
-                            <p className="text-xs text-white/25 text-center py-3">
-                              {librarySearch
-                                ? `Keine Ergebnisse für "${librarySearch}"`
-                                : "Bibliothek leer"}
-                            </p>
-                          )}
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
 
-                <div className="flex gap-2">
-                  <button
-                    className="btn-secondary flex-1 text-sm !py-2"
-                    onClick={() => setManagingGames([...olympic.games])}
-                  >
-                    ↩ Reset
-                  </button>
-                  <button
-                    className="btn-primary flex-1 text-sm !py-2"
-                    onClick={() => {
-                      if (!managingGames) return;
-                      getSocket().emit("edit-games", {
-                        code: code.toUpperCase(),
-                        hostToken,
-                        games: managingGames,
-                      });
-                      setManagingGames(null);
-                    }}
-                  >
-                    💾 Spiele speichern
-                  </button>
+                    {/* Library tab */}
+                    {addGameTab === "library" && (
+                      <div className="space-y-2">
+                        <input
+                          className="w-full rounded-lg px-3 py-1.5 text-sm bg-white/5 border border-white/10 text-white placeholder-white/25 focus:outline-none focus:border-purple-500/50"
+                          placeholder="Suchen…"
+                          value={librarySearch}
+                          onChange={(e) => setLibrarySearch(e.target.value)}
+                        />
+                        {libraryLoading && (
+                          <p className="text-xs text-white/30 text-center py-2 animate-pulse">
+                            Lade Bibliothek…
+                          </p>
+                        )}
+                        <div className="space-y-1 max-h-44 overflow-y-auto pr-0.5">
+                          {libraryPresets
+                            .filter((p) =>
+                              p.title
+                                .toLowerCase()
+                                .includes(librarySearch.toLowerCase()),
+                            )
+                            .map((preset) => {
+                              const curGames = managingGames ?? olympic.games;
+                              const already = curGames.some(
+                                (g) => g.title === preset.title,
+                              );
+                              return (
+                                <div
+                                  key={preset._id}
+                                  className="flex items-center gap-2 px-2 py-1.5 rounded-lg"
+                                  style={{
+                                    background: "rgba(255,255,255,0.02)",
+                                    border: "1px solid rgba(255,255,255,0.05)",
+                                  }}
+                                >
+                                  <span className="text-base flex-shrink-0">
+                                    {preset.icon}
+                                  </span>
+                                  <span className="flex-1 text-xs text-white/80 truncate">
+                                    {preset.title}
+                                  </span>
+                                  <span
+                                    className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded flex-shrink-0"
+                                    style={{
+                                      background:
+                                        preset.mode === "team"
+                                          ? "rgba(139,92,246,0.2)"
+                                          : "rgba(236,72,153,0.2)",
+                                      color:
+                                        preset.mode === "team"
+                                          ? "#a78bfa"
+                                          : "#f472b6",
+                                    }}
+                                  >
+                                    {preset.mode}
+                                  </span>
+                                  <button
+                                    className="px-2 py-0.5 rounded-lg text-xs font-bold transition-all flex-shrink-0 disabled:opacity-40"
+                                    style={
+                                      already
+                                        ? {
+                                            background: "rgba(236,72,153,0.15)",
+                                            border:
+                                              "1px solid rgba(236,72,153,0.4)",
+                                            color: "#f472b6",
+                                          }
+                                        : {
+                                            background: "rgba(139,92,246,0.25)",
+                                            border:
+                                              "1px solid rgba(139,92,246,0.5)",
+                                            color: "#c4b5fd",
+                                          }
+                                    }
+                                    disabled={already}
+                                    onClick={() => {
+                                      if (already) return;
+                                      const cur =
+                                        managingGames ?? olympic.games;
+                                      setManagingGames([
+                                        ...cur,
+                                        {
+                                          title: preset.title,
+                                          icon: preset.icon,
+                                          mode: preset.mode,
+                                          rules: preset.rules,
+                                          addons: preset.addons || {},
+                                          order: cur.length,
+                                        },
+                                      ]);
+                                    }}
+                                  >
+                                    {already ? "✓" : "+"}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          {!libraryLoading &&
+                            libraryPresets.filter((p) =>
+                              p.title
+                                .toLowerCase()
+                                .includes(librarySearch.toLowerCase()),
+                            ).length === 0 && (
+                              <p className="text-xs text-white/25 text-center py-3">
+                                {librarySearch
+                                  ? `Keine Ergebnisse für "${librarySearch}"`
+                                  : "Bibliothek leer"}
+                              </p>
+                            )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      className="btn-secondary flex-1 text-sm !py-2"
+                      onClick={() => setManagingGames([...olympic.games])}
+                    >
+                      <span className="flex items-center justify-center gap-1.5">
+                        <RotateCcw size={13} /> Reset
+                      </span>
+                    </button>
+                    <button
+                      className="btn-primary flex-1 text-sm !py-2"
+                      onClick={() => {
+                        if (!managingGames) return;
+                        getSocket().emit("edit-games", {
+                          code: code.toUpperCase(),
+                          hostToken,
+                          games: managingGames,
+                        });
+                        setManagingGames(null);
+                      }}
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        <Save size={14} /> Spiele speichern
+                      </span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1366,10 +1620,10 @@ export default function HostRoomPage() {
                 >
                   Einstellungen
                 </p>
-                <div className="space-y-4">
-                  {/* Name */}
+                {/* Row 1: Name, Max Players, Scoring Mode, Tie Rule */}
+                <div className="flex items-start justify-start gap-4 mb-3">
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-2 leading-none">
                       Event Name
                     </label>
                     <input
@@ -1384,10 +1638,8 @@ export default function HostRoomPage() {
                       }
                     />
                   </div>
-
-                  {/* Max Players */}
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-2 leading-none">
                       Max. Spieler
                     </label>
                     <input
@@ -1407,11 +1659,9 @@ export default function HostRoomPage() {
                       }
                     />
                   </div>
-
-                  {/* Scoring Mode */}
                   <Select
                     label={
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white/35">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-2 leading-none">
                         Wertungssystem
                       </span>
                     }
@@ -1419,6 +1669,7 @@ export default function HostRoomPage() {
                     onChange={(val) =>
                       setManagingSettings((s) => ({ ...s, scoringMode: val }))
                     }
+                    className="text-xs"
                     options={[
                       {
                         value: "linear",
@@ -1439,11 +1690,9 @@ export default function HostRoomPage() {
                       },
                     ]}
                   />
-
-                  {/* Tie Rule */}
                   <Select
                     label={
-                      <span className="text-[10px] font-black uppercase tracking-widest text-white/35">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-2 leading-none">
                         Tie-Breaker Regel
                       </span>
                     }
@@ -1451,6 +1700,7 @@ export default function HostRoomPage() {
                     onChange={(val) =>
                       setManagingSettings((s) => ({ ...s, tieRule: val }))
                     }
+                    className="text-xs"
                     options={[
                       {
                         value: "tiebreaker",
@@ -1462,46 +1712,52 @@ export default function HostRoomPage() {
                       },
                     ]}
                   />
+                </div>
 
-                  {/* Bonus / Malus Rules */}
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-2">
-                      Bonus / Malus Regeln
-                    </label>
-                    <div className="space-y-1.5">
-                      {[
-                        {
-                          key: "comebackPenalty",
-                          emoji: "↩️",
-                          label: "Comeback Malus",
-                          badge: "−2 PT",
-                          cls: "text-pink-400",
-                        },
-                        {
-                          key: "lastPlaceBonus",
-                          emoji: "🎯",
-                          label: "Last Place Bonus",
-                          badge: "+1 PT",
-                          cls: "text-green-400",
-                        },
-                        {
-                          key: "winStreakBonus",
-                          emoji: "🔥",
-                          label: "Win Streak Bonus",
-                          badge: "+1 PT",
-                          cls: "text-green-400",
-                        },
-                        {
-                          key: "finalDoublePoints",
-                          emoji: "⭐",
-                          label: "Final Double Points",
-                          badge: "2×",
-                          cls: "text-yellow-400",
-                        },
-                      ].map(({ key, emoji, label, badge, cls }) => (
+                {/* Row 2: Bonus/Malus rules – 4-col grid */}
+                <div className="mb-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-2 leading-none">
+                    Bonus / Malus Regeln
+                  </label>
+                  <div className="flex gap-4 ">
+                    {[
+                      {
+                        key: "comebackPenalty",
+                        Icon: Undo2,
+                        iconCls: "text-pink-400",
+                        label: "Comeback Malus",
+                        badge: "−2 PT",
+                        cls: "text-pink-400",
+                      },
+                      {
+                        key: "lastPlaceBonus",
+                        Icon: Target,
+                        iconCls: "text-green-400",
+                        label: "Last Place Bonus",
+                        badge: "+1 PT",
+                        cls: "text-green-400",
+                      },
+                      {
+                        key: "winStreakBonus",
+                        Icon: Flame,
+                        iconCls: "text-orange-400",
+                        label: "Win Streak Bonus",
+                        badge: "+1 PT",
+                        cls: "text-green-400",
+                      },
+                      {
+                        key: "finalDoublePoints",
+                        Icon: Star,
+                        iconCls: "text-yellow-400",
+                        label: "Final Double Points",
+                        badge: "2×",
+                        cls: "text-yellow-400",
+                      },
+                    ].map(
+                      ({ key, Icon: RuleIcon, iconCls, label, badge, cls }) => (
                         <button
                           key={key}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all"
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all"
                           style={
                             managingSettings.extraRules?.[key]
                               ? {
@@ -1523,10 +1779,10 @@ export default function HostRoomPage() {
                             }))
                           }
                         >
-                          <span className="text-base w-5 flex-shrink-0">
-                            {emoji}
+                          <span className="w-5 flex-shrink-0 flex items-center">
+                            <RuleIcon size={12} className={iconCls} />
                           </span>
-                          <span className="flex-1 text-xs font-semibold text-white/70">
+                          <span className="flex-1 text-xs font-semibold text-white/70 leading-tight">
                             {label}
                           </span>
                           <span
@@ -1565,22 +1821,16 @@ export default function HostRoomPage() {
                             )}
                           </span>
                         </button>
-                      ))}
-                    </div>
+                      ),
+                    )}
                   </div>
+                </div>
 
-                  {/* Host participates */}
-                  <div className="flex items-center justify-between px-1">
-                    <div>
-                      <p className="text-xs font-semibold text-white/70">
-                        🎮 Host spielt mit
-                      </p>
-                      <p className="text-[10px] text-white/30 mt-0.5">
-                        Score des Hosts wird mitgezählt
-                      </p>
-                    </div>
+                {/* Row 3: Toggles + Save button in one flex row */}
+                <div className="flex items-center gap-5 flex-wrap">
+                  <div className="flex items-center gap-3">
                     <button
-                      className="relative w-11 h-6 rounded-full transition-all flex-shrink-0"
+                      className="relative w-11 h-[26px] rounded-full transition-all flex-shrink-0"
                       style={{
                         background: managingSettings.hostParticipates
                           ? "rgba(34,211,238,0.5)"
@@ -1606,40 +1856,29 @@ export default function HostRoomPage() {
                         }}
                       />
                     </button>
+                    <p className="text-xs font-semibold text-white/70 whitespace-nowrap">
+                      <span className="flex items-center gap-1.5">
+                        <Gamepad2 size={12} /> Host spielt mit
+                      </span>
+                    </p>
                   </div>
-
                   {managingSettings.hostParticipates && (
-                    <div>
-                      <label className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-1.5">
-                        Host Spielername
-                      </label>
-                      <input
-                        className="w-full rounded-xl px-4 py-2.5 text-sm bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-cyan-500/50 transition-colors"
-                        maxLength={30}
-                        placeholder="z.B. Alex"
-                        value={managingSettings.hostPlayerName}
-                        onChange={(e) =>
-                          setManagingSettings((s) => ({
-                            ...s,
-                            hostPlayerName: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
+                    <input
+                      className="rounded-xl px-3 py-2 text-sm bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-cyan-500/50 transition-colors w-36"
+                      maxLength={30}
+                      placeholder="Host Name…"
+                      value={managingSettings.hostPlayerName}
+                      onChange={(e) =>
+                        setManagingSettings((s) => ({
+                          ...s,
+                          hostPlayerName: e.target.value,
+                        }))
+                      }
+                    />
                   )}
-
-                  {/* Hide game plan */}
-                  <div className="flex items-center justify-between px-1">
-                    <div>
-                      <p className="text-xs font-semibold text-white/70">
-                        🔒 Spielplan verstecken
-                      </p>
-                      <p className="text-[10px] text-white/30 mt-0.5">
-                        Spieltitel werden bei Teilnehmern unscharf
-                      </p>
-                    </div>
+                  <div className="flex items-center gap-3">
                     <button
-                      className="relative w-11 h-6 rounded-full transition-all flex-shrink-0"
+                      className="relative w-11 h-[26px] rounded-full transition-all flex-shrink-0"
                       style={{
                         background: managingSettings.hideGamePlan
                           ? "rgba(250,204,21,0.5)"
@@ -1665,21 +1904,27 @@ export default function HostRoomPage() {
                         }}
                       />
                     </button>
+                    <p className="text-xs font-semibold text-white/70 whitespace-nowrap">
+                      <span className="flex items-center gap-1.5">
+                        <Lock size={12} /> Spielplan verstecken
+                      </span>
+                    </p>
                   </div>
+                  <button
+                    className="btn-primary text-sm !py-2 !px-5 ml-auto flex-shrink-0"
+                    onClick={() => {
+                      getSocket().emit("update-settings", {
+                        code: code.toUpperCase(),
+                        hostToken,
+                        settings: managingSettings,
+                      });
+                    }}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Save size={14} /> Einstellungen speichern
+                    </span>
+                  </button>
                 </div>
-
-                <button
-                  className="btn-primary w-full text-sm !py-2.5 mt-4"
-                  onClick={() => {
-                    getSocket().emit("update-settings", {
-                      code: code.toUpperCase(),
-                      hostToken,
-                      settings: managingSettings,
-                    });
-                  }}
-                >
-                  💾 Einstellungen speichern
-                </button>
               </div>
 
               {/* ── Danger zone ── */}
@@ -1705,7 +1950,9 @@ export default function HostRoomPage() {
                     revertToDraft();
                   }}
                 >
-                  ↩ Olympiade zurück zum Entwurf
+                  <span className="flex items-center justify-center gap-1.5">
+                    <RotateCcw size={14} /> Olympiade zurück zum Entwurf
+                  </span>
                 </button>
               </div>
             </div>
@@ -1722,6 +1969,30 @@ export default function HostRoomPage() {
           danger={confirmModal.danger}
           onConfirm={confirmModal.onConfirm}
           onCancel={() => setConfirmModal(null)}
+        />
+      )}
+
+      <FloatingRoomNav code={code} />
+
+      {tiebreaker && (
+        <TiebreakerModal
+          question={tiebreaker.question}
+          unit={tiebreaker.unit}
+          tiedPlayers={tiebreaker.tiedPlayers}
+          answers={tiebreakerAnswers}
+          isHost={true}
+          isParticipant={false}
+          onResolve={(winner) =>
+            getSocket().emit("tiebreaker-resolve", {
+              code: code.toUpperCase(),
+              hostToken,
+              gameId: tiebreaker.gameId,
+              winner,
+            })
+          }
+          onClose={() => setTiebreaker(null)}
+          resolved={!!tiebreakerResolved}
+          winner={tiebreakerResolved}
         />
       )}
     </>

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { Check } from "lucide-react";
 import Select from "./ui/Select.jsx";
 
 export default function ScoreEntry({
@@ -7,6 +8,7 @@ export default function ScoreEntry({
   existingResult,
   onSubmit,
   onCancel,
+  tieRule,
 }) {
   const isFFA = game.mode !== "team";
   const names = participants.map((p) => p.name);
@@ -65,7 +67,7 @@ export default function ScoreEntry({
     if (isFFA) {
       const places = placements.map((p) => p.place);
       const uniquePlaces = new Set(places);
-      if (uniquePlaces.size !== places.length) {
+      if (tieRule !== "tiebreaker" && uniquePlaces.size !== places.length) {
         setError("Each player must have a unique place.");
         return false;
       }
@@ -136,9 +138,7 @@ export default function ScoreEntry({
                     { value: "", label: "—" },
                     ...names.map((_, i) => ({
                       value: String(i + 1),
-                      label: `${i + 1}${
-                        i === 0 ? " 🥇" : i === 1 ? " 🥈" : i === 2 ? " 🥉" : ""
-                      }`,
+                      label: String(i + 1),
                     })),
                   ]}
                 />
@@ -177,7 +177,7 @@ export default function ScoreEntry({
                     }`}
                     onClick={() => setWinner(team)}
                   >
-                    {winner === team ? "✅ Winner" : "Set as winner"}
+                    {winner === team ? <span className="flex items-center justify-center gap-1"><Check size={12} /> Winner</span> : "Set as winner"}
                   </button>
                   <div className="space-y-1 pt-1">
                     {names.map((name) => (

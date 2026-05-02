@@ -45,7 +45,7 @@ router.get("/:id", async (req, res) => {
 // POST /api/game-presets — create preset (auth required)
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { title, mode, icon, rules, addons } = req.body;
+    const { title, mode, icon, rules, addons, estimatedMinutes } = req.body;
     if (!title?.trim())
       return res.status(400).json({ error: "Title is required" });
 
@@ -58,6 +58,7 @@ router.post("/", requireAuth, async (req, res) => {
       mode: mode || "ffa",
       icon: icon || "🎮",
       rules: rules || "",
+      estimatedMinutes: Number(estimatedMinutes) || 0,
       addons: addons || {},
       createdBy: req.user.id,
       createdByUsername: user.username,
@@ -78,12 +79,13 @@ router.patch("/:id", requireAuth, async (req, res) => {
     if (String(preset.createdBy) !== String(req.user.id))
       return res.status(403).json({ error: "Not your preset" });
 
-    const { title, mode, icon, rules, addons } = req.body;
+    const { title, mode, icon, rules, addons, estimatedMinutes } = req.body;
     if (title !== undefined) preset.title = title.trim();
     if (mode !== undefined) preset.mode = mode;
     if (icon !== undefined) preset.icon = icon || "🎮";
     if (rules !== undefined) preset.rules = rules;
     if (addons !== undefined) preset.addons = addons;
+    if (estimatedMinutes !== undefined) preset.estimatedMinutes = Number(estimatedMinutes) || 0;
 
     await preset.save();
     res.json(preset);

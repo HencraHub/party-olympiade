@@ -6,6 +6,7 @@ const GamePresetSchema = new mongoose.Schema(
     mode: { type: String, enum: ["ffa", "team"], default: "ffa" },
     icon: { type: String, default: "🎮", maxlength: 10 },
     rules: { type: String, default: "", maxlength: 1000 },
+    estimatedMinutes: { type: Number, default: 0, min: 0 },
     imageBase64: { type: String, default: "" },
     addons: {
       drinkingGame: {

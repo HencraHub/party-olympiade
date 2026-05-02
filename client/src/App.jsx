@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Header from "./components/Header.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import CreatePage from "./pages/CreatePage.jsx";
@@ -8,16 +8,29 @@ import ParticipantView from "./pages/ParticipantView.jsx";
 import WinnerPage from "./pages/WinnerPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import GameLibraryPage from "./pages/GameLibraryPage.jsx";
+import DraftsPage from "./pages/DraftsPage.jsx";
+import FloatingRoomNav from "./components/ui/FloatingRoomNav.jsx";
+
+function GlobalRejoin() {
+  const location = useLocation();
+  if (location.pathname.startsWith("/room/")) return null;
+  let lastRoom = null;
+  try { lastRoom = JSON.parse(localStorage.getItem("lastRoom")); } catch {}
+  if (!lastRoom?.code) return null;
+  return <FloatingRoomNav code={lastRoom.code} role={lastRoom.role} />;
+}
 
 export default function App() {
   return (
     <BrowserRouter>
       <Header />
+      <GlobalRejoin />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/create" element={<CreatePage />} />
         <Route path="/edit/:code" element={<CreatePage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/drafts" element={<DraftsPage />} />
         <Route path="/library" element={<GameLibraryPage />} />
         <Route path="/join" element={<JoinPage />} />
         <Route path="/join/:code" element={<JoinPage />} />

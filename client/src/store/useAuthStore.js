@@ -22,6 +22,12 @@ export const useAuthStore = create(
         set({ user: data.user, token: data.token });
         return data;
       },
+
+      updateProfile: async (changes) => {
+        const { data } = await api.patch('/auth/profile', changes);
+        set((s) => ({ user: { ...s.user, ...data.user } }));
+        return data.user;
+      },
     }),
     {
       name: 'auth-storage',

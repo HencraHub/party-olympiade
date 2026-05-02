@@ -57,6 +57,7 @@ router.post("/", requireAuth, async (req, res) => {
       scoringEnabled,
       hostParticipates,
       hostPlayerName,
+      hideGamePlan,
     } = req.body;
     if (!name)
       return res.status(400).json({ error: "Olympic name is required" });
@@ -74,6 +75,7 @@ router.post("/", requireAuth, async (req, res) => {
       scoringEnabled: scoringEnabled !== false,
       hostParticipates: !!hostParticipates,
       hostPlayerName: hostPlayerName || "",
+      hideGamePlan: !!hideGamePlan,
       extraRules: extraRules || {},
       maxPlayers: maxPlayers || 20,
       participants: [],
@@ -173,6 +175,7 @@ router.patch("/:code", requireAuth, async (req, res) => {
       scoringEnabled,
       hostParticipates,
       hostPlayerName,
+      hideGamePlan,
     } = req.body;
     if (name !== undefined) olympic.name = name;
     if (tieRule !== undefined) olympic.tieRule = tieRule;
@@ -184,6 +187,7 @@ router.patch("/:code", requireAuth, async (req, res) => {
     if (hostParticipates !== undefined)
       olympic.hostParticipates = hostParticipates;
     if (hostPlayerName !== undefined) olympic.hostPlayerName = hostPlayerName;
+    if (hideGamePlan !== undefined) olympic.hideGamePlan = !!hideGamePlan;
 
     await olympic.save();
     const { hostToken: _ht, ...safe } = olympic.toObject();

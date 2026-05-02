@@ -1,5 +1,9 @@
 import Olympic from "../models/Olympic.js";
 import { computeLeaderboard } from "../utils/scoring.js";
+import { getRandomTiebreakerQuestion } from "../data/tiebreakerQuestions.js";
+
+// In-memory tiebreaker state: code → { question, correctAnswer, unit, tiedPlayers, gameId, answers }
+const activeTiebreakers = new Map();
 
 export function initSocket(io) {
   io.on("connection", (socket) => {
@@ -29,6 +33,16 @@ export function initSocket(io) {
             return socket.emit("error", {
               message: "This Olympic has not been launched yet",
             });
+          }
+
+          // Block unregistered participants from joining active/finished games
+          if (!isHost && (olympic.status === "active" || olympic.status === "finished")) {
+            const trimName = name?.trim();
+            const isRegistered = trimName &&
+              olympic.participants.some((p) => p.name === trimName);
+            if (!isRegistered) {
+              return socket.emit("error", { message: "GAME_IN_PROGRESS" });
+            }
           }
 
           // Dynamically add participant when a non-host joins (lobby only)
@@ -171,14 +185,111 @@ export function initSocket(io) {
         const safe2 = olympic.toObject();
         delete safe2.hostToken;
         const leaderboard2 = computeLeaderboard(safe2);
+        const upperCode = code.toUpperCase();
 
-        io.to(code.toUpperCase()).emit("room-update", {
+        io.to(upperCode).emit("room-update", {
           olympic: safe2,
           leaderboard: leaderboard2,
         });
+
+        // Detect ties and trigger tiebreaker if enabled
+        if (olympic.tieRule === "tiebreaker" && placements?.length) {
+          const groups = {};
+          for (const p of placements) {
+            if (!groups[p.place]) groups[p.place] = [];
+            groups[p.place].push(p.participantName);
+          }
+          const tiedGroup = Object.entries(groups)
+            .filter(([, names]) => names.length > 1)
+            .sort(([a], [b]) => Number(a) - Number(b))[0];
+
+          if (tiedGroup) {
+            const q = getRandomTiebreakerQuestion();
+            activeTiebreakers.set(upperCode, {
+              question: q.question,
+              correctAnswer: q.correctAnswer,
+              unit: q.unit,
+              tiedPlayers: tiedGroup[1],
+              gameId: String(gameId),
+              answers: {},
+            });
+            io.to(upperCode).emit("tiebreaker-start", {
+              question: q.question,
+              unit: q.unit,
+              tiedPlayers: tiedGroup[1],
+              gameId: String(gameId),
+            });
+          }
+        }
       } catch (err) {
         console.error("submit-score error:", err);
         socket.emit("error", { message: "Server error" });
+      }
+    });
+
+    /**
+     * tiebreaker-answer — participant submits their answer
+     * payload: { code, name, answer }
+     */
+    socket.on("tiebreaker-answer", ({ code, name, answer }) => {
+      const upperCode = code?.toUpperCase();
+      const tb = activeTiebreakers.get(upperCode);
+      if (!tb || !tb.tiedPlayers.includes(name)) return;
+
+      tb.answers[name] = String(answer).trim();
+
+      // Relay updated answers to everyone in the room (host shows them live)
+      io.to(upperCode).emit("tiebreaker-answers-update", {
+        answers: tb.answers,
+        tiedPlayers: tb.tiedPlayers,
+      });
+    });
+
+    /**
+     * tiebreaker-resolve — host picks the winner
+     * payload: { code, hostToken, gameId, winner }
+     */
+    socket.on("tiebreaker-resolve", async ({ code, hostToken, gameId, winner }) => {
+      try {
+        const upperCode = code?.toUpperCase();
+        const olympic = await Olympic.findOne({ code: upperCode });
+        if (!olympic) return;
+        if (olympic.hostToken !== hostToken) return;
+
+        const tb = activeTiebreakers.get(upperCode);
+        const tiedPlayers = tb ? tb.tiedPlayers : [];
+        activeTiebreakers.delete(upperCode);
+
+        // Adjust placements: winner keeps the tied place, others cascade down
+        const resultIdx = olympic.results.findIndex((r) => String(r.gameId) === String(gameId));
+        if (resultIdx >= 0 && tiedPlayers.length > 1) {
+          const placements = [...olympic.results[resultIdx].placements];
+          // Find the tied place value
+          const tiedPlace = placements.find((p) => p.participantName === winner)?.place;
+          if (tiedPlace != null) {
+            let nextPlace = tiedPlace + 1;
+            for (const p of placements) {
+              if (p.participantName !== winner && tiedPlayers.includes(p.participantName)) {
+                p.place = nextPlace++;
+              }
+            }
+            // Shift all non-tied placements that were at or above tiedPlace+1
+            for (const p of placements) {
+              if (!tiedPlayers.includes(p.participantName) && p.place >= tiedPlace + 1) {
+                p.place += tiedPlayers.length - 1;
+              }
+            }
+            olympic.results[resultIdx].placements = placements;
+            await olympic.save();
+          }
+        }
+
+        const safe = olympic.toObject();
+        delete safe.hostToken;
+        io.to(upperCode).emit("room-update", { olympic: safe, leaderboard: computeLeaderboard(safe) });
+        io.to(upperCode).emit("tiebreaker-resolved", { winner });
+      } catch (err) {
+        console.error("tiebreaker-resolve error:", err);
       }
     });
 

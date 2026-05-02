@@ -3,6 +3,23 @@ import { useAuthStore } from "../store/useAuthStore.js";
 import api from "../api/client.js";
 import GlassCard from "../components/ui/GlassCard.jsx";
 import Input from "../components/ui/Input.jsx";
+import {
+  Pencil,
+  Trash2,
+  Clock,
+  Wrench,
+  Search,
+  Plus,
+  X,
+  Swords,
+  Users,
+  Save,
+  AlertTriangle,
+  Beer,
+  Shield,
+  BookOpen,
+  Gamepad2,
+} from "lucide-react";
 
 const DEFAULT_ADDONS = {
   drinkingGame: { enabled: false, rules: "" },
@@ -17,8 +34,45 @@ const BLANK_FORM = {
   mode: "ffa",
   icon: "🎮",
   rules: "",
+  estimatedMinutes: 0,
   addons: { ...DEFAULT_ADDONS },
 };
+
+function formatMinutes(min) {
+  if (!min || min <= 0) return null;
+  if (min < 60) return `~${min} Min`;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return m > 0 ? `~${h}h ${m}m` : `~${h}h`;
+}
+
+function RulesDisplay({ rules }) {
+  if (!rules) return null;
+  const lines = rules
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (lines.length <= 1)
+    return <p className="text-sm text-muted leading-relaxed">{rules}</p>;
+  return (
+    <ul className="space-y-1 text-sm text-muted">
+      {lines.slice(0, 5).map((line, i) => (
+        <li key={i} className="flex items-start gap-2">
+          <span
+            className="mt-1.5 w-1.5 h-1.5 rounded-full shrink-0"
+            style={{ background: "rgba(139,92,246,0.6)" }}
+          />
+          <span className="leading-relaxed">{line}</span>
+        </li>
+      ))}
+      {lines.length > 5 && (
+        <li className="text-white/25 text-xs pl-3.5">
+          +{lines.length - 5} weitere Regeln
+        </li>
+      )}
+    </ul>
+  );
+}
 
 export default function GameLibraryPage() {
   const { user } = useAuthStore();
@@ -28,14 +82,12 @@ export default function GameLibraryPage() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
-  // Submit form state
   const [showForm, setShowForm] = useState(false);
-  const [editingPreset, setEditingPreset] = useState(null); // preset being edited
+  const [editingPreset, setEditingPreset] = useState(null);
   const [form, setForm] = useState({ ...BLANK_FORM });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  // Confirm delete
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [deleteError, setDeleteError] = useState("");
@@ -56,7 +108,7 @@ export default function GameLibraryPage() {
       const { data } = await api.get("/game-presets");
       setPresets(data);
     } catch {
-      setError("Failed to load library. Is the server running?");
+      setError("Bibliothek konnte nicht geladen werden. Läuft der Server?");
     } finally {
       setLoading(false);
     }
@@ -64,14 +116,13 @@ export default function GameLibraryPage() {
 
   async function handleSubmit() {
     if (!form.title.trim()) {
-      setSubmitError("Title is required");
+      setSubmitError("Titel ist erforderlich");
       return;
     }
     setSubmitting(true);
     setSubmitError("");
     try {
       if (editingPreset) {
-        // Update existing preset
         const { data } = await api.patch(
           `/game-presets/${editingPreset._id}`,
           form,
@@ -83,7 +134,6 @@ export default function GameLibraryPage() {
         );
         setEditingPreset(null);
       } else {
-        // Create new preset
         const { data } = await api.post("/game-presets", form);
         setPresets((prev) =>
           [...prev, data].sort((a, b) => a.title.localeCompare(b.title)),
@@ -95,8 +145,8 @@ export default function GameLibraryPage() {
       setSubmitError(
         err.response?.data?.error ||
           (editingPreset
-            ? "Failed to update preset"
-            : "Failed to submit preset"),
+            ? "Aktualisierung fehlgeschlagen"
+            : "Einreichung fehlgeschlagen"),
       );
     } finally {
       setSubmitting(false);
@@ -109,6 +159,7 @@ export default function GameLibraryPage() {
       mode: preset.mode,
       icon: preset.icon,
       rules: preset.rules || "",
+      estimatedMinutes: preset.estimatedMinutes || 0,
       addons: preset.addons || { ...DEFAULT_ADDONS },
     });
     setEditingPreset(preset);
@@ -123,13 +174,12 @@ export default function GameLibraryPage() {
       await api.delete(`/game-presets/${id}`);
       setPresets((prev) => prev.filter((p) => p._id !== id));
     } catch (err) {
-      showDeleteError(err.response?.data?.error || "Failed to delete");
+      showDeleteError(err.response?.data?.error || "Löschen fehlgeschlagen");
     } finally {
       setDeleting(null);
     }
   }
 
-  // Group alphabetically
   const filtered = presets.filter(
     (p) =>
       p.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -146,11 +196,11 @@ export default function GameLibraryPage() {
 
   return (
     <div className="min-h-screen px-4 py-10">
-      {/* Delete error toast */}
       {deleteError && (
         <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 animate-slide-up">
-          <div className="bg-pink-600/90 backdrop-blur-sm text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl border border-pink-400/30">
-            ⚠ {deleteError}
+          <div className="bg-pink-600/90 backdrop-blur-sm text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-2xl border border-pink-400/30 flex items-center gap-2">
+            <AlertTriangle size={14} />
+            {deleteError}
           </div>
         </div>
       )}
@@ -158,17 +208,16 @@ export default function GameLibraryPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-3xl font-black text-white">📚 Game Library</h1>
+            <h1 className="text-3xl font-black text-white flex items-center gap-3"><BookOpen size={28} className="text-purple-400" /> Game Library</h1>
             <p className="text-sm text-muted mt-1">
-              Community game presets — pick any into your Olympic
+              Community Spiel-Vorlagen — direkt in deine Olympiade
             </p>
           </div>
           {user ? (
             <button
-              className="btn-primary !py-2 !px-4 text-sm shrink-0"
+              className="flex items-center gap-2 btn-primary !py-2 !px-4 text-sm shrink-0"
               onClick={() => {
                 if (showForm && editingPreset) {
-                  // Cancel edit
                   setEditingPreset(null);
                   setForm({ ...BLANK_FORM });
                   setShowForm(false);
@@ -179,25 +228,47 @@ export default function GameLibraryPage() {
                 }
               }}
             >
-              {showForm ? "✕ Cancel" : "+ Submit Preset"}
+              {showForm ? (
+                <>
+                  <X size={14} /> Abbrechen
+                </>
+              ) : (
+                <>
+                  <Plus size={14} /> Preset einreichen
+                </>
+              )}
             </button>
           ) : (
             <p className="text-xs text-muted bg-white/5 rounded-xl px-3 py-2">
-              Sign in to submit presets
+              Einloggen um Presets einzureichen
             </p>
           )}
         </div>
 
-        {/* Submit form */}
+        {/* Submit / Edit form */}
         {showForm && user && (
-          <GlassCard className="space-y-4 border-purple-500/30">
-            <h2 className="font-bold text-white">
-              {editingPreset ? "✏️ Edit Preset" : "New Preset"}
-            </h2>
+          <div
+            className="rounded-2xl p-6 space-y-5"
+            style={{
+              background: "rgba(10,12,30,0.97)",
+              border: "1px solid rgba(139,92,246,0.35)",
+              boxShadow: "0 0 32px rgba(139,92,246,0.08)",
+            }}
+          >
+            <div className="flex items-center gap-2">
+              {editingPreset ? (
+                <Pencil size={16} className="text-purple-400" />
+              ) : (
+                <Plus size={16} className="text-purple-400" />
+              )}
+              <h2 className="font-bold text-white">
+                {editingPreset ? "Preset bearbeiten" : "Neues Preset"}
+              </h2>
+            </div>
 
             <div className="flex gap-2">
               <Input
-                placeholder="Game title"
+                placeholder="Spieltitel"
                 maxLength={60}
                 value={form.title}
                 onChange={(e) =>
@@ -221,30 +292,76 @@ export default function GameLibraryPage() {
                 <button
                   key={m}
                   onClick={() => setForm((f) => ({ ...f, mode: m }))}
-                  className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-colors flex items-center justify-center gap-2"
+                  style={
                     form.mode === m
-                      ? "border-purple-500 bg-purple-500/20 text-purple-light"
-                      : "border-white/10 text-muted hover:border-white/30"
-                  }`}
+                      ? {
+                          borderColor: "rgba(139,92,246,0.6)",
+                          background: "rgba(139,92,246,0.15)",
+                          color: "#c4b5fd",
+                        }
+                      : {
+                          borderColor: "rgba(255,255,255,0.08)",
+                          color: "rgba(255,255,255,0.45)",
+                        }
+                  }
                 >
-                  {m === "ffa" ? "⚔️ FFA" : "👥 Teams"}
+                  {m === "ffa" ? (
+                    <>
+                      <Swords size={14} /> FFA
+                    </>
+                  ) : (
+                    <>
+                      <Users size={14} /> Teams
+                    </>
+                  )}
                 </button>
               ))}
             </div>
 
-            <textarea
-              className="textarea-field h-28"
-              placeholder="Rules / description (optional, max 1000 chars)"
-              maxLength={1000}
-              value={form.rules}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, rules: e.target.value }))
-              }
-            />
+            <div>
+              <label className="block text-xs text-white/50 uppercase tracking-wider font-bold mb-1.5">
+                Regeln / Beschreibung
+              </label>
+              <textarea
+                className="textarea-field h-32"
+                placeholder={
+                  "Regeln (optional, max 1000 Zeichen)\n\nTipp: Jede neue Zeile wird ein Bullet Point"
+                }
+                maxLength={1000}
+                value={form.rules}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, rules: e.target.value }))
+                }
+              />
+              <p className="text-[10px] text-white/25 mt-1">
+                Eine Zeile pro Regel → wird als Aufzählungspunkt angezeigt
+              </p>
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="label">⏱ Time limit (min, 0=∞)</label>
+                <label className="flex items-center gap-1.5 text-xs text-white/50 uppercase tracking-wider font-bold mb-1.5">
+                  <Clock size={11} /> Geschätzte Dauer (Min)
+                </label>
+                <input
+                  type="number"
+                  className="input-field"
+                  min={0}
+                  placeholder="z.B. 30"
+                  value={form.estimatedMinutes || ""}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      estimatedMinutes: Number(e.target.value) || 0,
+                    }))
+                  }
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-1.5 text-xs text-white/50 uppercase tracking-wider font-bold mb-1.5">
+                  <Clock size={11} /> Zeitlimit im Spiel (0=∞)
+                </label>
                 <input
                   type="number"
                   className="input-field"
@@ -261,11 +378,13 @@ export default function GameLibraryPage() {
                   }
                 />
               </div>
-              <div>
-                <label className="label">🛠 Equipment</label>
+              <div className="col-span-2">
+                <label className="flex items-center gap-1.5 text-xs text-white/50 uppercase tracking-wider font-bold mb-1.5">
+                  <Wrench size={11} /> Equipment
+                </label>
                 <input
                   className="input-field"
-                  placeholder="e.g. Controller"
+                  placeholder="z.B. Controller, 2 Bildschirme"
                   maxLength={200}
                   value={form.addons.equipment}
                   onChange={(e) =>
@@ -279,53 +398,64 @@ export default function GameLibraryPage() {
             </div>
 
             {submitError && (
-              <p className="text-pink-400 text-sm">{submitError}</p>
+              <p className="text-pink-400 text-sm flex items-center gap-1.5">
+                <AlertTriangle size={13} /> {submitError}
+              </p>
             )}
 
             <button
-              className="btn-primary w-full"
+              className="btn-primary w-full flex items-center justify-center gap-2"
               onClick={handleSubmit}
               disabled={submitting || !form.title.trim()}
             >
+              <Save size={14} />
               {submitting
                 ? editingPreset
-                  ? "Saving…"
-                  : "Submitting…"
+                  ? "Speichern…"
+                  : "Einreichen…"
                 : editingPreset
-                  ? "💾 Save Changes"
-                  : "📤 Submit to Library"}
+                  ? "Änderungen speichern"
+                  : "In Bibliothek einreichen"}
             </button>
-          </GlassCard>
+          </div>
         )}
 
         {/* Search */}
-        <input
-          className="input-field w-full"
-          placeholder="🔍 Search games or creators…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="relative">
+          <Search
+            size={15}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30"
+          />
+          <input
+            className="input-field w-full pl-10"
+            placeholder="Spiele oder Ersteller suchen…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
         {loading && (
           <p className="text-muted text-sm text-center py-10 animate-pulse">
-            Loading library…
+            Bibliothek lädt…
           </p>
         )}
         {error && (
-          <p className="text-pink-400 text-sm bg-pink-500/10 border border-pink-500/20 rounded-xl px-4 py-3">
-            {error}
+          <p className="text-pink-400 text-sm bg-pink-500/10 border border-pink-500/20 rounded-xl px-4 py-3 flex items-center gap-2">
+            <AlertTriangle size={14} /> {error}
           </p>
         )}
 
         {!loading && filtered.length === 0 && !error && (
           <GlassCard className="text-center py-10">
-            <p className="text-4xl mb-3">🎮</p>
+            <Gamepad2 size={40} className="mx-auto mb-3 text-white/20" />
             <p className="text-white font-semibold mb-1">
-              {search ? `No results for "${search}"` : "Library is empty"}
+              {search
+                ? `Keine Ergebnisse für "${search}"`
+                : "Bibliothek ist leer"}
             </p>
             {!search && user && (
               <p className="text-sm text-muted">
-                Be the first to submit a game preset!
+                Sei der Erste und reiche ein Preset ein!
               </p>
             )}
           </GlassCard>
@@ -335,114 +465,160 @@ export default function GameLibraryPage() {
         {!loading &&
           letters.map((letter) => (
             <div key={letter}>
-              {/* Letter header */}
               <div className="flex items-center gap-3 mb-3">
                 <span
-                  className="text-xl font-black w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  className="text-sm font-black w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-white"
                   style={{
                     background: "linear-gradient(135deg, #8b5cf6, #ec4899)",
                   }}
                 >
                   {letter}
                 </span>
-                <div className="flex-1 h-px bg-white/10" />
+                <div className="flex-1 h-px bg-white/[0.06]" />
               </div>
 
-              <div className="space-y-2">
-                {grouped[letter].map((preset) => (
-                  <GlassCard
-                    key={preset._id}
-                    className="hover:border-white/15 transition-colors"
-                  >
-                    <div className="flex items-start gap-3">
-                      <span className="text-3xl mt-0.5 shrink-0">
-                        {preset.icon}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                          <h3 className="font-bold text-white">
+              <div className="space-y-3">
+                {grouped[letter].map((preset) => {
+                  const isOwner = user && String(preset.createdBy) === user.id;
+                  return (
+                    <div
+                      key={preset._id}
+                      className="rounded-2xl overflow-hidden transition-all hover:border-white/10"
+                      style={{
+                        background: "rgba(10,12,30,0.95)",
+                        border: "1px solid rgba(255,255,255,0.07)",
+                      }}
+                    >
+                      {/* Card header */}
+                      <div className="flex items-start gap-3 px-4 pt-4 pb-3">
+                        <div
+                          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
+                          style={{
+                            background: "rgba(139,92,246,0.15)",
+                            border: "1px solid rgba(139,92,246,0.2)",
+                          }}
+                        >
+                          {preset.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-white text-base leading-tight">
                             {preset.title}
                           </h3>
-                          <span
-                            className={`badge text-xs px-2 py-0.5 rounded-full ${
-                              preset.mode === "ffa"
-                                ? "bg-cyan-500/20 text-cyan-400"
-                                : "bg-amber-500/20 text-amber-400"
-                            }`}
-                          >
-                            {preset.mode === "ffa" ? "⚔️ FFA" : "👥 Teams"}
-                          </span>
-                          {preset.addons?.drinkingGame?.enabled && (
-                            <span className="badge text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
-                              🍺 Drinking
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            <span
+                              className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md"
+                              style={
+                                preset.mode === "ffa"
+                                  ? {
+                                      background: "rgba(236,72,153,0.15)",
+                                      color: "#f472b6",
+                                    }
+                                  : {
+                                      background: "rgba(139,92,246,0.18)",
+                                      color: "#a78bfa",
+                                    }
+                              }
+                            >
+                              {preset.mode === "ffa" ? (
+                                <Swords size={10} />
+                              ) : (
+                                <Users size={10} />
+                              )}
+                              {preset.mode === "ffa" ? "FFA" : "Teams"}
                             </span>
-                          )}
+                            {preset.addons?.drinkingGame?.enabled && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-orange-500/15 text-orange-400">
+                                <Beer size={10} /> Trinkspiel
+                              </span>
+                            )}
+                            {preset.estimatedMinutes > 0 && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-cyan-400/70">
+                                <Clock size={10} />{" "}
+                                {formatMinutes(preset.estimatedMinutes)}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        {preset.rules && (
-                          <p className="text-sm text-muted line-clamp-2 mb-1">
-                            {preset.rules}
-                          </p>
+                        {/* Owner action buttons */}
+                        {isOwner && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              className="p-2 rounded-lg text-purple-400/50 hover:text-purple-400 hover:bg-purple-500/15 transition-colors"
+                              onClick={() => startEdit(preset)}
+                              title="Bearbeiten"
+                            >
+                              <Pencil size={15} />
+                            </button>
+                            {confirmDelete === preset._id ? (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  className="text-xs px-2.5 py-1.5 rounded-lg bg-pink-500/20 text-pink-400 hover:bg-pink-500/30 transition-colors font-semibold"
+                                  onClick={() => handleDelete(preset._id)}
+                                  disabled={deleting === preset._id}
+                                >
+                                  {deleting === preset._id ? "…" : "Löschen"}
+                                </button>
+                                <button
+                                  className="p-1.5 rounded-lg bg-white/5 text-muted hover:bg-white/10 transition-colors"
+                                  onClick={() => setConfirmDelete(null)}
+                                >
+                                  <X size={12} />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                className="p-2 rounded-lg text-red-400/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                onClick={() => setConfirmDelete(preset._id)}
+                                title="Löschen"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            )}
+                          </div>
                         )}
-                        <div className="flex items-center gap-3 text-xs text-white/30 flex-wrap">
-                          <span>by {preset.createdByUsername}</span>
-                          {preset.addons?.equipment && (
-                            <span>🛠 {preset.addons.equipment}</span>
-                          )}
-                          {preset.addons?.timeLimit > 0 && (
-                            <span>⏱ {preset.addons.timeLimit} min</span>
-                          )}
-                        </div>
                       </div>
 
-                      {/* Edit / Delete own preset */}
-                      {user && String(preset.createdBy) === user.id && (
-                        <div className="shrink-0 flex flex-col gap-1">
-                          {/* Edit button */}
-                          <button
-                            className="btn-ghost text-xs text-purple-400 hover:bg-purple-500/10 !p-2"
-                            onClick={() => startEdit(preset)}
-                            title="Edit preset"
-                          >
-                            ✏️
-                          </button>
-                          {confirmDelete === preset._id ? (
-                            <div className="flex flex-col gap-1">
-                              <button
-                                className="text-xs px-2 py-1 rounded-lg bg-pink-500/20 text-pink-400 hover:bg-pink-500/30"
-                                onClick={() => handleDelete(preset._id)}
-                                disabled={deleting === preset._id}
-                              >
-                                {deleting === preset._id ? "…" : "Delete"}
-                              </button>
-                              <button
-                                className="text-xs px-2 py-1 rounded-lg bg-white/5 text-muted hover:bg-white/10"
-                                onClick={() => setConfirmDelete(null)}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              className="btn-ghost text-xs text-pink-400 hover:bg-pink-500/10 !p-2"
-                              onClick={() => setConfirmDelete(preset._id)}
-                            >
-                              🗑️
-                            </button>
-                          )}
+                      {/* Rules bullet list */}
+                      {preset.rules && (
+                        <div className="px-4 pb-3">
+                          <RulesDisplay rules={preset.rules} />
                         </div>
                       )}
+
+                      {/* Footer meta */}
+                      <div
+                        className="flex items-center gap-4 px-4 py-2.5 flex-wrap"
+                        style={{
+                          borderTop: "1px solid rgba(255,255,255,0.04)",
+                          background: "rgba(0,0,0,0.12)",
+                        }}
+                      >
+                        <span className="text-xs text-white/25">
+                          von {preset.createdByUsername}
+                        </span>
+                        {preset.addons?.equipment && (
+                          <span className="inline-flex items-center gap-1 text-xs text-white/30">
+                            <Wrench size={10} /> {preset.addons.equipment}
+                          </span>
+                        )}
+                        {preset.addons?.timeLimit > 0 && (
+                          <span className="inline-flex items-center gap-1 text-xs text-white/30">
+                            <Shield size={10} /> {preset.addons.timeLimit} min
+                            Limit
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </GlassCard>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
 
-        {/* Stats footer */}
         {!loading && presets.length > 0 && (
           <p className="text-center text-xs text-white/20 pb-4">
-            {presets.length} preset{presets.length !== 1 ? "s" : ""} in the
-            library
+            {presets.length} Preset{presets.length !== 1 ? "s" : ""} in der
+            Bibliothek
           </p>
         )}
       </div>

@@ -23,6 +23,12 @@ const UserSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
     },
+    avatarColor: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 7,
+    },
   },
   { timestamps: true }
 );

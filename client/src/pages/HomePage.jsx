@@ -1,8 +1,19 @@
 import { useNavigate } from "react-router-dom";
+import {
+  Dices,
+  Users,
+  Crown,
+  Zap,
+  Trophy,
+  Gamepad2,
+  Medal,
+  Rocket,
+} from "lucide-react";
 
 const FEATURES = [
   {
-    icon: "🎲",
+    Icon: Dices,
+    iconColor: "text-pink-400",
     title: "Verrückte Spiele",
     desc: "Von Klassikern bis zu neuen Party-Highlights. Für jeden ist etwas dabei!",
     color: "from-pink-500/20 to-purple-500/10",
@@ -10,7 +21,8 @@ const FEATURES = [
     glow: "rgba(236,72,153,0.15)",
   },
   {
-    icon: "👥",
+    Icon: Users,
+    iconColor: "text-cyan-400",
     title: "Für alle gemacht",
     desc: "Egal ob 3 oder 20 Spieler – stellt Teams zusammen und habt gemeinsam Spaß!",
     color: "from-cyan-500/20 to-blue-500/10",
@@ -18,7 +30,8 @@ const FEATURES = [
     glow: "rgba(34,211,238,0.15)",
   },
   {
-    icon: "👑",
+    Icon: Crown,
+    iconColor: "text-yellow-400",
     title: "Punkte sammeln",
     desc: "Jedes Spiel zählt! Sammelt Punkte und steigt im Ranking auf.",
     color: "from-yellow-500/20 to-orange-500/10",
@@ -26,7 +39,8 @@ const FEATURES = [
     glow: "rgba(250,204,21,0.15)",
   },
   {
-    icon: "⚡",
+    Icon: Zap,
+    iconColor: "text-purple-400",
     title: "Einfache Regeln",
     desc: "Schnell verstanden, sofort losgespielt. Kein Aufwand, nur Spaß!",
     color: "from-purple-500/20 to-pink-500/10",
@@ -34,7 +48,8 @@ const FEATURES = [
     glow: "rgba(139,92,246,0.15)",
   },
   {
-    icon: "🏆",
+    Icon: Trophy,
+    iconColor: "text-green-400",
     title: "Werde Champion",
     desc: "Zeig allen, wer die Olympiade dominiert und sich den Sieg holt!",
     color: "from-green-500/20 to-cyan-500/10",
@@ -46,28 +61,32 @@ const FEATURES = [
 const STEPS = [
   {
     num: "1",
-    icon: "👥",
+    Icon: Users,
+    iconColor: "#ec4899",
     title: "Lobby erstellen",
     desc: "Erstelle deine Lobby und lade deine Freunde ein.",
     color: "#ec4899",
   },
   {
     num: "2",
-    icon: "🎮",
+    Icon: Gamepad2,
+    iconColor: "#22d3ee",
     title: "Spiele auswählen",
     desc: "Wählt zusammen die besten Spiele für eure Olympiade.",
     color: "#22d3ee",
   },
   {
     num: "3",
-    icon: "🏆",
+    Icon: Trophy,
+    iconColor: "#8b5cf6",
     title: "Spielen & Punkten",
     desc: "Spielt die Spiele und sammelt Punkte!",
     color: "#8b5cf6",
   },
   {
     num: "4",
-    icon: "👑",
+    Icon: Crown,
+    iconColor: "#facc15",
     title: "Champion küren",
     desc: "Wer hat die meisten Punkte? Die Krone gehört dir!",
     color: "#facc15",
@@ -142,7 +161,7 @@ export default function HomePage() {
             >
               <span className="text-lg">+</span>
               <div className="text-left">
-                <div className="font-black">Lobby erstellen</div>
+                <div className="font-black">Olympiade erstellen</div>
                 <div className="text-xs font-normal opacity-70">
                   Neue Olympiade starten
                 </div>
@@ -152,7 +171,7 @@ export default function HomePage() {
               className="btn-secondary !px-8 !py-4 !rounded-2xl text-base gap-3 !border-cyan-500/60 !text-cyan-300 hover:!bg-cyan-500/10"
               onClick={() => navigate("/join")}
             >
-              <span className="text-lg">👥</span>
+              <Users size={18} />
               <div className="text-left">
                 <div className="font-black">Lobby beitreten</div>
                 <div className="text-xs font-normal opacity-70">
@@ -174,19 +193,25 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
-          {FEATURES.map(({ icon, title, desc, color, border, glow }) => (
-            <div
-              key={title}
-              className={`relative rounded-2xl p-5 border bg-gradient-to-br ${color} ${border} flex flex-col items-center text-center gap-3 transition-transform duration-200 hover:scale-105 hover:-translate-y-1`}
-              style={{ boxShadow: `0 8px 32px ${glow}` }}
-            >
-              <div className="text-4xl">{icon}</div>
-              <div>
-                <h3 className="font-bold text-white text-sm mb-1">{title}</h3>
-                <p className="text-xs text-white/50 leading-relaxed">{desc}</p>
+          {FEATURES.map(
+            ({ Icon, iconColor, title, desc, color, border, glow }) => (
+              <div
+                key={title}
+                className={`relative rounded-2xl p-5 border bg-gradient-to-br ${color} ${border} flex flex-col items-center text-center gap-3 transition-transform duration-200 hover:scale-105 hover:-translate-y-1`}
+                style={{ boxShadow: `0 8px 32px ${glow}` }}
+              >
+                <div className={iconColor}>
+                  <Icon size={36} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm mb-1">{title}</h3>
+                  <p className="text-xs text-white/50 leading-relaxed">
+                    {desc}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            ),
+          )}
         </div>
       </section>
 
@@ -209,7 +234,7 @@ export default function HomePage() {
             }}
           />
 
-          {STEPS.map(({ num, icon, title, desc, color }) => (
+          {STEPS.map(({ num, Icon, iconColor, title, desc, color }) => (
             <div
               key={num}
               className="relative flex flex-col items-center text-center gap-3 glass rounded-2xl p-5 border-white/[0.08]"
@@ -226,7 +251,9 @@ export default function HomePage() {
               >
                 {num}
               </div>
-              <div className="text-2xl">{icon}</div>
+              <div style={{ color: iconColor }}>
+                <Icon size={24} />
+              </div>
               <div>
                 <h3 className="font-bold text-white text-sm mb-1">{title}</h3>
                 <p className="text-xs text-white/50 leading-relaxed">{desc}</p>
@@ -251,7 +278,7 @@ export default function HomePage() {
           <div className="absolute -bottom-8 -right-8 w-32 h-32 rounded-full bg-pink-500/10 blur-2xl pointer-events-none" />
 
           <div className="relative z-10">
-            <div className="text-5xl mb-4">🏅</div>
+            <Medal size={52} className="mx-auto mb-4 text-yellow-400/80" />
             <h2 className="text-3xl font-black text-white mb-3">
               Bereit für die{" "}
               <span
@@ -272,7 +299,9 @@ export default function HomePage() {
               className="btn-primary !px-10 !py-4 !rounded-2xl text-base shadow-[0_0_40px_rgba(139,92,246,0.4)]"
               onClick={() => navigate("/create")}
             >
-              🚀 Jetzt starten
+              <span className="flex items-center justify-center gap-2">
+                <Rocket size={16} /> Jetzt starten
+              </span>
             </button>
           </div>
         </div>

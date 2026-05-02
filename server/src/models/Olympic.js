@@ -39,6 +39,7 @@ const GameSchema = new mongoose.Schema({
   rules: { type: String, default: "", maxlength: 1000 },
   imageBase64: { type: String, default: "" },
   order: { type: Number, default: 0 },
+  estimatedMinutes: { type: Number, default: 0, min: 0 },
   addons: { type: AddonsSchema, default: () => ({}) },
 });
 

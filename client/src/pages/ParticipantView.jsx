@@ -4,6 +4,9 @@ import { connectSocket, getSocket } from "../socket/socket.js";
 import useOlympicStore from "../store/useOlympicStore.js";
 import GlassCard from "../components/ui/GlassCard.jsx";
 import Scoreboard from "../components/Scoreboard.jsx";
+import FloatingRoomNav from "../components/ui/FloatingRoomNav.jsx";
+import TiebreakerModal from "../components/ui/TiebreakerModal.jsx";
+import { Users, Gamepad2, Crown, Medal, Swords, Check, Beer, Clock, Scale, X, BarChart2, ChevronRight, ArrowLeft, Play, Lock } from "lucide-react";
 
 export default function ParticipantView() {
   const { code } = useParams();
@@ -17,7 +20,11 @@ export default function ParticipantView() {
   } = useOlympicStore();
   const [joined, setJoined] = useState(!!olympic);
   const [socketError, setSocketError] = useState("");
+  const [gameInProgress, setGameInProgress] = useState(false);
   const [rulesModal, setRulesModal] = useState(null); // game object or null
+  const [tiebreaker, setTiebreaker] = useState(null);
+  const [tiebreakerAnswers, setTiebreakerAnswers] = useState({});
+  const [tiebreakerResolved, setTiebreakerResolved] = useState(null);
 
   useEffect(() => {
     if (!code) return;
@@ -29,22 +36,41 @@ export default function ParticipantView() {
       updateFromRoomEvent(data);
       setConnected(true);
       setJoined(true);
+      if (participantName) {
+        localStorage.setItem("lastRoom", JSON.stringify({ code: code.toUpperCase(), role: "participant" }));
+      }
     });
 
     socket.on("olympic-finished", () => {
+      localStorage.removeItem("lastRoom");
       navigate(`/room/${code}/winner`);
     });
 
     socket.on("olympic-reverted", () => {
-      // Host reverted to draft — send players back to join page with a message
+      localStorage.removeItem("lastRoom");
       navigate(`/join/${code?.toUpperCase()}?reverted=1`);
     });
 
     socket.on("kicked", () => {
+      localStorage.removeItem("lastRoom");
       navigate(`/join/${code?.toUpperCase()}?kicked=1`);
     });
 
-    socket.on("error", ({ message }) => setSocketError(message));
+    socket.on("error", ({ message }) => {
+      if (message === "GAME_IN_PROGRESS") {
+        setGameInProgress(true);
+      } else {
+        setSocketError(message);
+      }
+    });
+
+    socket.on("tiebreaker-start", (data) => {
+      setTiebreaker(data);
+      setTiebreakerAnswers({});
+      setTiebreakerResolved(null);
+    });
+    socket.on("tiebreaker-answers-update", ({ answers }) => setTiebreakerAnswers(answers));
+    socket.on("tiebreaker-resolved", ({ winner }) => setTiebreakerResolved(winner));
 
     // If we don't have an olympic yet (direct URL access), try to join as spectator
     if (!olympic) {
@@ -61,8 +87,38 @@ export default function ParticipantView() {
       socket.off("olympic-reverted");
       socket.off("kicked");
       socket.off("error");
+      socket.off("tiebreaker-start");
+      socket.off("tiebreaker-answers-update");
+      socket.off("tiebreaker-resolved");
     };
   }, [code]);
+
+  if (gameInProgress) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4">
+        <div
+          className="w-full max-w-sm rounded-2xl p-8 text-center animate-slide-up"
+          style={{
+            background: "rgba(10,10,28,0.97)",
+            border: "1px solid rgba(250,204,21,0.3)",
+            boxShadow: "0 0 60px rgba(250,204,21,0.08)",
+          }}
+        >
+          <div className="mb-4 flex justify-center text-yellow-400/70"><Lock size={44} /></div>
+          <h2 className="text-xl font-black text-white mb-2">Spiel läuft bereits</h2>
+          <p className="text-sm text-white/50 mb-6">
+            Dieser Raum ist nicht mehr beigetreten. Die Olympiade hat bereits begonnen — du warst nicht in der Lobby.
+          </p>
+          <button
+            className="btn-secondary w-full"
+            onClick={() => navigate("/")}
+          >
+            Zur Startseite
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!olympic || !joined) {
     return (
@@ -99,6 +155,7 @@ export default function ParticipantView() {
     ];
 
     return (
+      <>
       <div className="min-h-screen px-4 py-8 flex flex-col items-center">
         <div className="w-full max-w-lg space-y-6 animate-slide-up">
           {/* ── Waiting hero card ── */}
@@ -157,7 +214,7 @@ export default function ParticipantView() {
 
               {/* Joined confirmation */}
               <div className="flex items-center justify-center gap-2">
-                <span className="text-purple-400">👥</span>
+                <Users size={14} className="text-purple-400" />
                 <span className="font-bold text-white text-sm">
                   Du bist in der Lobby
                 </span>
@@ -181,7 +238,7 @@ export default function ParticipantView() {
           >
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
-                <span className="text-purple-400">🎮</span>
+                <Gamepad2 size={14} className="text-purple-400" />
                 <h2 className="font-black text-white text-sm uppercase tracking-wider">
                   Spieler in der Lobby
                 </h2>
@@ -216,8 +273,8 @@ export default function ParticipantView() {
                         {p.name[0]?.toUpperCase()}
                       </div>
                       {isHost && (
-                        <span className="absolute -top-2 -right-1 text-base">
-                          👑
+                        <span className="absolute -top-2 -right-1">
+                          <Crown size={14} className="text-yellow-400" />
                         </span>
                       )}
                       {/* Online dot */}
@@ -308,10 +365,12 @@ export default function ParticipantView() {
             }}
             onClick={() => navigate("/")}
           >
-            ← Lobby verlassen
+            <span className="flex items-center justify-center gap-1.5"><ArrowLeft size={14} /> Lobby verlassen</span>
           </button>
         </div>
       </div>
+      <FloatingRoomNav code={code} />
+      </>
     );
   }
 
@@ -335,7 +394,7 @@ export default function ParticipantView() {
             }}
           >
             <div className="flex items-center gap-3 min-w-0">
-              <span className="text-2xl flex-shrink-0">🏅</span>
+              <Medal size={22} className="text-pink-400 flex-shrink-0" />
               <div className="min-w-0">
                 <h1 className="font-black text-white text-lg truncate leading-tight">
                   {olympic.name}
@@ -445,13 +504,13 @@ export default function ParticipantView() {
                             border: `1px solid ${currentGame.mode === "team" ? "rgba(139,92,246,0.4)" : "rgba(236,72,153,0.4)"}`,
                           }}
                         >
-                          {currentGame.mode === "team" ? "👥 Teams" : "⚔ FFA"}
+                          {currentGame.mode === "team" ? <><Users size={11} /> Teams</> : <><Swords size={11} /> FFA</>}
                         </span>
                         {olympic.results.find(
                           (r) => String(r.gameId) === String(currentGame._id),
                         ) && (
-                          <span className="text-green-400 text-sm font-bold">
-                            ✅ Bewertet
+                          <span className="text-green-400 text-sm font-bold flex items-center gap-1">
+                            <Check size={13} /> Bewertet
                           </span>
                         )}
                         <span
@@ -462,7 +521,7 @@ export default function ParticipantView() {
                             color: "#facc15",
                           }}
                         >
-                          ▶ Live
+                          <ChevronRight size={12} /> Live
                         </span>
                       </div>
                     </div>
@@ -495,8 +554,8 @@ export default function ParticipantView() {
                         border: "1px solid rgba(251,146,60,0.25)",
                       }}
                     >
-                      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-400/70 mb-2">
-                        🍺 Trinkregeln
+                      <p className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-400/70 mb-2 flex items-center gap-1">
+                        <Beer size={10} /> Trinkregeln
                       </p>
                       <p className="text-sm text-white/85 whitespace-pre-line leading-relaxed">
                         {currentGame.addons.drinkingGame.rules ||
@@ -511,18 +570,18 @@ export default function ParticipantView() {
                     currentGame.addons?.timeLimit > 0) && (
                     <div className="flex flex-wrap gap-3 mt-2">
                       {currentGame.addons?.timeLimit > 0 && (
-                        <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8">
-                          ⏱ {currentGame.addons.timeLimit} Min
+                        <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8 flex items-center gap-1">
+                          <Clock size={11} /> {currentGame.addons.timeLimit} Min
                         </span>
                       )}
                       {currentGame.addons?.equipment && (
                         <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8">
-                          🎒 {currentGame.addons.equipment}
+                          {currentGame.addons.equipment}
                         </span>
                       )}
                       {currentGame.addons?.handicap && (
-                        <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8">
-                          ⚖ {currentGame.addons.handicap}
+                        <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8 flex items-center gap-1">
+                          <Scale size={11} /> {currentGame.addons.handicap}
                         </span>
                       )}
                     </div>
@@ -550,8 +609,8 @@ export default function ParticipantView() {
                   border: "1px solid rgba(255,255,255,0.08)",
                 }}
               >
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/30 mb-4">
-                  📊 Live Tabelle
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/30 mb-4 flex items-center gap-1.5">
+                  <BarChart2 size={11} /> Live Tabelle
                 </p>
                 <Scoreboard
                   leaderboard={leaderboard}
@@ -612,7 +671,7 @@ export default function ParticipantView() {
                         </span>
                         {/* Icon — always visible */}
                         <span className="text-sm flex-shrink-0">
-                          {hidden ? "🎮" : g.icon}
+                          {hidden ? <Gamepad2 size={14} className="text-white/30" /> : g.icon}
                         </span>
                         {/* Title — blurred when hidden */}
                         <span
@@ -626,13 +685,13 @@ export default function ParticipantView() {
                           {hidden ? "???????????" : g.title}
                         </span>
                         {scored && !hidden && (
-                          <span className="text-green-400 text-xs flex-shrink-0">
-                            ✅
+                          <span className="flex-shrink-0">
+                            <Check size={13} className="text-green-400" />
                           </span>
                         )}
                         {isCur && (
-                          <span className="text-yellow-400 text-[9px] font-black uppercase flex-shrink-0">
-                            ▶
+                          <span className="text-yellow-400 flex-shrink-0">
+                            <Play size={9} fill="currentColor" />
                           </span>
                         )}
                         {/* Rules button — visible when not hidden */}
@@ -655,7 +714,7 @@ export default function ParticipantView() {
                 </div>
                 {olympic.hideGamePlan && (
                   <p className="text-[10px] text-white/20 text-center mt-3">
-                    🔒 Spielplan ausgeblendet
+                    <span className="flex items-center justify-center gap-1"><Lock size={10} /> Spielplan ausgeblendet</span>
                   </p>
                 )}
               </div>
@@ -663,6 +722,8 @@ export default function ParticipantView() {
           </div>
         </div>
       </div>
+
+      <FloatingRoomNav code={code} />
 
       {rulesModal && (
         <div
@@ -696,14 +757,14 @@ export default function ParticipantView() {
                     color: rulesModal.mode === "team" ? "#a78bfa" : "#f472b6",
                   }}
                 >
-                  {rulesModal.mode === "team" ? "👥 Teams" : "⚔ FFA"}
+                  {rulesModal.mode === "team" ? <><Users size={11} /> Teams</> : <><Swords size={11} /> FFA</>}
                 </span>
               </div>
               <button
-                className="text-white/40 hover:text-white text-xl leading-none flex-shrink-0"
+                className="text-white/40 hover:text-white flex-shrink-0"
                 onClick={() => setRulesModal(null)}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
@@ -734,8 +795,8 @@ export default function ParticipantView() {
                   border: "1px solid rgba(251,146,60,0.25)",
                 }}
               >
-                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-400/70 mb-2">
-                  🍺 Trinkregeln
+                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-orange-400/70 mb-2 flex items-center gap-1">
+                  <Beer size={10} /> Trinkregeln
                 </p>
                 <p className="text-sm text-white/85 whitespace-pre-line leading-relaxed">
                   {rulesModal.addons.drinkingGame.rules ||
@@ -750,18 +811,18 @@ export default function ParticipantView() {
               rulesModal.addons?.timeLimit > 0) && (
               <div className="flex flex-wrap gap-2">
                 {rulesModal.addons?.timeLimit > 0 && (
-                  <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8">
-                    ⏱ {rulesModal.addons.timeLimit} Min
+                  <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8 flex items-center gap-1">
+                    <Clock size={11} /> {rulesModal.addons.timeLimit} Min
                   </span>
                 )}
                 {rulesModal.addons?.equipment && (
                   <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8">
-                    🎒 {rulesModal.addons.equipment}
+                    {rulesModal.addons.equipment}
                   </span>
                 )}
                 {rulesModal.addons?.handicap && (
-                  <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8">
-                    ⚖ {rulesModal.addons.handicap}
+                  <span className="text-xs text-white/50 bg-white/5 px-3 py-1.5 rounded-lg border border-white/8 flex items-center gap-1">
+                    <Scale size={11} /> {rulesModal.addons.handicap}
                   </span>
                 )}
               </div>
@@ -776,6 +837,27 @@ export default function ParticipantView() {
             </button>
           </div>
         </div>
+      )}
+
+      {tiebreaker && (
+        <TiebreakerModal
+          question={tiebreaker.question}
+          unit={tiebreaker.unit}
+          tiedPlayers={tiebreaker.tiedPlayers}
+          answers={tiebreakerAnswers}
+          isHost={false}
+          isParticipant={tiebreaker.tiedPlayers.includes(participantName)}
+          onAnswer={(answer) =>
+            getSocket().emit("tiebreaker-answer", {
+              code: code.toUpperCase(),
+              name: participantName,
+              answer,
+            })
+          }
+          onClose={() => setTiebreaker(null)}
+          resolved={!!tiebreakerResolved}
+          winner={tiebreakerResolved}
+        />
       )}
     </>
   );

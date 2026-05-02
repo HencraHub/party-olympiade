@@ -6,6 +6,55 @@ import Input from "../components/ui/Input.jsx";
 import Select from "../components/ui/Select.jsx";
 import { useAuthStore } from "../store/useAuthStore.js";
 import AuthModal from "../components/AuthModal.jsx";
+import {
+  Crown,
+  Gamepad2,
+  Users,
+  Trophy,
+  Swords,
+  Lightbulb,
+  Clock,
+  Beer,
+  Wrench,
+  Scale,
+  FolderOpen,
+  Search,
+  Target,
+  Flame,
+  Star,
+  Undo2,
+  Rocket,
+  Save,
+  X,
+  Check,
+  GripVertical,
+  ChevronUp,
+  ChevronDown,
+  Eye,
+  CalendarDays,
+  Medal,
+  Pencil,
+  Plus,
+  Lock,
+  ArrowLeft,
+  ArrowRight,
+} from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const STEPS = ["Event Setup", "Spiele", "Vorschau"];
 
@@ -21,31 +70,35 @@ const DEFAULT_ADDONS = {
 const BONUS_RULES = [
   {
     key: "comebackPenalty",
-    emoji: "↩️",
+    Icon: Undo2,
+    iconColor: "text-pink-400",
     label: "COMEBACK MALUS",
-    desc: "Vorheriger Sieger nicht in Top 3 → −2 Punkte",
+    desc: "Vorheriger Sieger nicht in Top 3",
     badge: "−2 PT",
     badgeClass: "text-pink-400",
   },
   {
     key: "lastPlaceBonus",
-    emoji: "🎯",
+    Icon: Target,
+    iconColor: "text-green-400",
     label: "LAST PLACE BONUS",
-    desc: "Letzter Platz in Top 3 → +1 Punkt",
+    desc: "Letzter Platz in Top 3",
     badge: "+1 PT",
     badgeClass: "text-green-400",
   },
   {
     key: "winStreakBonus",
-    emoji: "🔥",
+    Icon: Flame,
+    iconColor: "text-orange-400",
     label: "WIN STREAK BONUS",
-    desc: "Zwei FFA-Siege in Folge → +1 Punkt",
+    desc: "Zwei FFA-Siege in Folge",
     badge: "+1 PT",
     badgeClass: "text-green-400",
   },
   {
     key: "finalDoublePoints",
-    emoji: "⭐",
+    Icon: Star,
+    iconColor: "text-yellow-400",
     label: "FINAL DOUBLE POINTS",
     desc: "Letztes Spiel gibt doppelte Basispunkte",
     badge: "2×",
@@ -69,9 +122,10 @@ function StepEventSetup({ data, onChange }) {
               value={data.name}
               onChange={(e) => onChange({ name: e.target.value })}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-pink-500 text-lg select-none pointer-events-none">
-              👑
-            </span>
+            <Crown
+              size={16}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-pink-500 pointer-events-none"
+            />
           </div>
         </div>
         <div className="sm:w-28">
@@ -141,54 +195,68 @@ function StepEventSetup({ data, onChange }) {
       <div>
         <p className="label-upper">Optionale Bonus / Malus Regeln</p>
         <div className="grid sm:grid-cols-2 gap-4 mt-3">
-          {BONUS_RULES.map(({ key, emoji, label, desc, badge, badgeClass }) => (
-            <label key={key} className="checkbox-card">
-              {/* Custom visual checkbox */}
-              <div
-                className={`checkbox-dot ${data.extraRules[key] ? "checked" : ""}`}
-                aria-hidden="true"
-              >
-                {data.extraRules[key] && (
-                  <svg
-                    className="w-3 h-3 text-white"
-                    viewBox="0 0 12 12"
-                    fill="none"
-                  >
-                    <path
-                      d="M2 6l3 3 5-5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
-              </div>
-              <input
-                type="checkbox"
-                className="sr-only"
-                checked={data.extraRules[key]}
-                onChange={(e) =>
-                  onChange({
-                    extraRules: { ...data.extraRules, [key]: e.target.checked },
-                  })
-                }
-              />
-              <div className="flex-1 min-w-0">
-                <span className="text-xs font-black text-white/80 uppercase tracking-wide">
-                  {emoji} {label}
+          {BONUS_RULES.map(
+            ({
+              key,
+              Icon: RuleIcon,
+              iconColor,
+              label,
+              desc,
+              badge,
+              badgeClass,
+            }) => (
+              <label key={key} className="checkbox-card">
+                {/* Custom visual checkbox */}
+                <div
+                  className={`checkbox-dot ${data.extraRules[key] ? "checked" : ""}`}
+                  aria-hidden="true"
+                >
+                  {data.extraRules[key] && (
+                    <svg
+                      className="w-3 h-3 text-white"
+                      viewBox="0 0 12 12"
+                      fill="none"
+                    >
+                      <path
+                        d="M2 6l3 3 5-5"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  )}
+                </div>
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={data.extraRules[key]}
+                  onChange={(e) =>
+                    onChange({
+                      extraRules: {
+                        ...data.extraRules,
+                        [key]: e.target.checked,
+                      },
+                    })
+                  }
+                />
+                <div className="flex-1 min-w-0">
+                  <span className="text-xs font-black text-white/80 uppercase tracking-wide flex items-center gap-1.5">
+                    <RuleIcon size={12} className={iconColor} />
+                    {label}
+                  </span>
+                  <p className="text-xs text-muted mt-0.5 leading-relaxed">
+                    {desc}
+                  </p>
+                </div>
+                <span
+                  className={`text-xs font-black flex-shrink-0 ${badgeClass}`}
+                >
+                  {badge}
                 </span>
-                <p className="text-xs text-muted mt-0.5 leading-relaxed">
-                  {desc}
-                </p>
-              </div>
-              <span
-                className={`text-xs font-black flex-shrink-0 ${badgeClass}`}
-              >
-                {badge}
-              </span>
-            </label>
-          ))}
+              </label>
+            ),
+          )}
         </div>
       </div>
 
@@ -235,8 +303,8 @@ function StepEventSetup({ data, onChange }) {
               onChange={(e) => onChange({ hostParticipates: e.target.checked })}
             />
             <div className="flex-1 min-w-0">
-              <span className="text-xs font-black text-white/80 uppercase tracking-wide">
-                🎮 Host spielt mit
+              <span className="text-xs font-black text-white/80 uppercase tracking-wide flex items-center gap-1.5">
+                <Gamepad2 size={12} className="text-cyan-400" /> Host spielt mit
               </span>
               <p className="text-xs text-muted mt-0.5">Dein Score zählt mit.</p>
             </div>
@@ -284,8 +352,9 @@ function StepEventSetup({ data, onChange }) {
               onChange={(e) => onChange({ hideGamePlan: e.target.checked })}
             />
             <div className="flex-1 min-w-0">
-              <span className="text-xs font-black text-white/80 uppercase tracking-wide">
-                🔒 Spielplan verstecken
+              <span className="text-xs font-black text-white/80 uppercase tracking-wide flex items-center gap-1.5">
+                <Eye size={12} className="text-yellow-400" /> Spielplan
+                verstecken
               </span>
               <p className="text-xs text-muted mt-0.5">
                 Spieltitel verschwommen bis zum Start.
@@ -431,28 +500,26 @@ function PreviewPanel({ data }) {
         <div className="px-5 pb-5 space-y-3.5">
           {[
             {
-              icon: "👥",
+              icon: <Users size={14} className="text-cyan-400" />,
               label: "Spieler",
               value: data.maxPlayers,
               cls: "text-white font-semibold",
             },
             {
-              icon: "🏆",
+              icon: <Trophy size={14} className="text-yellow-400" />,
               label: "Wertungssystem",
               value: scoringLabels[data.scoringMode] || "Linear",
               cls: "text-white font-semibold",
             },
             {
-              icon: "⚔️",
+              icon: <Swords size={14} className="text-pink-400" />,
               label: "Tie-Breaker",
               value: tieLabels[data.tieRule] || data.tieRule,
               cls: "text-white/80 text-xs",
             },
           ].map(({ icon, label, value, cls }) => (
             <div key={label} className="flex items-start gap-3">
-              <span className="text-base leading-none mt-0.5 flex-shrink-0">
-                {icon}
-              </span>
+              <span className="leading-none mt-0.5 flex-shrink-0">{icon}</span>
               <div className="min-w-0">
                 <div className="text-xs text-muted leading-none mb-0.5">
                   {label}
@@ -495,7 +562,7 @@ function PreviewPanel({ data }) {
         }}
       >
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-cyan-400 text-sm">💡</span>
+          <Lightbulb size={14} className="text-cyan-400" />
           <h4 className="text-cyan-400 text-xs font-black uppercase tracking-widest">
             So funktioniert's
           </h4>
@@ -509,7 +576,111 @@ function PreviewPanel({ data }) {
   );
 }
 // ─── Step 2: Games ────────────────────────────────────────────────────────
+function SortableGameRow({ game, index, total, onMove, onRemove }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: game._dndId });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+        background: "rgba(255,255,255,0.03)",
+        border: `1px solid ${isDragging ? "rgba(139,92,246,0.5)" : "rgba(255,255,255,0.06)"}`,
+      }}
+      className="flex items-center gap-2.5 p-2.5 rounded-xl"
+    >
+      {/* Drag handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="text-white/20 hover:text-white/50 cursor-grab active:cursor-grabbing px-0.5 touch-none"
+        tabIndex={-1}
+      >
+        <GripVertical size={16} />
+      </button>
+      <div
+        className="w-9 h-9 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
+        style={{ background: "rgba(139,92,246,0.12)" }}
+      >
+        {game.icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        <span className="font-bold text-white text-sm truncate block">
+          {game.title}
+        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className="text-[10px] font-black uppercase"
+            style={{ color: game.mode === "team" ? "#a78bfa" : "#f472b6" }}
+          >
+            {game.mode.toUpperCase()}
+          </span>
+          {game.estimatedMinutes > 0 && (
+            <span className="text-[10px] text-cyan-400/50">
+              ~{game.estimatedMinutes}m
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex gap-0.5 items-center shrink-0">
+        <button
+          className="text-white/25 hover:text-white/70 p-0.5 rounded disabled:opacity-20"
+          onClick={() => onMove(index, -1)}
+          disabled={index === 0}
+        >
+          <ChevronUp size={14} />
+        </button>
+        <button
+          className="text-white/25 hover:text-white/70 p-0.5 rounded disabled:opacity-20"
+          onClick={() => onMove(index, 1)}
+          disabled={index === total - 1}
+        >
+          <ChevronDown size={14} />
+        </button>
+        <button
+          className="text-pink-400/60 hover:text-pink-400 ml-0.5 p-0.5"
+          onClick={onRemove}
+        >
+          <X size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function StepGames({ games, onChange }) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  // Attach stable dnd IDs
+  const gamesWithIds = games.map((g, i) => ({
+    ...g,
+    _dndId: `game-${i}-${g.title}`,
+  }));
+
+  function handleDragEnd(event) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = gamesWithIds.findIndex((g) => g._dndId === active.id);
+    const newIdx = gamesWithIds.findIndex((g) => g._dndId === over.id);
+    onChange(
+      arrayMove(games, oldIdx, newIdx).map((g, i) => ({ ...g, order: i })),
+    );
+  }
+
   const [tab, setTab] = useState("create"); // 'create' | 'library'
 
   // ── Create tab state ──
@@ -518,6 +689,7 @@ function StepGames({ games, onChange }) {
     mode: "ffa",
     icon: "🎮",
     rules: "",
+    estimatedMinutes: 0,
     addons: { ...DEFAULT_ADDONS },
   });
   const [showAddons, setShowAddons] = useState(false);
@@ -549,6 +721,7 @@ function StepGames({ games, onChange }) {
       mode: "ffa",
       icon: "🎮",
       rules: "",
+      estimatedMinutes: 0,
       addons: { ...DEFAULT_ADDONS },
     });
     setShowAddons(false);
@@ -562,6 +735,7 @@ function StepGames({ games, onChange }) {
         mode: preset.mode,
         icon: preset.icon,
         rules: preset.rules,
+        estimatedMinutes: preset.estimatedMinutes || 0,
         addons: preset.addons || { ...DEFAULT_ADDONS },
         order: games.length,
       },
@@ -619,10 +793,17 @@ function StepGames({ games, onChange }) {
               }
             >
               <div
-                className={`font-black text-sm mb-0.5 ${tab === key ? "text-white" : "text-muted"}`}
+                className={`font-black text-sm mb-0.5 flex items-center gap-1.5 ${tab === key ? "text-white" : "text-muted"}`}
               >
-                {key === "create" ? "＋ " : "🗂 "}
-                {label} {key === "create" && "✏️"}
+                {key === "create" ? (
+                  <Plus size={13} />
+                ) : (
+                  <FolderOpen size={13} />
+                )}
+                {label}
+                {key === "create" && (
+                  <Pencil size={11} className="ml-0.5 opacity-60" />
+                )}
               </div>
               <div className="text-xs text-white/35">{sub}</div>
             </button>
@@ -639,7 +820,7 @@ function StepGames({ games, onChange }) {
             }}
           >
             <div className="flex items-center gap-2">
-              <span className="text-purple-400">🗂</span>
+              <FolderOpen size={14} className="text-purple-400" />
               <h3 className="font-black text-white text-xs uppercase tracking-[0.15em]">
                 Spielbibliothek
               </h3>
@@ -647,9 +828,10 @@ function StepGames({ games, onChange }) {
 
             {/* Search */}
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">
-                🔍
-              </span>
+              <Search
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+              />
               <input
                 className="input-field pl-9 text-sm"
                 placeholder="Spiele suchen…"
@@ -762,7 +944,13 @@ function StepGames({ games, onChange }) {
                       onClick={() => !already && addFromLibrary(preset)}
                       disabled={already}
                     >
-                      {already ? "✓" : "+ Hinzufügen"}
+                      {already ? (
+                        <span className="flex items-center gap-1">
+                          <Check size={11} /> Hinzugefügt
+                        </span>
+                      ) : (
+                        "+ Hinzufügen"
+                      )}
                     </button>
                   </div>
                 );
@@ -782,7 +970,7 @@ function StepGames({ games, onChange }) {
             }}
           >
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-purple-400">✏️</span>
+              <Pencil size={14} className="text-purple-400" />
               <h3 className="font-black text-white text-xs uppercase tracking-[0.15em]">
                 Spiel hinzufügen
               </h3>
@@ -831,7 +1019,17 @@ function StepGames({ games, onChange }) {
                         }
                   }
                 >
-                  {m === "ffa" ? "⚔ FFA" : "👥 Teams"}
+                  {m === "ffa" ? (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <Swords size={13} />
+                      FFA
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <Users size={13} />
+                      Teams
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -846,13 +1044,40 @@ function StepGames({ games, onChange }) {
               }
             />
 
+            <div>
+              <label className="label flex items-center gap-1.5">
+                <Clock size={12} className="text-cyan-400/70" /> Geschätzte
+                Dauer (Min, optional)
+              </label>
+              <input
+                type="number"
+                className="input-field"
+                min={0}
+                placeholder="z.B. 30"
+                value={form.estimatedMinutes || ""}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    estimatedMinutes: Number(e.target.value) || 0,
+                  }))
+                }
+              />
+            </div>
+
             <button
               className="text-sm text-purple-light hover:text-purple transition-colors"
               onClick={() => setShowAddons((s) => !s)}
             >
-              {showAddons
-                ? "▲ Add-ons ausblenden"
-                : "▼ Add-ons anzeigen (optional)"}
+              <span className="flex items-center gap-1.5">
+                {showAddons ? (
+                  <ChevronUp size={13} />
+                ) : (
+                  <ChevronDown size={13} />
+                )}
+                {showAddons
+                  ? "Add-ons ausblenden"
+                  : "Add-ons anzeigen (optional)"}
+              </span>
             </button>
 
             {showAddons && (
@@ -875,7 +1100,8 @@ function StepGames({ games, onChange }) {
                       }))
                     }
                   />
-                  🍺 Trinkspiel-Modus
+                  <Beer size={14} className="text-orange-400" />{" "}
+                  Trinkspiel-Modus
                 </label>
                 {form.addons.drinkingGame.enabled && (
                   <textarea
@@ -899,7 +1125,10 @@ function StepGames({ games, onChange }) {
                 )}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="label">⏱ Zeitlimit (min, 0=∞)</label>
+                    <label className="label flex items-center gap-1.5">
+                      <Clock size={12} className="text-cyan-400/70" /> Zeitlimit
+                      (min, 0=∞)
+                    </label>
                     <input
                       type="number"
                       className="input-field"
@@ -918,7 +1147,10 @@ function StepGames({ games, onChange }) {
                   </div>
                   {form.mode === "team" && (
                     <div>
-                      <label className="label">👥 Teamgröße</label>
+                      <label className="label flex items-center gap-1.5">
+                        <Users size={12} className="text-purple-400/70" />{" "}
+                        Teamgröße
+                      </label>
                       <input
                         type="number"
                         className="input-field"
@@ -938,7 +1170,12 @@ function StepGames({ games, onChange }) {
                   )}
                 </div>
                 <Input
-                  label="🛠 Benötigtes Equipment"
+                  label={
+                    <span className="flex items-center gap-1.5">
+                      <Wrench size={12} className="text-white/50" />
+                      Benötigtes Equipment
+                    </span>
+                  }
                   placeholder="z.B. Controller, 2 TVs"
                   maxLength={200}
                   value={form.addons.equipment}
@@ -950,7 +1187,12 @@ function StepGames({ games, onChange }) {
                   }
                 />
                 <Input
-                  label="⚖ Handicap-Regeln"
+                  label={
+                    <span className="flex items-center gap-1.5">
+                      <Scale size={12} className="text-white/50" />
+                      Handicap-Regeln
+                    </span>
+                  }
                   placeholder="z.B. Bester Spieler nutzt Tastatur"
                   maxLength={200}
                   value={form.addons.handicap}
@@ -988,85 +1230,73 @@ function StepGames({ games, onChange }) {
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-pink-400">🎮</span>
+            <Gamepad2 size={14} className="text-pink-400" />
             <h3 className="font-black text-white text-xs uppercase tracking-[0.15em]">
               Ausgewählte Spiele
             </h3>
           </div>
-          {games.length > 0 && (
-            <span
-              className="text-xs font-black px-2 py-0.5 rounded-full"
-              style={{ background: "#ec4899", color: "#fff" }}
-            >
-              {games.length}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {(() => {
+              const total = games.reduce(
+                (sum, g) => sum + (g.estimatedMinutes || 0),
+                0,
+              );
+              if (!total) return null;
+              const h = Math.floor(total / 60);
+              const m = total % 60;
+              return (
+                <span className="text-[10px] text-cyan-400/60 font-semibold flex items-center gap-1">
+                  <Clock size={10} /> ~{h > 0 ? `${h}h ` : ""}
+                  {m > 0 ? `${m}m` : ""}
+                </span>
+              );
+            })()}
+            {games.length > 0 && (
+              <span
+                className="text-xs font-black px-2 py-0.5 rounded-full"
+                style={{ background: "#ec4899", color: "#fff" }}
+              >
+                {games.length}
+              </span>
+            )}
+          </div>
         </div>
 
         {games.length === 0 ? (
           <div className="flex-1 flex items-center justify-center py-10 text-center">
             <div>
-              <div className="text-white/15 text-4xl mb-2">🎮</div>
+              <Gamepad2 size={36} className="text-white/15 mb-2" />
               <p className="text-white/25 text-xs leading-relaxed">
                 Hier erscheinen die Spiele deiner Olympiade.
               </p>
             </div>
           </div>
         ) : (
-          <div className="space-y-2 overflow-y-auto max-h-[540px] pr-0.5">
-            {games.map((g, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-2.5 p-2.5 rounded-xl"
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                }}
-              >
-                <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center text-xl flex-shrink-0"
-                  style={{ background: "rgba(139,92,246,0.12)" }}
-                >
-                  {g.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="font-bold text-white text-sm truncate block">
-                    {g.title}
-                  </span>
-                  <span
-                    className="text-[10px] font-black uppercase"
-                    style={{ color: g.mode === "team" ? "#a78bfa" : "#f472b6" }}
-                  >
-                    {g.mode.toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex gap-0.5 items-center shrink-0">
-                  <button
-                    className="text-white/25 hover:text-white/70 text-xs px-1 py-0.5 rounded disabled:opacity-20"
-                    onClick={() => moveGame(i, -1)}
-                    disabled={i === 0}
-                  >
-                    ▲
-                  </button>
-                  <button
-                    className="text-white/25 hover:text-white/70 text-xs px-1 py-0.5 rounded disabled:opacity-20"
-                    onClick={() => moveGame(i, 1)}
-                    disabled={i === games.length - 1}
-                  >
-                    ▼
-                  </button>
-                  <button
-                    className="text-pink-400/60 hover:text-pink-400 text-base leading-none ml-0.5 px-1"
-                    onClick={() =>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={gamesWithIds.map((g) => g._dndId)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2 overflow-y-auto max-h-[540px] pr-0.5">
+                {gamesWithIds.map((g, i) => (
+                  <SortableGameRow
+                    key={g._dndId}
+                    game={g}
+                    index={i}
+                    total={games.length}
+                    onMove={moveGame}
+                    onRemove={() =>
                       onChange(games.filter((_, idx) => idx !== i))
                     }
-                  >
-                    ×
-                  </button>
-                </div>
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         )}
       </div>
     </div>
@@ -1086,10 +1316,10 @@ function StepPreview({ data }) {
   };
 
   const activeRuleLabels = {
-    comebackPenalty: "🔥 WinStreak Bonus aktiviert",
-    lastPlaceBonus: "📈 Last Place Bonus aktiviert",
-    winStreakBonus: "🔥 WinStreak Bonus aktiviert",
-    finalDoublePoints: "⭐ Final Double Points aktiviert",
+    comebackPenalty: "Comeback Malus aktiv",
+    lastPlaceBonus: "Last Place Bonus aktiv",
+    winStreakBonus: "WinStreak Bonus aktiv",
+    finalDoublePoints: "Final Double Points aktiv",
   };
 
   const activeRules = Object.entries(data.extraRules)
@@ -1109,7 +1339,7 @@ function StepPreview({ data }) {
         {/* Deine Lobby */}
         <div style={panelStyle} className="p-5">
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-purple-400">👑</span>
+            <Crown size={14} className="text-purple-400" />
             <h3 className="font-black text-white text-xs uppercase tracking-[0.18em]">
               Deine Lobby
             </h3>
@@ -1121,20 +1351,24 @@ function StepPreview({ data }) {
 
           <div className="space-y-3">
             {[
-              { icon: "👥", label: "Max. Spieler", value: data.maxPlayers },
               {
-                icon: "🏆",
+                icon: <Users size={14} className="text-cyan-400" />,
+                label: "Max. Spieler",
+                value: data.maxPlayers,
+              },
+              {
+                icon: <Trophy size={14} className="text-yellow-400" />,
                 label: "Wertungssystem",
                 value: scoringLabels[data.scoringMode] || "Linear",
               },
               {
-                icon: "⚔️",
+                icon: <Swords size={14} className="text-pink-400" />,
                 label: "Tie-Breaker",
                 value: tieLabels[data.tieRule] || data.tieRule,
               },
             ].map(({ icon, label, value }) => (
               <div key={label} className="flex items-center gap-3">
-                <span className="text-base flex-shrink-0">{icon}</span>
+                <span className="flex-shrink-0">{icon}</span>
                 <div>
                   <div className="text-xs text-white/45">{label}</div>
                   <div className="text-white text-sm font-semibold">
@@ -1166,11 +1400,28 @@ function StepPreview({ data }) {
 
         {/* Spiele */}
         <div style={panelStyle} className="p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-purple-400">🎮</span>
-            <h3 className="font-black text-white text-xs uppercase tracking-[0.18em]">
-              Spiele ({data.games.length})
-            </h3>
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="flex items-center gap-2">
+              <Gamepad2 size={14} className="text-purple-400" />
+              <h3 className="font-black text-white text-xs uppercase tracking-[0.18em]">
+                Spiele ({data.games.length})
+              </h3>
+            </div>
+            {(() => {
+              const total = data.games.reduce(
+                (sum, g) => sum + (g.estimatedMinutes || 0),
+                0,
+              );
+              if (!total) return null;
+              const h = Math.floor(total / 60);
+              const m = total % 60;
+              return (
+                <span className="text-[10px] text-cyan-400/60 font-semibold flex items-center gap-1">
+                  <Clock size={10} /> ~{h > 0 ? `${h}h ` : ""}
+                  {m > 0 ? `${m}m` : ""}
+                </span>
+              );
+            })()}
           </div>
 
           {data.games.length === 0 ? (
@@ -1228,7 +1479,7 @@ function StepPreview({ data }) {
           className="p-5"
         >
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-cyan-400">👥</span>
+            <Users size={14} className="text-cyan-400" />
             <h4 className="font-black text-cyan-400 text-xs uppercase tracking-[0.15em]">
               Spieler treten per Room Code bei
             </h4>
@@ -1251,7 +1502,7 @@ function StepPreview({ data }) {
         className="p-5 flex flex-col gap-5"
       >
         <div className="flex items-center gap-2">
-          <span className="text-pink-400">👁</span>
+          <Eye size={14} className="text-pink-400" />
           <h3 className="font-black text-white text-xs uppercase tracking-[0.18em]">
             Vorschau
           </h3>
@@ -1330,21 +1581,29 @@ function StepPreview({ data }) {
         {/* Stats */}
         <div className="space-y-3">
           {[
-            { icon: "👥", label: "Max. Spieler", value: data.maxPlayers },
             {
-              icon: "🏆",
+              icon: <Users size={14} className="text-cyan-400" />,
+              label: "Max. Spieler",
+              value: data.maxPlayers,
+            },
+            {
+              icon: <Trophy size={14} className="text-yellow-400" />,
               label: "Wertungssystem",
               value: scoringLabels[data.scoringMode] || "Linear",
             },
             {
-              icon: "⚔️",
+              icon: <Swords size={14} className="text-pink-400" />,
               label: "Tie-Breaker",
               value: tieLabels[data.tieRule] || data.tieRule,
             },
-            { icon: "🎮", label: "Spiele", value: data.games.length },
+            {
+              icon: <Gamepad2 size={14} className="text-purple-400" />,
+              label: "Spiele",
+              value: data.games.length,
+            },
           ].map(({ icon, label, value }) => (
             <div key={label} className="flex items-center gap-3">
-              <span className="text-base flex-shrink-0">{icon}</span>
+              <span className="flex-shrink-0">{icon}</span>
               <div>
                 <div className="text-xs text-white/40">{label}</div>
                 <div className="text-white font-semibold text-sm">{value}</div>
@@ -1417,6 +1676,19 @@ export default function CreatePage() {
     return true;
   }
 
+  const payload = {
+    name: eventData.name,
+    tieRule: eventData.tieRule,
+    scoringMode: eventData.scoringMode,
+    scoringEnabled: eventData.scoringEnabled,
+    hostParticipates: eventData.hostParticipates,
+    hostPlayerName: eventData.hostPlayerName,
+    hideGamePlan: eventData.hideGamePlan,
+    extraRules: eventData.extraRules,
+    maxPlayers: eventData.maxPlayers,
+    games,
+  };
+
   async function save() {
     if (!user) {
       setShowAuthModal(true);
@@ -1426,33 +1698,9 @@ export default function CreatePage() {
     setApiError("");
     try {
       if (isEditMode) {
-        // Update existing draft
-        await api.patch(`/olympics/${editCode}`, {
-          name: eventData.name,
-          tieRule: eventData.tieRule,
-          scoringMode: eventData.scoringMode,
-          scoringEnabled: eventData.scoringEnabled,
-          hostParticipates: eventData.hostParticipates,
-          hostPlayerName: eventData.hostPlayerName,
-          hideGamePlan: eventData.hideGamePlan,
-          extraRules: eventData.extraRules,
-          maxPlayers: eventData.maxPlayers,
-          games,
-        });
+        await api.patch(`/olympics/${editCode}`, payload);
       } else {
-        // Create new draft
-        const { data } = await api.post("/olympics", {
-          name: eventData.name,
-          tieRule: eventData.tieRule,
-          scoringMode: eventData.scoringMode,
-          scoringEnabled: eventData.scoringEnabled,
-          hostParticipates: eventData.hostParticipates,
-          hostPlayerName: eventData.hostPlayerName,
-          hideGamePlan: eventData.hideGamePlan,
-          extraRules: eventData.extraRules,
-          maxPlayers: eventData.maxPlayers,
-          games,
-        });
+        const { data } = await api.post("/olympics", payload);
         localStorage.setItem(`hostToken_${data.code}`, data.hostToken);
       }
       navigate("/profile");
@@ -1460,8 +1708,39 @@ export default function CreatePage() {
       setApiError(
         err.response?.data?.error ||
           (isEditMode
-            ? "Failed to save changes."
-            : "Failed to create Olympic. Is the server running?"),
+            ? "Speichern fehlgeschlagen."
+            : "Erstellen fehlgeschlagen. Läuft der Server?"),
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function saveAndLaunch() {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    setLoading(true);
+    setApiError("");
+    try {
+      let code = editCode;
+      if (!isEditMode) {
+        const { data } = await api.post("/olympics", payload);
+        localStorage.setItem(`hostToken_${data.code}`, data.hostToken);
+        code = data.code;
+      } else {
+        await api.patch(`/olympics/${editCode}`, payload);
+      }
+      const { data } = await api.post(`/olympics/${code}/launch`);
+      if (data?.hostToken) {
+        localStorage.setItem(`hostToken_${code}`, data.hostToken);
+      }
+      navigate(`/room/${code}/host`);
+    } catch (err) {
+      setApiError(
+        err.response?.data?.error ||
+          "Starten fehlgeschlagen. Bitte versuche es erneut.",
       );
     } finally {
       setLoading(false);
@@ -1473,7 +1752,9 @@ export default function CreatePage() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <GlassCard className="max-w-sm w-full text-center py-8">
-          <div className="text-4xl mb-3">🔒</div>
+          <div className="mb-3 flex justify-center text-white/40">
+            <Lock size={36} />
+          </div>
           <h2 className="font-bold text-white mb-1">Anmeldung erforderlich</h2>
           <p className="text-sm text-muted mb-5">
             Du benötigst ein Konto, um Olympics zu erstellen
@@ -1503,14 +1784,14 @@ export default function CreatePage() {
       {/* ── Page header ── */}
       <div className="relative flex items-center justify-center px-4 pt-8 pb-6">
         <button
-          className="absolute left-4 btn-ghost !px-3 !py-2 text-sm"
+          className="absolute left-4 btn-ghost !px-3 !py-2 text-sm flex items-center gap-1.5"
           onClick={() => navigate(isEditMode ? "/profile" : "/")}
         >
-          ← Zurück
+          <ArrowLeft size={14} /> Zurück
         </button>
         <div className="text-center">
           <div className="flex items-center justify-center gap-3 mb-1">
-            <span className="text-2xl">🏅</span>
+            <Medal size={26} className="text-pink-400" />
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
               <span className="text-white">LOBBY </span>
               <span
@@ -1551,7 +1832,7 @@ export default function CreatePage() {
                     : undefined
                 }
               >
-                {i < step ? "✓" : i + 1}
+                {i < step ? <Check size={14} /> : i + 1}
               </div>
               <span
                 className={`text-xs font-semibold whitespace-nowrap ${i === step ? "text-white" : "text-muted"}`}
@@ -1576,7 +1857,7 @@ export default function CreatePage() {
           {/* Form panel */}
           <div className="panel-glass rounded-2xl p-6">
             <div className="flex items-center gap-2.5 mb-6">
-              <span className="text-pink-500">📅</span>
+              <CalendarDays size={16} className="text-pink-500" />
               <h2 className="text-sm font-black uppercase tracking-[0.15em] text-white">
                 Event Setup
               </h2>
@@ -1622,10 +1903,10 @@ export default function CreatePage() {
         <div className="flex items-center justify-between gap-4 max-w-6xl mx-auto mb-3">
           {step > 0 ? (
             <button
-              className="btn-secondary !px-6"
+              className="btn-secondary !px-6 flex items-center gap-1.5"
               onClick={() => setStep((s) => s - 1)}
             >
-              ← Zurück
+              <ArrowLeft size={14} /> Zurück
             </button>
           ) : (
             <div />
@@ -1649,25 +1930,83 @@ export default function CreatePage() {
               onClick={() => setStep((s) => s + 1)}
               disabled={!canProceed()}
             >
-              WEITER →
+              <span className="flex items-center gap-2">
+                WEITER <ArrowRight size={16} />
+              </span>
             </button>
+          ) : isEditMode ? (
+            <div className="flex items-center gap-3">
+              <button
+                className="btn-secondary !px-5 !py-3 !rounded-2xl font-bold text-sm"
+                onClick={save}
+                disabled={loading || !canProceed()}
+              >
+                {loading ? (
+                  "…"
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <Save size={14} />
+                    Als Entwurf
+                  </span>
+                )}
+              </button>
+              <button
+                className="btn-primary !px-7 !py-3.5 !rounded-2xl font-black text-base"
+                style={
+                  canProceed() && !loading
+                    ? { boxShadow: "0 0 40px rgba(236,72,153,0.4)" }
+                    : undefined
+                }
+                onClick={saveAndLaunch}
+                disabled={loading || !canProceed()}
+              >
+                {loading ? (
+                  "Startet…"
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Rocket size={15} />
+                    Starten
+                  </span>
+                )}
+              </button>
+            </div>
           ) : (
-            <button
-              className="btn-primary !px-14 !py-3.5 !rounded-2xl font-black text-base"
-              style={
-                canProceed() && !loading
-                  ? { boxShadow: "0 0 40px rgba(236,72,153,0.4)" }
-                  : undefined
-              }
-              onClick={save}
-              disabled={loading || !canProceed()}
-            >
-              {loading
-                ? "Speichern…"
-                : isEditMode
-                  ? "💾 SPEICHERN"
-                  : "Lobby erstellen ✓"}
-            </button>
+            /* New Olympic — two options: save draft or launch now */
+            <div className="flex items-center gap-3">
+              <button
+                className="btn-secondary !px-5 !py-3 !rounded-2xl font-bold text-sm"
+                onClick={save}
+                disabled={loading || !canProceed()}
+              >
+                {loading ? (
+                  "…"
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <Save size={14} />
+                    Als Entwurf
+                  </span>
+                )}
+              </button>
+              <button
+                className="btn-primary !px-7 !py-3.5 !rounded-2xl font-black text-base"
+                style={
+                  canProceed() && !loading
+                    ? { boxShadow: "0 0 40px rgba(236,72,153,0.4)" }
+                    : undefined
+                }
+                onClick={saveAndLaunch}
+                disabled={loading || !canProceed()}
+              >
+                {loading ? (
+                  "Startet…"
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Rocket size={15} />
+                    Jetzt starten!
+                  </span>
+                )}
+              </button>
+            </div>
           )}
         </div>
 

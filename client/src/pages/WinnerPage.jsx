@@ -7,6 +7,7 @@ import GlassCard from "../components/ui/GlassCard.jsx";
 import Podium from "../components/Podium.jsx";
 import Scoreboard from "../components/Scoreboard.jsx";
 import useOlympicStore from "../store/useOlympicStore.js";
+import { Trophy, Rocket, Home, ClipboardList, Check, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
 
 export default function WinnerPage() {
   const { code } = useParams();
@@ -28,6 +29,11 @@ export default function WinnerPage() {
   const [showBonusLog, setShowBonusLog] = useState(false);
 
   const confettiFired = useRef(false);
+
+  // Clear any active room from localStorage — the game is over
+  useEffect(() => {
+    localStorage.removeItem("lastRoom");
+  }, []);
 
   // Fetch from API if not in store
   useEffect(() => {
@@ -118,8 +124,9 @@ export default function WinnerPage() {
       <div className="min-h-screen px-4 py-10">
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="text-center animate-fade-in">
-            <h1 className="text-4xl sm:text-5xl font-black text-white mb-2">
-              🎉 Event Complete!
+            <h1 className="text-4xl sm:text-5xl font-black text-white mb-2 flex items-center justify-center gap-3">
+              <Sparkles className="text-pink-400" size={40} />
+              Event Complete!
             </h1>
             <p className="text-muted">{olympic.name}</p>
           </div>
@@ -153,13 +160,13 @@ export default function WinnerPage() {
 
           <div className="flex flex-col sm:flex-row gap-3 pb-8">
             <button
-              className="btn-primary flex-1"
+              className="btn-primary flex-1 flex items-center justify-center gap-2"
               onClick={() => navigate("/create")}
             >
-              🚀 New Olympic
+              <Rocket size={15} /> New Olympic
             </button>
-            <button className="btn-ghost flex-1" onClick={() => navigate("/")}>
-              🏠 Home
+            <button className="btn-ghost flex-1 flex items-center justify-center gap-2" onClick={() => navigate("/")}>
+              <Home size={15} /> Home
             </button>
           </div>
         </div>
@@ -172,8 +179,9 @@ export default function WinnerPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Hero */}
         <div className="text-center animate-fade-in">
-          <h1 className="text-4xl sm:text-5xl font-black text-white mb-2">
-            🏆 Olympic Champion!
+          <h1 className="text-4xl sm:text-5xl font-black text-white mb-2 flex items-center justify-center gap-3">
+            <Trophy className="text-yellow-400" size={40} />
+            Olympic Champion!
           </h1>
           <p className="text-muted">{olympic.name}</p>
         </div>
@@ -239,7 +247,7 @@ export default function WinnerPage() {
             >
               <h2 className="font-bold text-white">Bonus / Penalty Log</h2>
               <span className="text-muted text-sm">
-                {showBonusLog ? "▲" : "▼"}
+                {showBonusLog ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </span>
             </button>
             {showBonusLog && (
@@ -269,17 +277,17 @@ export default function WinnerPage() {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3 pb-8">
-          <button className="btn-primary flex-1" onClick={copyResults}>
-            {copied ? "✅ Copied!" : "📋 Copy Results"}
+          <button className="btn-primary flex-1 flex items-center justify-center gap-2" onClick={copyResults}>
+            {copied ? <><Check size={15} /> Copied!</> : <><ClipboardList size={15} /> Copy Results</>}
           </button>
           <button
-            className="btn-secondary flex-1"
+            className="btn-secondary flex-1 flex items-center justify-center gap-2"
             onClick={() => navigate("/create")}
           >
-            🚀 New Olympic
+            <Rocket size={15} /> New Olympic
           </button>
-          <button className="btn-ghost flex-1" onClick={() => navigate("/")}>
-            🏠 Home
+          <button className="btn-ghost flex-1 flex items-center justify-center gap-2" onClick={() => navigate("/")}>
+            <Home size={15} /> Home
           </button>
         </div>
       </div>

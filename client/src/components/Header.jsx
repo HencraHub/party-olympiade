@@ -1,7 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore.js";
 import AuthModal from "./AuthModal.jsx";
+import { ChevronDown, User, LogOut, Medal, FileText } from "lucide-react";
+
+export const AVATAR_GRADIENTS = [
+  "linear-gradient(135deg, #8b5cf6, #ec4899)", // purple → pink
+  "linear-gradient(135deg, #06b6d4, #3b82f6)", // cyan → blue
+  "linear-gradient(135deg, #22c55e, #14b8a6)", // green → teal
+  "linear-gradient(135deg, #f97316, #ec4899)", // orange → pink
+  "linear-gradient(135deg, #eab308, #f97316)", // yellow → orange
+  "linear-gradient(135deg, #f43f5e, #8b5cf6)", // rose → purple
+  "linear-gradient(135deg, #6366f1, #22d3ee)", // indigo → cyan
+  "linear-gradient(135deg, #ec4899, #ef4444)", // pink → red
+];
 
 export default function Header() {
   const navigate = useNavigate();
@@ -27,7 +39,7 @@ export default function Header() {
           className="flex items-center gap-2 font-black text-white hover:opacity-80 transition-opacity shrink-0"
           onClick={() => navigate("/")}
         >
-          <span className="text-xl">🏅</span>
+          <Medal size={20} className="text-pink-400" />
           <div className="leading-none text-left">
             <div
               className="text-base font-black tracking-widest"
@@ -55,7 +67,7 @@ export default function Header() {
         {/* Center nav */}
         <nav className="hidden sm:flex items-center gap-1">
           {[
-            { label: "Lobby erstellen", path: "/create" },
+            { label: "Olympiade erstellen", path: "/create" },
             { label: "Lobby beitreten", path: "/join" },
             { label: "Game Library", path: "/library" },
           ].map(({ label, path }) => {
@@ -99,11 +111,16 @@ export default function Header() {
                 onClick={() => setShowMenu((s) => !s)}
                 className="flex items-center gap-2 glass rounded-full px-3 py-1.5 text-sm font-semibold text-white hover:border-white/20 transition-colors"
               >
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xs font-bold shrink-0">
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                  style={{
+                    background: AVATAR_GRADIENTS[user.avatarColor ?? 0],
+                  }}
+                >
                   {user.username[0].toUpperCase()}
                 </div>
                 <span className="hidden sm:block">{user.username}</span>
-                <span className="text-muted text-xs">▾</span>
+                <ChevronDown size={12} className="text-white/50" />
               </button>
 
               {showMenu && (
@@ -113,35 +130,54 @@ export default function Header() {
                     onClick={() => setShowMenu(false)}
                   />
                   <div
-                    className="absolute right-0 top-full mt-2 z-20 w-44 rounded-xl border border-white/10 py-1 overflow-hidden"
+                    className="absolute right-0 top-full mt-2 z-20 w-52 rounded-xl border border-white/10 overflow-hidden"
                     style={{
                       background: "rgba(13,16,36,0.98)",
                       boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
                     }}
                   >
+                    {/* Email */}
                     <div className="px-3 py-2 border-b border-white/[0.06]">
                       <p className="text-xs text-muted truncate">
                         {user.email}
                       </p>
                     </div>
+
                     <button
-                      className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/5 transition-colors"
+                      className="w-full text-left px-3 py-2.5 text-sm text-white hover:bg-white/5 transition-colors flex items-center gap-2.5"
                       onClick={() => {
                         navigate("/profile");
                         setShowMenu(false);
                       }}
                     >
-                      🏅 My Olympics
+                      <User size={14} className="text-white/50 shrink-0" />
+                      Profil
                     </button>
+
                     <button
-                      className="w-full text-left px-3 py-2 text-sm text-pink-400 hover:bg-pink-500/10 transition-colors"
+                      className="w-full text-left px-3 py-2.5 text-sm text-white hover:bg-white/5 transition-colors flex items-center gap-2.5"
                       onClick={() => {
-                        logout();
+                        navigate("/drafts");
                         setShowMenu(false);
                       }}
                     >
-                      Sign out
+                      <FileText size={14} className="text-white/50 shrink-0" />
+                      Entwürfe
                     </button>
+
+                    {/* Sign out — always visible */}
+                    <div className="border-t border-white/[0.06]">
+                      <button
+                        className="w-full text-left px-3 py-2.5 text-sm text-pink-400 hover:bg-pink-500/10 transition-colors flex items-center gap-2.5"
+                        onClick={() => {
+                          logout();
+                          setShowMenu(false);
+                        }}
+                      >
+                        <LogOut size={14} className="shrink-0" />
+                        Abmelden
+                      </button>
+                    </div>
                   </div>
                 </>
               )}

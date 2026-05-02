@@ -35,7 +35,7 @@ router.post('/register', async (req, res) => {
     const user = await User.create({ username, email, password });
     const token = signToken(user);
 
-    res.status(201).json({ token, user: { id: user._id, username: user.username, email: user.email } });
+    res.status(201).json({ token, user: { id: user._id, username: user.username, email: user.email, avatarColor: user.avatarColor ?? 0 } });
   } catch (err) {
     console.error('register error:', err);
     res.status(500).json({ error: 'Registration failed' });
@@ -57,7 +57,7 @@ router.post('/login', async (req, res) => {
     if (!valid) return res.status(401).json({ error: 'Invalid email or password' });
 
     const token = signToken(user);
-    res.json({ token, user: { id: user._id, username: user.username, email: user.email } });
+    res.json({ token, user: { id: user._id, username: user.username, email: user.email, avatarColor: user.avatarColor ?? 0 } });
   } catch (err) {
     console.error('login error:', err);
     res.status(500).json({ error: 'Login failed' });
@@ -75,9 +75,42 @@ router.get('/me', async (req, res) => {
     const user = await User.findById(payload.id).select('-password');
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    res.json({ user: { id: user._id, username: user.username, email: user.email } });
+    res.json({ user: { id: user._id, username: user.username, email: user.email, avatarColor: user.avatarColor ?? 0 } });
   } catch (err) {
     res.status(401).json({ error: 'Invalid or expired token' });
+  }
+});
+
+// PATCH /api/auth/profile — update username and/or avatarColor
+router.patch('/profile', async (req, res) => {
+  try {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith('Bearer ')) return res.status(401).json({ error: 'Not authenticated' });
+
+    const payload = jwt.verify(auth.slice(7), JWT_SECRET);
+    const user = await User.findById(payload.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const { username, avatarColor } = req.body;
+
+    if (username !== undefined) {
+      const trimmed = String(username).trim().slice(0, 30);
+      if (trimmed.length < 2) return res.status(400).json({ error: 'Username must be at least 2 characters' });
+      const taken = await User.findOne({ username: trimmed, _id: { $ne: user._id } });
+      if (taken) return res.status(409).json({ error: 'Username already taken' });
+      user.username = trimmed;
+    }
+    if (avatarColor !== undefined) {
+      const c = Number(avatarColor);
+      if (!Number.isInteger(c) || c < 0 || c > 7) return res.status(400).json({ error: 'Invalid avatarColor' });
+      user.avatarColor = c;
+    }
+
+    await user.save();
+    res.json({ user: { id: user._id, username: user.username, email: user.email, avatarColor: user.avatarColor } });
+  } catch (err) {
+    if (err.name === 'JsonWebTokenError') return res.status(401).json({ error: 'Invalid token' });
+    res.status(500).json({ error: 'Profile update failed' });
   }
 });
 

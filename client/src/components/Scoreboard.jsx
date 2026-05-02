@@ -1,4 +1,3 @@
-const MEDAL = ["🥇", "🥈", "🥉"];
 const RANK_STYLES = [
   {
     bg: "rgba(250,204,21,0.08)",
@@ -71,7 +70,6 @@ export default function Scoreboard({
         const participant = participants[participantIdx];
         const isMe = entry.name === myName;
         const rankStyle = RANK_STYLES[i];
-        const medal = MEDAL[i];
 
         return (
           <div
@@ -94,12 +92,12 @@ export default function Scoreboard({
           >
             {/* Rank */}
             <span
-              className="text-sm w-5 flex-shrink-0 text-center"
+              className="text-xs font-black w-5 flex-shrink-0 text-center font-mono"
               style={{
                 color: rankStyle ? rankStyle.num : "rgba(255,255,255,0.2)",
               }}
             >
-              {medal ?? <span className="text-xs font-mono">{i + 1}</span>}
+              {i + 1}
             </span>
 
             {/* Avatar */}

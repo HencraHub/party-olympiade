@@ -1,8 +1,9 @@
 import { useEffect, useRef } from "react";
+import { Medal } from "lucide-react";
 
 const PODIUM_HEIGHTS = ["h-28", "h-20", "h-14"];
 const PODIUM_ORDER = [1, 0, 2]; // display order: 2nd, 1st, 3rd
-const MEDALS = ["🥇", "🥈", "🥉"];
+const MEDAL_COLORS = ["#facc15", "#94a3b8", "#cd7f32"];
 const DELAY = ["delay-300", "delay-0", "delay-600"];
 
 export default function Podium({ leaderboard = [], participants = [] }) {
@@ -42,7 +43,9 @@ export default function Podium({ leaderboard = [], participants = [] }) {
             </div>
 
             {/* Medal */}
-            <div className="text-3xl mb-1">{MEDALS[rankIdx]}</div>
+            <div className="mb-1">
+              <Medal size={28} style={{ color: MEDAL_COLORS[rankIdx] }} />
+            </div>
 
             {/* Name */}
             <div className="text-sm sm:text-base font-bold text-white text-center max-w-[90px] sm:max-w-[120px] truncate">
