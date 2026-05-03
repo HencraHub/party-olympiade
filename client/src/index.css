@@ -1,0 +1,245 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+    font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+    color: #ffffff;
+    background-color: #070714;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-image:
+      radial-gradient(
+        1200px 720px at 8% 0%,
+        rgba(236, 72, 153, 0.22),
+        transparent 70%
+      ),
+      radial-gradient(
+        1240px 760px at 92% 6%,
+        rgba(34, 211, 238, 0.18),
+        transparent 72%
+      ),
+      linear-gradient(166deg, #0d1024, #070714);
+    background-attachment: fixed;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+}
+
+@layer components {
+  /* ── Glass surfaces ── */
+  .glass {
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    background: linear-gradient(
+      138deg,
+      rgba(18, 18, 36, 0.85),
+      rgba(28, 28, 56, 0.6)
+    );
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.03),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  /* Deeper, more opaque glass panel for primary content areas */
+  .panel-glass {
+    border: 1px solid rgba(139, 92, 246, 0.42);
+    background: linear-gradient(
+      145deg,
+      rgba(12, 15, 35, 0.97),
+      rgba(18, 22, 50, 0.93)
+    );
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.04),
+      0 0 40px rgba(139, 92, 246, 0.12),
+      0 20px 60px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-black text-white tracking-wide transition-all duration-200 hover:scale-[1.04] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100;
+    background: linear-gradient(90deg, #8b5cf6, #ec4899, #f43f5e);
+    background-size: 200% 100%;
+    background-position: 0% 0%;
+    box-shadow:
+      0 0 20px rgba(236, 72, 153, 0.35),
+      0 4px 16px rgba(0, 0, 0, 0.4);
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s,
+      background-position 0.4s;
+  }
+  .btn-primary:not(:disabled):hover {
+    background-position: 100% 0%;
+    box-shadow:
+      0 0 40px rgba(236, 72, 153, 0.6),
+      0 8px 32px rgba(139, 92, 246, 0.3);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full font-bold text-purple-300 transition-all duration-200 hover:text-white hover:bg-purple-500/20 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed;
+    border: 1.5px solid rgba(139, 92, 246, 0.7);
+    background: rgba(139, 92, 246, 0.07);
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.15);
+  }
+  .btn-secondary:not(:disabled):hover {
+    border-color: rgba(139, 92, 246, 1);
+    box-shadow:
+      0 0 24px rgba(139, 92, 246, 0.4),
+      0 0 8px rgba(139, 92, 246, 0.2);
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full font-medium text-white/50 transition-all duration-200 hover:text-white hover:bg-white/10;
+  }
+
+  /* ── Form elements ── */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl text-white placeholder-white/25 outline-none transition-all duration-200;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  .input-field:focus {
+    border-color: rgba(236, 72, 153, 0.75);
+    box-shadow:
+      0 0 0 3px rgba(236, 72, 153, 0.18),
+      0 0 16px rgba(236, 72, 153, 0.15),
+      0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .textarea-field {
+    @apply w-full px-4 py-3 rounded-xl text-white placeholder-white/25 outline-none transition-all duration-200 resize-none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  .textarea-field:focus {
+    border-color: rgba(236, 72, 153, 0.75);
+    box-shadow:
+      0 0 0 3px rgba(236, 72, 153, 0.18),
+      0 0 16px rgba(236, 72, 153, 0.15),
+      0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Legacy label — keep for backward compat */
+  .label {
+    @apply block text-sm font-medium text-muted mb-1;
+  }
+
+  /* New: UPPERCASE section label */
+  .label-upper {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 0.5rem;
+  }
+
+  /* Field helper text */
+  .field-hint {
+    font-size: 0.7rem;
+    color: #b7bbcc;
+    margin-top: 0.4rem;
+    line-height: 1.5;
+    opacity: 0.75;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  /* ── Checkbox card (bonus/malus rule rows) ── */
+  .checkbox-card {
+    @apply flex items-center gap-3 cursor-pointer rounded-xl p-3 transition-all duration-200;
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    background: rgba(139, 92, 246, 0.03);
+  }
+  .checkbox-card:hover {
+    border-color: rgba(139, 92, 246, 0.4);
+    background: rgba(139, 92, 246, 0.07);
+  }
+
+  /* Custom checkbox indicator */
+  .checkbox-dot {
+    @apply w-5 h-5 rounded flex items-center justify-center border-2 flex-shrink-0 transition-all duration-200;
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .checkbox-dot.checked {
+    background: #ec4899;
+    border-color: #ec4899;
+  }
+  .checkbox-dot.checked-cyan {
+    background: #22d3ee;
+    border-color: #22d3ee;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.5);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.8);
+}
+
+/* Range input styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #8b5cf6, #ec4899);
+  cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #8b5cf6, #ec4899);
+  cursor: pointer;
+  border: none;
+}
+
+/* File input hidden */
+input[type="file"] {
+  display: none;
+}
+
+/* Transition for page animations */
+.page-enter {
+  animation: fadeIn 0.3s ease-out;
+}
