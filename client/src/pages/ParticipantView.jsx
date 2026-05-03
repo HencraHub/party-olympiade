@@ -6,7 +6,24 @@ import GlassCard from "../components/ui/GlassCard.jsx";
 import Scoreboard from "../components/Scoreboard.jsx";
 import FloatingRoomNav from "../components/ui/FloatingRoomNav.jsx";
 import TiebreakerModal from "../components/ui/TiebreakerModal.jsx";
-import { Users, Gamepad2, Crown, Medal, Swords, Check, Beer, Clock, Scale, X, BarChart2, ChevronRight, ArrowLeft, Play, Lock } from "lucide-react";
+import IntroOverlay from "../components/ui/IntroOverlay.jsx";
+import {
+  Users,
+  Gamepad2,
+  Crown,
+  Medal,
+  Swords,
+  Check,
+  Beer,
+  Clock,
+  Scale,
+  X,
+  BarChart2,
+  ChevronRight,
+  ArrowLeft,
+  Play,
+  Lock,
+} from "lucide-react";
 
 export default function ParticipantView() {
   const { code } = useParams();
@@ -25,6 +42,7 @@ export default function ParticipantView() {
   const [tiebreaker, setTiebreaker] = useState(null);
   const [tiebreakerAnswers, setTiebreakerAnswers] = useState({});
   const [tiebreakerResolved, setTiebreakerResolved] = useState(null);
+  const [introOlympic, setIntroOlympic] = useState(null);
 
   useEffect(() => {
     if (!code) return;
@@ -37,7 +55,10 @@ export default function ParticipantView() {
       setConnected(true);
       setJoined(true);
       if (participantName) {
-        localStorage.setItem("lastRoom", JSON.stringify({ code: code.toUpperCase(), role: "participant" }));
+        localStorage.setItem(
+          "lastRoom",
+          JSON.stringify({ code: code.toUpperCase(), role: "participant" }),
+        );
       }
     });
 
@@ -69,8 +90,15 @@ export default function ParticipantView() {
       setTiebreakerAnswers({});
       setTiebreakerResolved(null);
     });
-    socket.on("tiebreaker-answers-update", ({ answers }) => setTiebreakerAnswers(answers));
-    socket.on("tiebreaker-resolved", ({ winner }) => setTiebreakerResolved(winner));
+    socket.on("tiebreaker-answers-update", ({ answers }) =>
+      setTiebreakerAnswers(answers),
+    );
+    socket.on("tiebreaker-resolved", ({ winner }) =>
+      setTiebreakerResolved(winner),
+    );
+
+    socket.on("intro-start", ({ olympic: o }) => setIntroOlympic(o));
+    socket.on("intro-ended", () => setIntroOlympic(null));
 
     // If we don't have an olympic yet (direct URL access), try to join as spectator
     if (!olympic) {
@@ -90,6 +118,8 @@ export default function ParticipantView() {
       socket.off("tiebreaker-start");
       socket.off("tiebreaker-answers-update");
       socket.off("tiebreaker-resolved");
+      socket.off("intro-start");
+      socket.off("intro-ended");
     };
   }, [code]);
 
@@ -104,10 +134,15 @@ export default function ParticipantView() {
             boxShadow: "0 0 60px rgba(250,204,21,0.08)",
           }}
         >
-          <div className="mb-4 flex justify-center text-yellow-400/70"><Lock size={44} /></div>
-          <h2 className="text-xl font-black text-white mb-2">Spiel läuft bereits</h2>
+          <div className="mb-4 flex justify-center text-yellow-400/70">
+            <Lock size={44} />
+          </div>
+          <h2 className="text-xl font-black text-white mb-2">
+            Spiel läuft bereits
+          </h2>
           <p className="text-sm text-white/50 mb-6">
-            Dieser Raum ist nicht mehr beigetreten. Die Olympiade hat bereits begonnen — du warst nicht in der Lobby.
+            Dieser Raum ist nicht mehr beigetreten. Die Olympiade hat bereits
+            begonnen — du warst nicht in der Lobby.
           </p>
           <button
             className="btn-secondary w-full"
@@ -156,220 +191,224 @@ export default function ParticipantView() {
 
     return (
       <>
-      <div className="min-h-screen px-4 py-8 flex flex-col items-center">
-        <div className="w-full max-w-lg space-y-6 animate-slide-up">
-          {/* ── Waiting hero card ── */}
-          <div
-            className="relative rounded-2xl p-6 overflow-hidden text-center"
-            style={{
-              background:
-                "linear-gradient(145deg, rgba(10,10,28,0.97), rgba(16,14,40,0.97))",
-              border: "1px solid rgba(139,92,246,0.45)",
-              boxShadow: "0 0 60px rgba(139,92,246,0.15)",
-            }}
-          >
-            {/* Ambient decorative dots */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-              {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute w-1.5 h-1.5 rounded-sm"
-                  style={{
-                    left: `${8 + i * 12}%`,
-                    top: `${12 + (i % 3) * 30}%`,
-                    background: ["#ec4899", "#8b5cf6", "#22d3ee", "#facc15"][
-                      i % 4
-                    ],
-                    opacity: 0.5,
-                    transform: `rotate(${i * 45}deg)`,
-                  }}
-                />
-              ))}
-            </div>
-
-            <div className="relative">
-              {/* Hourglass icon */}
-              <div className="flex justify-center mb-3">
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.15))",
-                    border: "1px solid rgba(139,92,246,0.35)",
-                  }}
-                >
-                  ⏳
-                </div>
-              </div>
-
-              <h2 className="text-xl font-black text-white mb-1">
-                {olympic.name}
-              </h2>
-              <p className="text-white/45 text-sm mb-5 animate-pulse">
-                Warte darauf, dass der Host das Spiel startet…
-              </p>
-
-              {/* Separator */}
-              <div className="h-px bg-white/[0.06] mb-4" />
-
-              {/* Joined confirmation */}
-              <div className="flex items-center justify-center gap-2">
-                <Users size={14} className="text-purple-400" />
-                <span className="font-bold text-white text-sm">
-                  Du bist in der Lobby
-                </span>
-              </div>
-              {participantName && (
-                <p className="text-white/40 text-xs mt-1">
-                  Der Host kann Spiele und Regeln ändern.
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* ── Player grid ── */}
-          <div
-            className="rounded-2xl p-6"
-            style={{
-              background: "rgba(10,12,30,0.9)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-            }}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2">
-                <Gamepad2 size={14} className="text-purple-400" />
-                <h2 className="font-black text-white text-sm uppercase tracking-wider">
-                  Spieler in der Lobby
-                </h2>
-              </div>
-              <span className="text-sm text-muted">
-                <span className="text-white font-bold">{playerCount}</span> /{" "}
-                {maxPlayers} Spieler
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-4">
-              {olympic.participants.map((p, i) => {
-                const isMe = p.name === participantName;
-                const isHost = i === 0;
-                return (
-                  <div
-                    key={p.name}
-                    className="flex flex-col items-center gap-1.5 animate-fade-in"
-                  >
-                    <div className="relative">
-                      <div
-                        className={`w-[70px] h-[70px] rounded-2xl bg-gradient-to-br ${avatarGradients[i % avatarGradients.length]} flex items-center justify-center font-black text-xl text-white`}
-                        style={{
-                          border: isMe
-                            ? "2px solid rgba(236,72,153,0.7)"
-                            : "2px solid rgba(255,255,255,0.1)",
-                          boxShadow: isMe
-                            ? "0 0 14px rgba(236,72,153,0.3)"
-                            : "none",
-                        }}
-                      >
-                        {p.name[0]?.toUpperCase()}
-                      </div>
-                      {isHost && (
-                        <span className="absolute -top-2 -right-1">
-                          <Crown size={14} className="text-yellow-400" />
-                        </span>
-                      )}
-                      {/* Online dot */}
-                      <span
-                        className="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2"
-                        style={{
-                          background: "#22c55e",
-                          borderColor: "#0a0c1e",
-                        }}
-                      />
-                    </div>
-                    <span className="text-white text-xs font-semibold max-w-[72px] truncate text-center">
-                      {p.name}
-                    </span>
-                    {isMe && (
-                      <span
-                        className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full"
-                        style={{
-                          background: "rgba(236,72,153,0.2)",
-                          border: "1px solid rgba(236,72,153,0.4)",
-                          color: "#f472b6",
-                        }}
-                      >
-                        Du
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* Empty slots */}
-              {Array.from({
-                length: Math.min(maxPlayers - playerCount, 8),
-              }).map((_, i) => (
-                <div
-                  key={`empty-${i}`}
-                  className="flex flex-col items-center gap-1.5"
-                >
-                  <div
-                    className="w-[70px] h-[70px] rounded-2xl flex items-center justify-center text-white/20 text-2xl"
-                    style={{
-                      border: "2px dashed rgba(255,255,255,0.12)",
-                      background: "rgba(255,255,255,0.025)",
-                    }}
-                  >
-                    +
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Hint card ── */}
-          <div
-            className="rounded-2xl px-5 py-4 flex items-start gap-4"
-            style={{
-              background: "rgba(10,12,30,0.9)",
-              border: "1px solid rgba(255,255,255,0.07)",
-            }}
-          >
+        <div className="min-h-screen px-4 py-8 flex flex-col items-center">
+          <div className="w-full max-w-lg space-y-6 animate-slide-up">
+            {/* ── Waiting hero card ── */}
             <div
-              className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+              className="relative rounded-2xl p-6 overflow-hidden text-center"
               style={{
-                background: "rgba(34,211,238,0.1)",
-                border: "1px solid rgba(34,211,238,0.3)",
+                background:
+                  "linear-gradient(145deg, rgba(10,10,28,0.97), rgba(16,14,40,0.97))",
+                border: "1px solid rgba(139,92,246,0.45)",
+                boxShadow: "0 0 60px rgba(139,92,246,0.15)",
               }}
             >
-              <span className="text-cyan-400 text-sm">ℹ</span>
-            </div>
-            <div>
-              <h3 className="font-black text-cyan-400 text-sm mb-1">Hinweis</h3>
-              <p className="text-white/50 text-xs leading-relaxed">
-                Warte hier, bis der Host das Spiel startet.
-                <br />
-                Nur der Host kann Spiele und Regeln ändern.
-              </p>
-            </div>
-          </div>
+              {/* Ambient decorative dots */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-1.5 h-1.5 rounded-sm"
+                    style={{
+                      left: `${8 + i * 12}%`,
+                      top: `${12 + (i % 3) * 30}%`,
+                      background: ["#ec4899", "#8b5cf6", "#22d3ee", "#facc15"][
+                        i % 4
+                      ],
+                      opacity: 0.5,
+                      transform: `rotate(${i * 45}deg)`,
+                    }}
+                  />
+                ))}
+              </div>
 
-          {/* ── Leave button ── */}
-          <button
-            className="w-full py-3 rounded-full font-bold text-sm transition-all hover:scale-[1.02] active:scale-95"
-            style={{
-              background: "rgba(236,72,153,0.1)",
-              border: "1.5px solid rgba(236,72,153,0.5)",
-              color: "#f472b6",
-              boxShadow: "0 0 20px rgba(236,72,153,0.12)",
-            }}
-            onClick={() => navigate("/")}
-          >
-            <span className="flex items-center justify-center gap-1.5"><ArrowLeft size={14} /> Lobby verlassen</span>
-          </button>
+              <div className="relative">
+                {/* Hourglass icon */}
+                <div className="flex justify-center mb-3">
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(236,72,153,0.15))",
+                      border: "1px solid rgba(139,92,246,0.35)",
+                    }}
+                  >
+                    ⏳
+                  </div>
+                </div>
+
+                <h2 className="text-xl font-black text-white mb-1">
+                  {olympic.name}
+                </h2>
+                <p className="text-white/45 text-sm mb-5 animate-pulse">
+                  Warte darauf, dass der Host das Spiel startet…
+                </p>
+
+                {/* Separator */}
+                <div className="h-px bg-white/[0.06] mb-4" />
+
+                {/* Joined confirmation */}
+                <div className="flex items-center justify-center gap-2">
+                  <Users size={14} className="text-purple-400" />
+                  <span className="font-bold text-white text-sm">
+                    Du bist in der Lobby
+                  </span>
+                </div>
+                {participantName && (
+                  <p className="text-white/40 text-xs mt-1">
+                    Der Host kann Spiele und Regeln ändern.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* ── Player grid ── */}
+            <div
+              className="rounded-2xl p-6"
+              style={{
+                background: "rgba(10,12,30,0.9)",
+                border: "1px solid rgba(255,255,255,0.07)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+              }}
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2">
+                  <Gamepad2 size={14} className="text-purple-400" />
+                  <h2 className="font-black text-white text-sm uppercase tracking-wider">
+                    Spieler in der Lobby
+                  </h2>
+                </div>
+                <span className="text-sm text-muted">
+                  <span className="text-white font-bold">{playerCount}</span> /{" "}
+                  {maxPlayers} Spieler
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-4">
+                {olympic.participants.map((p, i) => {
+                  const isMe = p.name === participantName;
+                  const isHost = i === 0;
+                  return (
+                    <div
+                      key={p.name}
+                      className="flex flex-col items-center gap-1.5 animate-fade-in"
+                    >
+                      <div className="relative">
+                        <div
+                          className={`w-[70px] h-[70px] rounded-2xl bg-gradient-to-br ${avatarGradients[i % avatarGradients.length]} flex items-center justify-center font-black text-xl text-white`}
+                          style={{
+                            border: isMe
+                              ? "2px solid rgba(236,72,153,0.7)"
+                              : "2px solid rgba(255,255,255,0.1)",
+                            boxShadow: isMe
+                              ? "0 0 14px rgba(236,72,153,0.3)"
+                              : "none",
+                          }}
+                        >
+                          {p.name[0]?.toUpperCase()}
+                        </div>
+                        {isHost && (
+                          <span className="absolute -top-2 -right-1">
+                            <Crown size={14} className="text-yellow-400" />
+                          </span>
+                        )}
+                        {/* Online dot */}
+                        <span
+                          className="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2"
+                          style={{
+                            background: "#22c55e",
+                            borderColor: "#0a0c1e",
+                          }}
+                        />
+                      </div>
+                      <span className="text-white text-xs font-semibold max-w-[72px] truncate text-center">
+                        {p.name}
+                      </span>
+                      {isMe && (
+                        <span
+                          className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full"
+                          style={{
+                            background: "rgba(236,72,153,0.2)",
+                            border: "1px solid rgba(236,72,153,0.4)",
+                            color: "#f472b6",
+                          }}
+                        >
+                          Du
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Empty slots */}
+                {Array.from({
+                  length: Math.min(maxPlayers - playerCount, 8),
+                }).map((_, i) => (
+                  <div
+                    key={`empty-${i}`}
+                    className="flex flex-col items-center gap-1.5"
+                  >
+                    <div
+                      className="w-[70px] h-[70px] rounded-2xl flex items-center justify-center text-white/20 text-2xl"
+                      style={{
+                        border: "2px dashed rgba(255,255,255,0.12)",
+                        background: "rgba(255,255,255,0.025)",
+                      }}
+                    >
+                      +
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Hint card ── */}
+            <div
+              className="rounded-2xl px-5 py-4 flex items-start gap-4"
+              style={{
+                background: "rgba(10,12,30,0.9)",
+                border: "1px solid rgba(255,255,255,0.07)",
+              }}
+            >
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
+                style={{
+                  background: "rgba(34,211,238,0.1)",
+                  border: "1px solid rgba(34,211,238,0.3)",
+                }}
+              >
+                <span className="text-cyan-400 text-sm">ℹ</span>
+              </div>
+              <div>
+                <h3 className="font-black text-cyan-400 text-sm mb-1">
+                  Hinweis
+                </h3>
+                <p className="text-white/50 text-xs leading-relaxed">
+                  Warte hier, bis der Host das Spiel startet.
+                  <br />
+                  Nur der Host kann Spiele und Regeln ändern.
+                </p>
+              </div>
+            </div>
+
+            {/* ── Leave button ── */}
+            <button
+              className="w-full py-3 rounded-full font-bold text-sm transition-all hover:scale-[1.02] active:scale-95"
+              style={{
+                background: "rgba(236,72,153,0.1)",
+                border: "1.5px solid rgba(236,72,153,0.5)",
+                color: "#f472b6",
+                boxShadow: "0 0 20px rgba(236,72,153,0.12)",
+              }}
+              onClick={() => navigate("/")}
+            >
+              <span className="flex items-center justify-center gap-1.5">
+                <ArrowLeft size={14} /> Lobby verlassen
+              </span>
+            </button>
+          </div>
         </div>
-      </div>
-      <FloatingRoomNav code={code} />
+        <FloatingRoomNav code={code} />
       </>
     );
   }
@@ -504,7 +543,15 @@ export default function ParticipantView() {
                             border: `1px solid ${currentGame.mode === "team" ? "rgba(139,92,246,0.4)" : "rgba(236,72,153,0.4)"}`,
                           }}
                         >
-                          {currentGame.mode === "team" ? <><Users size={11} /> Teams</> : <><Swords size={11} /> FFA</>}
+                          {currentGame.mode === "team" ? (
+                            <div className="flex flex-row items-center gap-1 justify-center">
+                              <Users size={11} /> Teams
+                            </div>
+                          ) : (
+                            <div>
+                              <Swords size={11} /> FFA
+                            </div>
+                          )}
                         </span>
                         {olympic.results.find(
                           (r) => String(r.gameId) === String(currentGame._id),
@@ -671,7 +718,11 @@ export default function ParticipantView() {
                         </span>
                         {/* Icon — always visible */}
                         <span className="text-sm flex-shrink-0">
-                          {hidden ? <Gamepad2 size={14} className="text-white/30" /> : g.icon}
+                          {hidden ? (
+                            <Gamepad2 size={14} className="text-white/30" />
+                          ) : (
+                            g.icon
+                          )}
                         </span>
                         {/* Title — blurred when hidden */}
                         <span
@@ -714,7 +765,9 @@ export default function ParticipantView() {
                 </div>
                 {olympic.hideGamePlan && (
                   <p className="text-[10px] text-white/20 text-center mt-3">
-                    <span className="flex items-center justify-center gap-1"><Lock size={10} /> Spielplan ausgeblendet</span>
+                    <span className="flex items-center justify-center gap-1">
+                      <Lock size={10} /> Spielplan ausgeblendet
+                    </span>
                   </p>
                 )}
               </div>
@@ -757,7 +810,15 @@ export default function ParticipantView() {
                     color: rulesModal.mode === "team" ? "#a78bfa" : "#f472b6",
                   }}
                 >
-                  {rulesModal.mode === "team" ? <><Users size={11} /> Teams</> : <><Swords size={11} /> FFA</>}
+                  {rulesModal.mode === "team" ? (
+                    <>
+                      <Users size={11} /> Teams
+                    </>
+                  ) : (
+                    <>
+                      <Swords size={11} /> FFA
+                    </>
+                  )}
                 </span>
               </div>
               <button
@@ -857,6 +918,14 @@ export default function ParticipantView() {
           onClose={() => setTiebreaker(null)}
           resolved={!!tiebreakerResolved}
           winner={tiebreakerResolved}
+        />
+      )}
+      {introOlympic && (
+        <IntroOverlay
+          olympic={introOlympic}
+          isHost={false}
+          hostToken={null}
+          onClose={() => setIntroOlympic(null)}
         />
       )}
     </>

@@ -11,6 +11,7 @@ import Scoreboard from "../components/Scoreboard.jsx";
 import ScoreEntry from "../components/ScoreEntry.jsx";
 import FloatingRoomNav from "../components/ui/FloatingRoomNav.jsx";
 import TiebreakerModal from "../components/ui/TiebreakerModal.jsx";
+import IntroOverlay from "../components/ui/IntroOverlay.jsx";
 import {
   DndContext,
   closestCenter,
@@ -166,6 +167,7 @@ export default function HostRoomPage() {
   const [tiebreaker, setTiebreaker] = useState(null);
   const [tiebreakerAnswers, setTiebreakerAnswers] = useState({});
   const [tiebreakerResolved, setTiebreakerResolved] = useState(null);
+  const [introOlympic, setIntroOlympic] = useState(null);
 
   const hostToken = localStorage.getItem(`hostToken_${code?.toUpperCase()}`);
 
@@ -220,6 +222,9 @@ export default function HostRoomPage() {
       setTiebreakerResolved(winner),
     );
 
+    socket.on("intro-start", ({ olympic: o }) => setIntroOlympic(o));
+    socket.on("intro-ended", () => setIntroOlympic(null));
+
     socket.emit("join-room", {
       code: code.toUpperCase(),
       name: "Host",
@@ -235,8 +240,16 @@ export default function HostRoomPage() {
       socket.off("tiebreaker-start");
       socket.off("tiebreaker-answers-update");
       socket.off("tiebreaker-resolved");
+      socket.off("intro-start");
+      socket.off("intro-ended");
     };
   }, [code]);
+
+  useEffect(() => {
+    document.title = olympic?.name
+      ? `${olympic.name} (Host) | Party Olympiade`
+      : "Host | Party Olympiade";
+  }, [olympic?.name]);
 
   // Fetch library presets when library tab in manage modal is opened
   useEffect(() => {
@@ -569,7 +582,7 @@ export default function HostRoomPage() {
                         {/* Kick button (hover) */}
                         <button
                           className="absolute -top-2 -left-1 w-5 h-5 rounded-full bg-pink-500 text-white text-[10px] font-black items-center justify-center hidden group-hover:flex shadow-lg z-10"
-                          onClick={() => kickPlayer(p.name)}
+                          onClick={() => confirmKick(p.name)}
                           title={`Kick ${p.name}`}
                         >
                           ×
@@ -705,6 +718,14 @@ export default function HostRoomPage() {
             onCancel={() => setConfirmModal(null)}
           />
         )}
+        {introOlympic && (
+          <IntroOverlay
+            olympic={introOlympic}
+            isHost={true}
+            hostToken={hostToken}
+            onClose={() => setIntroOlympic(null)}
+          />
+        )}
         <FloatingRoomNav code={code} />
       </>
     );
@@ -785,6 +806,7 @@ export default function HostRoomPage() {
                     tieRule: olympic.tieRule || "tiebreaker",
                     extraRules: { ...olympic.extraRules },
                     hostParticipates: !!olympic.hostParticipates,
+                    hostGhostMode: !!olympic.hostGhostMode,
                     hostPlayerName: olympic.hostPlayerName || "",
                     hideGamePlan: !!olympic.hideGamePlan,
                   });
@@ -1176,62 +1198,75 @@ export default function HostRoomPage() {
               <div className="grid grid-cols-[2fr_3fr] gap-6">
                 {/* ── Spieler ── */}
                 <div>
-                  <p
-                    className="text-[10px] font-black uppercase tracking-[0.2em] mb-3"
-                    style={{ color: "#ec4899" }}
-                  >
-                    Spieler ({olympic.participants.length})
-                  </p>
-                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                    {olympic.participants.length === 0 ? (
-                      <p className="text-white/25 text-sm text-center py-3">
-                        Keine Spieler
-                      </p>
-                    ) : (
-                      olympic.participants.map((p, i) => {
-                        const gradients = [
-                          "from-pink-500 to-purple-600",
-                          "from-purple-500 to-blue-600",
-                          "from-cyan-500 to-blue-500",
-                          "from-green-400 to-teal-500",
-                          "from-orange-400 to-pink-500",
-                          "from-yellow-400 to-orange-500",
-                        ];
-                        return (
-                          <div
-                            key={p.name}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
-                            style={{
-                              background: "rgba(255,255,255,0.04)",
-                              border: "1px solid rgba(255,255,255,0.07)",
-                            }}
-                          >
-                            <div
-                              className={`w-9 h-9 rounded-xl bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center font-black text-sm text-white flex-shrink-0`}
-                            >
-                              {p.name[0]?.toUpperCase()}
-                            </div>
-                            <span className="flex-1 font-semibold text-white text-sm truncate">
-                              {p.name}
-                            </span>
-                            <button
-                              className="text-xs px-2.5 py-1 rounded-lg font-bold transition-all flex-shrink-0"
-                              style={{
-                                background: "rgba(236,72,153,0.1)",
-                                color: "#f472b6",
-                                border: "1px solid rgba(236,72,153,0.22)",
-                              }}
-                              onClick={() => kickPlayer(p.name)}
-                            >
-                              <span className="flex items-center gap-1">
-                                Kick <X size={11} />
-                              </span>
-                            </button>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
+                  {(() => {
+                    const hostNameNorm = (olympic.hostPlayerName || "").trim().toLowerCase();
+                    const visiblePlayers = olympic.participants.filter(
+                      (p) =>
+                        !(
+                          olympic.hostParticipates &&
+                          hostNameNorm &&
+                          p.name.trim().toLowerCase() === hostNameNorm
+                        ),
+                    );
+                    const gradients = [
+                      "from-pink-500 to-purple-600",
+                      "from-purple-500 to-blue-600",
+                      "from-cyan-500 to-blue-500",
+                      "from-green-400 to-teal-500",
+                      "from-orange-400 to-pink-500",
+                      "from-yellow-400 to-orange-500",
+                    ];
+                    return (
+                      <>
+                        <p
+                          className="text-[10px] font-black uppercase tracking-[0.2em] mb-3"
+                          style={{ color: "#ec4899" }}
+                        >
+                          Spieler ({visiblePlayers.length})
+                        </p>
+                        <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                          {visiblePlayers.length === 0 ? (
+                            <p className="text-white/25 text-sm text-center py-3">
+                              Keine Spieler
+                            </p>
+                          ) : (
+                            visiblePlayers.map((p, i) => (
+                              <div
+                                key={p.name}
+                                className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+                                style={{
+                                  background: "rgba(255,255,255,0.04)",
+                                  border: "1px solid rgba(255,255,255,0.07)",
+                                }}
+                              >
+                                <div
+                                  className={`w-9 h-9 rounded-xl bg-gradient-to-br ${gradients[i % gradients.length]} flex items-center justify-center font-black text-sm text-white flex-shrink-0`}
+                                >
+                                  {p.name[0]?.toUpperCase()}
+                                </div>
+                                <span className="flex-1 font-semibold text-white text-sm truncate">
+                                  {p.name}
+                                </span>
+                                <button
+                                  className="text-xs px-2.5 py-1 rounded-lg font-bold transition-all flex-shrink-0"
+                                  style={{
+                                    background: "rgba(236,72,153,0.1)",
+                                    color: "#f472b6",
+                                    border: "1px solid rgba(236,72,153,0.22)",
+                                  }}
+                                  onClick={() => confirmKick(p.name)}
+                                >
+                                  <span className="flex items-center gap-1">
+                                    Kick <X size={11} />
+                                  </span>
+                                </button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* ── Spiele ── */}
@@ -1621,8 +1656,8 @@ export default function HostRoomPage() {
                   Einstellungen
                 </p>
                 {/* Row 1: Name, Max Players, Scoring Mode, Tie Rule */}
-                <div className="flex items-start justify-start gap-4 mb-3">
-                  <div>
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="flex-1 min-w-0">
                     <label className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-2 leading-none">
                       Event Name
                     </label>
@@ -1638,7 +1673,7 @@ export default function HostRoomPage() {
                       }
                     />
                   </div>
-                  <div>
+                  <div className="w-28 flex-shrink-0">
                     <label className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-2 leading-none">
                       Max. Spieler
                     </label>
@@ -1669,7 +1704,7 @@ export default function HostRoomPage() {
                     onChange={(val) =>
                       setManagingSettings((s) => ({ ...s, scoringMode: val }))
                     }
-                    className="text-xs"
+                    className="flex-1 text-[11px]"
                     options={[
                       {
                         value: "linear",
@@ -1700,7 +1735,7 @@ export default function HostRoomPage() {
                     onChange={(val) =>
                       setManagingSettings((s) => ({ ...s, tieRule: val }))
                     }
-                    className="text-xs"
+                    className="flex-1 text-[11px]"
                     options={[
                       {
                         value: "tiebreaker",
@@ -1719,7 +1754,7 @@ export default function HostRoomPage() {
                   <label className="text-[10px] font-black uppercase tracking-widest text-white/35 block mb-2 leading-none">
                     Bonus / Malus Regeln
                   </label>
-                  <div className="flex gap-4 ">
+                  <div className="grid grid-cols-4 gap-2">
                     {[
                       {
                         key: "comebackPenalty",
@@ -1863,18 +1898,44 @@ export default function HostRoomPage() {
                     </p>
                   </div>
                   {managingSettings.hostParticipates && (
-                    <input
-                      className="rounded-xl px-3 py-2 text-sm bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-cyan-500/50 transition-colors w-36"
-                      maxLength={30}
-                      placeholder="Host Name…"
-                      value={managingSettings.hostPlayerName}
-                      onChange={(e) =>
-                        setManagingSettings((s) => ({
-                          ...s,
-                          hostPlayerName: e.target.value,
-                        }))
-                      }
-                    />
+                    <>
+                      <input
+                        className="rounded-xl px-3 py-2 text-sm bg-white/5 border border-white/10 text-white placeholder-white/20 focus:outline-none focus:border-cyan-500/50 transition-colors w-36"
+                        maxLength={30}
+                        placeholder="Host Name…"
+                        value={managingSettings.hostPlayerName}
+                        onChange={(e) =>
+                          setManagingSettings((s) => ({
+                            ...s,
+                            hostPlayerName: e.target.value,
+                          }))
+                        }
+                      />
+                      <div className="flex gap-1">
+                        <button
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                          style={
+                            !managingSettings.hostGhostMode
+                              ? { background: "rgba(34,211,238,0.15)", border: "1px solid rgba(34,211,238,0.5)", color: "#22d3ee" }
+                              : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }
+                          }
+                          onClick={() => setManagingSettings((s) => ({ ...s, hostGhostMode: false }))}
+                        >
+                          Score zählt
+                        </button>
+                        <button
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+                          style={
+                            managingSettings.hostGhostMode
+                              ? { background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.5)", color: "#a78bfa" }
+                              : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }
+                          }
+                          onClick={() => setManagingSettings((s) => ({ ...s, hostGhostMode: true }))}
+                        >
+                          Ghost Mode
+                        </button>
+                      </div>
+                    </>
                   )}
                   <div className="flex items-center gap-3">
                     <button
@@ -1981,7 +2042,18 @@ export default function HostRoomPage() {
           tiedPlayers={tiebreaker.tiedPlayers}
           answers={tiebreakerAnswers}
           isHost={true}
-          isParticipant={false}
+          isParticipant={
+            olympic.hostParticipates &&
+            !olympic.hostGhostMode &&
+            tiebreaker.tiedPlayers.includes(olympic.hostPlayerName)
+          }
+          onAnswer={(answer) =>
+            getSocket().emit("tiebreaker-answer", {
+              code: code.toUpperCase(),
+              name: olympic.hostPlayerName,
+              answer,
+            })
+          }
           onResolve={(winner) =>
             getSocket().emit("tiebreaker-resolve", {
               code: code.toUpperCase(),
@@ -1993,6 +2065,14 @@ export default function HostRoomPage() {
           onClose={() => setTiebreaker(null)}
           resolved={!!tiebreakerResolved}
           winner={tiebreakerResolved}
+        />
+      )}
+      {introOlympic && (
+        <IntroOverlay
+          olympic={introOlympic}
+          isHost={true}
+          hostToken={hostToken}
+          onClose={() => setIntroOlympic(null)}
         />
       )}
     </>

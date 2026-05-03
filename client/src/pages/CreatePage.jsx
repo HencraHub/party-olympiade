@@ -73,7 +73,7 @@ const BONUS_RULES = [
     Icon: Undo2,
     iconColor: "text-pink-400",
     label: "COMEBACK MALUS",
-    desc: "Vorheriger Sieger nicht in Top 3",
+    desc: "Vorheriger Sieger wird Letzter (nur FFA)",
     badge: "−2 PT",
     badgeClass: "text-pink-400",
   },
@@ -82,7 +82,7 @@ const BONUS_RULES = [
     Icon: Target,
     iconColor: "text-green-400",
     label: "LAST PLACE BONUS",
-    desc: "Letzter Platz in Top 3",
+    desc: "Letzter Platz gewinnt das nächste Spiel (nur FFA)",
     badge: "+1 PT",
     badgeClass: "text-green-400",
   },
@@ -300,7 +300,12 @@ function StepEventSetup({ data, onChange }) {
               type="checkbox"
               className="sr-only"
               checked={!!data.hostParticipates}
-              onChange={(e) => onChange({ hostParticipates: e.target.checked })}
+              onChange={(e) =>
+                onChange({
+                  hostParticipates: e.target.checked,
+                  hostGhostMode: false,
+                })
+              }
             />
             <div className="flex-1 min-w-0">
               <span className="text-xs font-black text-white/80 uppercase tracking-wide flex items-center gap-1.5">
@@ -308,10 +313,55 @@ function StepEventSetup({ data, onChange }) {
               </span>
               <p className="text-xs text-muted mt-0.5">Dein Score zählt mit.</p>
             </div>
-            <span className="text-xs font-semibold flex-shrink-0 text-cyan-400">
-              Score zählt
-            </span>
           </label>
+
+          {data.hostParticipates && (
+            <div
+              className="col-span-2 sm:col-span-1 sm:col-start-1 flex gap-2 mt-1"
+              style={{ gridColumn: "1 / -1" }}
+            >
+              <button
+                type="button"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all"
+                style={
+                  !data.hostGhostMode
+                    ? {
+                        background: "rgba(34,211,238,0.15)",
+                        border: "1px solid rgba(34,211,238,0.5)",
+                        color: "#22d3ee",
+                      }
+                    : {
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        color: "rgba(255,255,255,0.35)",
+                      }
+                }
+                onClick={() => onChange({ hostGhostMode: false })}
+              >
+                Score zählt
+              </button>
+              <button
+                type="button"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all"
+                style={
+                  data.hostGhostMode
+                    ? {
+                        background: "rgba(139,92,246,0.15)",
+                        border: "1px solid rgba(139,92,246,0.5)",
+                        color: "#a78bfa",
+                      }
+                    : {
+                        background: "rgba(255,255,255,0.04)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        color: "rgba(255,255,255,0.35)",
+                      }
+                }
+                onClick={() => onChange({ hostGhostMode: true })}
+              >
+                Ghost Mode
+              </button>
+            </div>
+          )}
 
           {/* Hide game plan */}
           <label
@@ -417,8 +467,8 @@ function PreviewPanel({ data }) {
     },
     data.hostParticipates && {
       label: "Host spielt mit",
-      badge: "Score zählt",
-      cls: "text-cyan-400",
+      badge: data.hostGhostMode ? "Ghost" : "Score zählt",
+      cls: data.hostGhostMode ? "text-purple-400" : "text-cyan-400",
     },
   ].filter(Boolean);
 
@@ -1635,6 +1685,7 @@ export default function CreatePage() {
     scoringMode: "linear",
     scoringEnabled: true,
     hostParticipates: false,
+    hostGhostMode: false,
     hostPlayerName: "",
     hideGamePlan: false,
     extraRules: {
@@ -1646,6 +1697,12 @@ export default function CreatePage() {
     maxPlayers: 12,
   });
   const [games, setGames] = useState([]);
+
+  useEffect(() => {
+    document.title = isEditMode
+      ? "Olympiade bearbeiten | Party Olympiade"
+      : "Olympiade erstellen | Party Olympiade";
+  }, [isEditMode]);
 
   // In edit mode, load existing draft data
   useEffect(() => {
@@ -1659,6 +1716,7 @@ export default function CreatePage() {
           scoringMode: data.scoringMode || "linear",
           scoringEnabled: data.scoringEnabled !== false,
           hostParticipates: !!data.hostParticipates,
+          hostGhostMode: !!data.hostGhostMode,
           hostPlayerName: data.hostPlayerName || "",
           hideGamePlan: !!data.hideGamePlan,
           extraRules: data.extraRules,
@@ -1682,6 +1740,7 @@ export default function CreatePage() {
     scoringMode: eventData.scoringMode,
     scoringEnabled: eventData.scoringEnabled,
     hostParticipates: eventData.hostParticipates,
+    hostGhostMode: eventData.hostGhostMode,
     hostPlayerName: eventData.hostPlayerName,
     hideGamePlan: eventData.hideGamePlan,
     extraRules: eventData.extraRules,

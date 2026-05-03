@@ -56,6 +56,7 @@ router.post("/", requireAuth, async (req, res) => {
       scoringMode,
       scoringEnabled,
       hostParticipates,
+      hostGhostMode,
       hostPlayerName,
       hideGamePlan,
     } = req.body;
@@ -74,6 +75,7 @@ router.post("/", requireAuth, async (req, res) => {
       scoringMode: scoringMode || "linear",
       scoringEnabled: scoringEnabled !== false,
       hostParticipates: !!hostParticipates,
+      hostGhostMode: !!hostGhostMode,
       hostPlayerName: hostPlayerName || "",
       hideGamePlan: !!hideGamePlan,
       extraRules: extraRules || {},
@@ -174,6 +176,7 @@ router.patch("/:code", requireAuth, async (req, res) => {
       scoringMode,
       scoringEnabled,
       hostParticipates,
+      hostGhostMode,
       hostPlayerName,
       hideGamePlan,
     } = req.body;
@@ -186,6 +189,7 @@ router.patch("/:code", requireAuth, async (req, res) => {
     if (games !== undefined) olympic.games = games;
     if (hostParticipates !== undefined)
       olympic.hostParticipates = hostParticipates;
+    if (hostGhostMode !== undefined) olympic.hostGhostMode = !!hostGhostMode;
     if (hostPlayerName !== undefined) olympic.hostPlayerName = hostPlayerName;
     if (hideGamePlan !== undefined) olympic.hideGamePlan = !!hideGamePlan;
 

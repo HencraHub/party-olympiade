@@ -29,6 +29,16 @@ const UserSchema = new mongoose.Schema(
       min: 0,
       max: 7,
     },
+    playerCard: {
+      type: {
+        iq: { type: Number, min: 0, max: 5 },
+        shooter: { type: Number, min: 0, max: 5 },
+        racing: { type: Number, min: 0, max: 5 },
+        party: { type: Number, min: 0, max: 5 },
+        troll: { type: Number, min: 0, max: 5 },
+      },
+      default: null,
+    },
   },
   { timestamps: true }
 );

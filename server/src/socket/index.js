@@ -96,7 +96,7 @@ export function initSocket(io) {
     );
 
     /**
-     * start-olympic — host starts the event (lobby → active)
+     * start-olympic — host starts the event (lobby → active) and triggers intro for all
      * payload: { code, hostToken }
      */
     socket.on("start-olympic", async ({ code, hostToken }) => {
@@ -113,14 +113,29 @@ export function initSocket(io) {
         delete safe.hostToken;
         const leaderboard = computeLeaderboard(safe);
 
-        io.to(code.toUpperCase()).emit("room-update", {
-          olympic: safe,
-          leaderboard,
-        });
+        // Emit intro first so the overlay is ready before room-update arrives
+        io.to(code.toUpperCase()).emit("intro-start", { olympic: safe });
+        io.to(code.toUpperCase()).emit("room-update", { olympic: safe, leaderboard });
       } catch (err) {
         console.error("start-olympic error:", err);
         socket.emit("error", { message: "Server error" });
       }
+    });
+
+    /**
+     * intro-next — host advances slide index
+     * payload: { code, hostToken, slideIndex }
+     */
+    socket.on("intro-next", ({ code, hostToken, slideIndex }) => {
+      io.to(code.toUpperCase()).emit("intro-slide", { slideIndex });
+    });
+
+    /**
+     * intro-close — host finishes or skips the intro; game is already active
+     * payload: { code, hostToken }
+     */
+    socket.on("intro-close", ({ code, hostToken }) => {
+      io.to(code.toUpperCase()).emit("intro-ended");
     });
 
     /**
@@ -407,6 +422,7 @@ export function initSocket(io) {
           tieRule,
           extraRules,
           hostParticipates,
+          hostGhostMode,
           hostPlayerName,
           hideGamePlan,
         } = settings || {};
@@ -440,6 +456,9 @@ export function initSocket(io) {
         }
         if (hostParticipates !== undefined) {
           olympic.hostParticipates = !!hostParticipates;
+        }
+        if (hostGhostMode !== undefined) {
+          olympic.hostGhostMode = !!hostGhostMode;
         }
         if (hostPlayerName !== undefined) {
           olympic.hostPlayerName = String(hostPlayerName).trim().slice(0, 30);
@@ -543,6 +562,15 @@ export function initSocket(io) {
           return socket.emit("error", { message: "Olympic not found" });
         if (olympic.hostToken !== hostToken)
           return socket.emit("error", { message: "Unauthorized" });
+
+        // Prevent the host from kicking their own participant slot
+        if (
+          olympic.hostParticipates &&
+          olympic.hostPlayerName &&
+          olympic.hostPlayerName === playerName
+        ) {
+          return socket.emit("error", { message: "Cannot kick yourself" });
+        }
 
         olympic.participants = olympic.participants.filter(
           (p) => p.name !== playerName,
