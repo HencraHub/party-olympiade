@@ -25,7 +25,31 @@ import {
   Star,
   Share2,
   LogOut,
+  Camera,
+  ImageOff,
 } from "lucide-react";
+
+async function compressImage(file) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const MAX_W = 700;
+      const MAX_H = 320;
+      const scale = Math.min(1, MAX_W / img.width, MAX_H / img.height);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL("image/jpeg", 0.82));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
 
 const STATUS_STYLES = {
   draft: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
@@ -97,6 +121,9 @@ function TradingCard({
   saving,
   profileError,
   logout,
+  artImage,
+  onUploadImage,
+  onRemoveImage,
 }) {
   const displayCard = editing ? cardValues : user.playerCard;
   const hasCard = !!user.playerCard;
@@ -197,36 +224,82 @@ function TradingCard({
           </div>
         </div>
 
-        {/* Art section — avatar on colored gradient bg */}
+        {/* Art section */}
         <div
-          className="relative flex items-center justify-center"
+          className="relative flex items-center justify-center overflow-hidden"
           style={{
-            height: "148px",
-            background: avatarGrad,
+            height: "220px",
+            background: artImage ? "transparent" : avatarGrad,
           }}
         >
-          {/* Dark overlay for mood */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(180deg, rgba(5,3,15,0.35) 0%, rgba(5,3,15,0.5) 100%)",
-            }}
-          />
-          <div
-            className="relative z-10 rounded-2xl flex items-center justify-center font-black text-white"
-            style={{
-              width: 80,
-              height: 80,
-              background: "rgba(0,0,0,0.3)",
-              backdropFilter: "blur(8px)",
-              border: "2px solid rgba(255,255,255,0.25)",
-              fontSize: 32,
-              textShadow: "0 2px 12px rgba(0,0,0,0.5)",
-            }}
-          >
-            {user.username[0].toUpperCase()}
-          </div>
+          {artImage ? (
+            <img
+              src={artImage}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <>
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(180deg, rgba(5,3,15,0.35) 0%, rgba(5,3,15,0.5) 100%)",
+                }}
+              />
+              <div
+                className="relative z-10 rounded-2xl flex items-center justify-center font-black text-white"
+                style={{
+                  width: 80,
+                  height: 80,
+                  background: "rgba(0,0,0,0.3)",
+                  backdropFilter: "blur(8px)",
+                  border: "2px solid rgba(255,255,255,0.25)",
+                  fontSize: 32,
+                  textShadow: "0 2px 12px rgba(0,0,0,0.5)",
+                }}
+              >
+                {user.username[0].toUpperCase()}
+              </div>
+            </>
+          )}
+
+          {/* Edit overlay */}
+          {editing && (
+            <div
+              className="absolute inset-0 z-20 flex items-center justify-center gap-3"
+              style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(2px)" }}
+            >
+              <label
+                className="flex items-center gap-1.5 text-xs font-bold text-white cursor-pointer px-3 py-2 rounded-xl transition-all hover:bg-white/10"
+                style={{ border: "1px solid rgba(255,255,255,0.25)" }}
+              >
+                <Camera size={14} />
+                {artImage ? "Ändern" : "Hochladen"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) onUploadImage(file);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {artImage && (
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 text-xs font-bold text-pink-300 px-3 py-2 rounded-xl transition-all hover:bg-pink-500/10"
+                  style={{ border: "1px solid rgba(236,72,153,0.35)" }}
+                  onClick={onRemoveImage}
+                >
+                  <ImageOff size={14} />
+                  Entfernen
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Name + color picker */}
@@ -403,6 +476,7 @@ export default function ProfilePage() {
   const [nameInput, setNameInput] = useState("");
   const [selectedColor, setSelectedColor] = useState(user?.avatarColor ?? 0);
   const [cardValues, setCardValues] = useState(null);
+  const [cardImagePreview, setCardImagePreview] = useState(null);
   const [saving, setSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
 
@@ -468,6 +542,7 @@ export default function ProfilePage() {
     }, {});
     // If no playerCard yet, default to 3/3/3/3/3 = 15 (valid budget)
     setCardValues(vals);
+    setCardImagePreview(user.cardImage ?? null);
     setProfileError("");
     setEditing(true);
   }
@@ -475,6 +550,7 @@ export default function ProfilePage() {
   function cancelEdit() {
     setEditing(false);
     setCardValues(null);
+    setCardImagePreview(null);
     setSelectedColor(user.avatarColor ?? 0);
     setProfileError("");
   }
@@ -502,11 +578,17 @@ export default function ProfilePage() {
           }, {});
         }
       }
+      // Only send cardImage if it changed
+      const savedImage = user.cardImage ?? null;
+      if (cardImagePreview !== savedImage) {
+        changes.cardImage = cardImagePreview;
+      }
       if (Object.keys(changes).length > 0) {
         await updateProfile(changes);
       }
       setEditing(false);
       setCardValues(null);
+      setCardImagePreview(null);
     } catch (err) {
       setProfileError(err.response?.data?.error || "Speichern fehlgeschlagen");
     } finally {
@@ -558,6 +640,12 @@ export default function ProfilePage() {
             saving={saving}
             profileError={profileError}
             logout={logout}
+            artImage={editing ? cardImagePreview : (user.cardImage ?? null)}
+            onUploadImage={async (file) => {
+              const b64 = await compressImage(file);
+              if (b64) setCardImagePreview(b64);
+            }}
+            onRemoveImage={() => setCardImagePreview(null)}
           />
         </div>
 

@@ -39,6 +39,7 @@ const UserSchema = new mongoose.Schema(
       },
       default: null,
     },
+    cardImage: { type: String, default: null },
   },
   { timestamps: true }
 );

@@ -205,13 +205,6 @@ const CARD_CATEGORIES = [
   { Icon: Ghost, label: "Troll", color: "#4ade80", val: 1 },
 ];
 
-const STATS_BAR = [
-  { value: "3", label: "Punktsysteme", color: "#22d3ee" },
-  { value: "4", label: "Bonus-Regeln", color: "#facc15" },
-  { value: "2-50", label: "Spieler", color: "#ec4899" },
-  { value: "FFA + Team", label: "Modi", color: "#a78bfa" },
-];
-
 function PreviewStars({ value }) {
   return (
     <div className="flex gap-0.5">
@@ -287,8 +280,7 @@ export default function HomePage() {
             <span className="text-white">WERDE</span>{" "}
             <span
               style={{
-                background:
-                  "linear-gradient(90deg, #facc15, #f97316)",
+                background: "linear-gradient(90deg, #facc15, #f97316)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
@@ -329,30 +321,6 @@ export default function HomePage() {
                 </div>
               </div>
             </button>
-          </div>
-
-          {/* Quick stats bar */}
-          <div className="grid grid-cols-4 gap-3 max-w-lg mx-auto">
-            {STATS_BAR.map((s) => (
-              <div
-                key={s.label}
-                className="rounded-xl px-2 py-3 text-center"
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.07)",
-                }}
-              >
-                <div
-                  className="text-lg sm:text-xl font-black"
-                  style={{ color: s.color }}
-                >
-                  {s.value}
-                </div>
-                <div className="text-[9px] uppercase tracking-wider text-white/40 font-bold mt-0.5">
-                  {s.label}
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -478,9 +446,10 @@ export default function HomePage() {
                 </p>
                 {currentMode.example.map((row, i) => {
                   const maxPts = currentMode.example[0].points || 1;
-                  const widthPct = row.points > 0
-                    ? Math.max(6, (row.points / maxPts) * 100)
-                    : 0;
+                  const widthPct =
+                    row.points > 0
+                      ? Math.max(6, (row.points / maxPts) * 100)
+                      : 0;
                   const placeColors = [
                     "#facc15",
                     "#cbd5e1",
@@ -519,7 +488,10 @@ export default function HomePage() {
                       <span
                         className="font-black text-sm tabular-nums w-12 text-right flex-shrink-0"
                         style={{
-                          color: row.points > 0 ? currentMode.accent : "rgba(255,255,255,0.2)",
+                          color:
+                            row.points > 0
+                              ? currentMode.accent
+                              : "rgba(255,255,255,0.2)",
                         }}
                       >
                         {row.points} Pkt
@@ -782,10 +754,7 @@ export default function HomePage() {
                 <div className="px-5 pb-4 space-y-1.5">
                   {CARD_CATEGORIES.map(({ Icon, label, color, val }) => (
                     <div key={label} className="flex items-center gap-2">
-                      <Icon
-                        size={11}
-                        style={{ color, flexShrink: 0 }}
-                      />
+                      <Icon size={11} style={{ color, flexShrink: 0 }} />
                       <span className="text-[10px] font-semibold text-white/50 w-12 flex-shrink-0">
                         {label}
                       </span>
@@ -919,9 +888,7 @@ export default function HomePage() {
             }}
           >
             <EyeOff size={28} className="text-purple-400 mb-3" />
-            <h3 className="font-black text-white text-base mb-2">
-              Host-Modi
-            </h3>
+            <h3 className="font-black text-white text-base mb-2">Host-Modi</h3>
             <p className="text-xs text-white/55 leading-relaxed">
               Host kann mitspielen (mit oder ohne Punkte als „Ghost") oder rein
               moderieren. Spielplan optional verstecken für Überraschung.

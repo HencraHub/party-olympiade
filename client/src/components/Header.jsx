@@ -136,13 +136,6 @@ export default function Header() {
                       boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
                     }}
                   >
-                    {/* Email */}
-                    <div className="px-3 py-2 border-b border-white/[0.06]">
-                      <p className="text-xs text-muted truncate">
-                        {user.email}
-                      </p>
-                    </div>
-
                     <button
                       className="w-full text-left px-3 py-2.5 text-sm text-white hover:bg-white/5 transition-colors flex items-center gap-2.5"
                       onClick={() => {

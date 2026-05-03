@@ -16,6 +16,19 @@ const ParticipantSchema = new mongoose.Schema({
   avatarBase64: { type: String, default: "" },
   stats: { type: StatSchema, default: () => ({}) },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  // Card display data — snapshotted from User profile on join
+  avatarColor: { type: Number, default: null },
+  cardImage: { type: String, default: null },
+  playerCard: {
+    type: {
+      iq: { type: Number },
+      shooter: { type: Number },
+      racing: { type: Number },
+      party: { type: Number },
+      troll: { type: Number },
+    },
+    default: null,
+  },
 });
 
 const AddonsSchema = new mongoose.Schema(

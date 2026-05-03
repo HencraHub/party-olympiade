@@ -124,30 +124,40 @@ export default function UserPublicProfilePage() {
 
             {/* Art section */}
             <div
-              className="relative flex items-center justify-center"
-              style={{ height: 148, background: avatarGrad }}
+              className="relative flex items-center justify-center overflow-hidden"
+              style={{ height: 220, background: profile.cardImage ? "transparent" : avatarGrad }}
             >
-              <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "linear-gradient(180deg, rgba(5,3,15,0.35) 0%, rgba(5,3,15,0.5) 100%)",
-                }}
-              />
-              <div
-                className="relative z-10 rounded-2xl flex items-center justify-center font-black text-white"
-                style={{
-                  width: 80,
-                  height: 80,
-                  background: "rgba(0,0,0,0.3)",
-                  backdropFilter: "blur(8px)",
-                  border: "2px solid rgba(255,255,255,0.25)",
-                  fontSize: 32,
-                  textShadow: "0 2px 12px rgba(0,0,0,0.5)",
-                }}
-              >
-                {profile.username?.[0]?.toUpperCase()}
-              </div>
+              {profile.cardImage ? (
+                <img
+                  src={profile.cardImage}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <>
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background:
+                        "linear-gradient(180deg, rgba(5,3,15,0.35) 0%, rgba(5,3,15,0.5) 100%)",
+                    }}
+                  />
+                  <div
+                    className="relative z-10 rounded-2xl flex items-center justify-center font-black text-white"
+                    style={{
+                      width: 80,
+                      height: 80,
+                      background: "rgba(0,0,0,0.3)",
+                      backdropFilter: "blur(8px)",
+                      border: "2px solid rgba(255,255,255,0.25)",
+                      fontSize: 32,
+                      textShadow: "0 2px 12px rgba(0,0,0,0.5)",
+                    }}
+                  >
+                    {profile.username?.[0]?.toUpperCase()}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Name */}

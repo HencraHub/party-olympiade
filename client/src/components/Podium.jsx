@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
 import { Medal } from "lucide-react";
+import CompactPlayerCard from "./ui/CompactPlayerCard.jsx";
 
 const PODIUM_HEIGHTS = ["h-28", "h-20", "h-14"];
 const PODIUM_ORDER = [1, 0, 2]; // display order: 2nd, 1st, 3rd
@@ -13,7 +13,7 @@ export default function Podium({ leaderboard = [], participants = [] }) {
   while (top3.length < 3) top3.push(null);
 
   return (
-    <div className="flex items-end justify-center gap-2 sm:gap-4 px-4">
+    <div className="flex items-end justify-center gap-2 sm:gap-6 px-4">
       {PODIUM_ORDER.map((rankIdx, displayIdx) => {
         const entry = top3[rankIdx];
         if (!entry) return <div key={displayIdx} className="w-24 sm:w-32" />;
@@ -27,29 +27,19 @@ export default function Podium({ leaderboard = [], participants = [] }) {
             className={`flex flex-col items-center animate-podium-rise ${animDelay} opacity-0`}
             style={{ animationFillMode: "forwards" }}
           >
-            {/* Avatar */}
+            {/* Player card */}
             <div className="mb-2">
-              {participant?.avatarBase64 ? (
-                <img
-                  src={participant.avatarBase64}
-                  alt={entry.name}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-purple-500/60 shadow-lg"
-                />
-              ) : (
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-purple to-pink flex items-center justify-center text-3xl font-bold shadow-lg">
-                  {entry.name[0]?.toUpperCase()}
-                </div>
-              )}
+              <CompactPlayerCard
+                name={entry.name}
+                avatarColor={participant?.avatarColor ?? null}
+                cardImage={participant?.cardImage ?? null}
+                fallbackIndex={rankIdx}
+              />
             </div>
 
             {/* Medal */}
             <div className="mb-1">
               <Medal size={28} style={{ color: MEDAL_COLORS[rankIdx] }} />
-            </div>
-
-            {/* Name */}
-            <div className="text-sm sm:text-base font-bold text-white text-center max-w-[90px] sm:max-w-[120px] truncate">
-              {entry.name}
             </div>
 
             {/* Points */}

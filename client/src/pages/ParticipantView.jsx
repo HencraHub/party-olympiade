@@ -24,6 +24,8 @@ import {
   Play,
   Lock,
 } from "lucide-react";
+import CompactPlayerCard from "../components/ui/CompactPlayerCard.jsx";
+import ActivityFeed from "../components/ui/ActivityFeed.jsx";
 
 export default function ParticipantView() {
   const { code } = useParams();
@@ -43,6 +45,8 @@ export default function ParticipantView() {
   const [tiebreakerAnswers, setTiebreakerAnswers] = useState({});
   const [tiebreakerResolved, setTiebreakerResolved] = useState(null);
   const [introOlympic, setIntroOlympic] = useState(null);
+  const [feedItems, setFeedItems] = useState([]);
+  const [chatCooldown, setChatCooldown] = useState(0);
 
   useEffect(() => {
     if (!code) return;
@@ -100,6 +104,17 @@ export default function ParticipantView() {
     socket.on("intro-start", ({ olympic: o }) => setIntroOlympic(o));
     socket.on("intro-ended", () => setIntroOlympic(null));
 
+    socket.on("chat-message", (msg) =>
+      setFeedItems((prev) => [...prev, { type: "chat", ...msg }]),
+    );
+    socket.on("bonus-events", (events) =>
+      setFeedItems((prev) => [
+        ...prev,
+        ...events.map((e) => ({ type: "bonus", ...e })),
+      ]),
+    );
+    socket.on("chat-cooldown", ({ secsLeft }) => setChatCooldown(secsLeft));
+
     // If we don't have an olympic yet (direct URL access), try to join as spectator
     if (!olympic) {
       socket.emit("join-room", {
@@ -120,6 +135,9 @@ export default function ParticipantView() {
       socket.off("tiebreaker-resolved");
       socket.off("intro-start");
       socket.off("intro-ended");
+      socket.off("chat-message");
+      socket.off("bonus-events");
+      socket.off("chat-cooldown");
     };
   }, [code]);
 
@@ -192,7 +210,7 @@ export default function ParticipantView() {
     return (
       <>
         <div className="min-h-screen px-4 py-8 flex flex-col items-center">
-          <div className="w-full max-w-lg space-y-6 animate-slide-up">
+          <div className="w-full max-w-3xl space-y-6 animate-slide-up">
             {/* ── Waiting hero card ── */}
             <div
               className="relative rounded-2xl p-6 overflow-hidden text-center"
@@ -284,59 +302,22 @@ export default function ParticipantView() {
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-3">
                 {olympic.participants.map((p, i) => {
                   const isMe = p.name === participantName;
-                  const isHost = i === 0;
+                  const isHost = olympic.hostParticipates
+                    ? p.name === olympic.hostPlayerName
+                    : i === 0;
                   return (
-                    <div
+                    <CompactPlayerCard
                       key={p.name}
-                      className="flex flex-col items-center gap-1.5 animate-fade-in"
-                    >
-                      <div className="relative">
-                        <div
-                          className={`w-[70px] h-[70px] rounded-2xl bg-gradient-to-br ${avatarGradients[i % avatarGradients.length]} flex items-center justify-center font-black text-xl text-white`}
-                          style={{
-                            border: isMe
-                              ? "2px solid rgba(236,72,153,0.7)"
-                              : "2px solid rgba(255,255,255,0.1)",
-                            boxShadow: isMe
-                              ? "0 0 14px rgba(236,72,153,0.3)"
-                              : "none",
-                          }}
-                        >
-                          {p.name[0]?.toUpperCase()}
-                        </div>
-                        {isHost && (
-                          <span className="absolute -top-2 -right-1">
-                            <Crown size={14} className="text-yellow-400" />
-                          </span>
-                        )}
-                        {/* Online dot */}
-                        <span
-                          className="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2"
-                          style={{
-                            background: "#22c55e",
-                            borderColor: "#0a0c1e",
-                          }}
-                        />
-                      </div>
-                      <span className="text-white text-xs font-semibold max-w-[72px] truncate text-center">
-                        {p.name}
-                      </span>
-                      {isMe && (
-                        <span
-                          className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full"
-                          style={{
-                            background: "rgba(236,72,153,0.2)",
-                            border: "1px solid rgba(236,72,153,0.4)",
-                            color: "#f472b6",
-                          }}
-                        >
-                          Du
-                        </span>
-                      )}
-                    </div>
+                      name={p.name}
+                      avatarColor={p.avatarColor ?? null}
+                      cardImage={p.cardImage ?? null}
+                      isMe={isMe}
+                      isHost={isHost}
+                      fallbackIndex={i}
+                    />
                   );
                 })}
 
@@ -346,17 +327,16 @@ export default function ParticipantView() {
                 }).map((_, i) => (
                   <div
                     key={`empty-${i}`}
-                    className="flex flex-col items-center gap-1.5"
+                    style={{
+                      width: 83,
+                      height: 96,
+                      border: "1.5px dashed rgba(255,255,255,0.1)",
+                      background: "rgba(255,255,255,0.02)",
+                      borderRadius: 14,
+                    }}
+                    className="flex items-center justify-center text-white/20 text-2xl font-light"
                   >
-                    <div
-                      className="w-[70px] h-[70px] rounded-2xl flex items-center justify-center text-white/20 text-2xl"
-                      style={{
-                        border: "2px dashed rgba(255,255,255,0.12)",
-                        background: "rgba(255,255,255,0.025)",
-                      }}
-                    >
-                      +
-                    </div>
+                    +
                   </div>
                 ))}
               </div>
@@ -411,6 +391,14 @@ export default function ParticipantView() {
         <FloatingRoomNav code={code} />
       </>
     );
+  }
+
+  function sendChat(text) {
+    getSocket()?.emit("chat-message", {
+      code: code.toUpperCase(),
+      name: participantName || "Gast",
+      text,
+    });
   }
 
   const currentGame = olympic.games[olympic.currentGameIndex];
@@ -548,7 +536,7 @@ export default function ParticipantView() {
                               <Users size={11} /> Teams
                             </div>
                           ) : (
-                            <div>
+                            <div className="flex flex-row items-center gap-1 justify-center">
                               <Swords size={11} /> FFA
                             </div>
                           )}
@@ -645,6 +633,15 @@ export default function ParticipantView() {
                   <p className="text-white/30">Kein Spiel ausgewählt</p>
                 </div>
               )}
+
+              {/* ── Activity feed (chat + bonus events) ── */}
+              <ActivityFeed
+                items={feedItems}
+                onSend={sendChat}
+                myName={participantName}
+                participants={olympic.participants}
+                cooldownSecs={chatCooldown}
+              />
             </div>
 
             {/* ── Right 1/3: leaderboard + spielplan (sticky) ── */}

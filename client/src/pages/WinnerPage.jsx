@@ -6,8 +6,10 @@ import { computeLeaderboard } from "../utils/scoring.js";
 import GlassCard from "../components/ui/GlassCard.jsx";
 import Podium from "../components/Podium.jsx";
 import Scoreboard from "../components/Scoreboard.jsx";
+import CompactPlayerCard from "../components/ui/CompactPlayerCard.jsx";
 import useOlympicStore from "../store/useOlympicStore.js";
 import { Trophy, Rocket, Home, ClipboardList, Check, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
+import { AVATAR_GRADIENTS } from "../components/Header.jsx";
 
 export default function WinnerPage() {
   const { code } = useParams();
@@ -187,39 +189,45 @@ export default function WinnerPage() {
         </div>
 
         {/* Winner highlight */}
-        {winner && (
-          <div
-            className="glass rounded-2xl p-6 text-center shadow-[0_0_40px_rgba(139,92,246,0.15)]"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(250,204,21,0.12), rgba(245,158,11,0.06)), linear-gradient(138deg, rgba(18,18,36,0.85), rgba(28,28,56,0.6))",
-            }}
-          >
-            {leaderboard[0]?.name &&
-            olympic.participants.find((p) => p.name === leaderboard[0].name)
-              ?.avatarBase64 ? (
-              <img
-                src={
-                  olympic.participants.find(
-                    (p) => p.name === leaderboard[0].name,
-                  ).avatarBase64
-                }
-                alt={winner.name}
-                className="w-24 h-24 rounded-full object-cover border-4 border-yellow-400/60 mx-auto mb-4 shadow-xl"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center text-5xl font-black mx-auto mb-4 shadow-xl">
-                {winner.name[0]?.toUpperCase()}
+        {winner && (() => {
+          const winnerParticipant = olympic.participants.find((p) => p.name === winner.name);
+          const avatarGrad = winnerParticipant?.avatarColor != null
+            ? AVATAR_GRADIENTS[winnerParticipant.avatarColor] ?? AVATAR_GRADIENTS[0]
+            : "linear-gradient(135deg, #eab308, #f97316)";
+          return (
+            <div
+              className="glass rounded-2xl p-6 text-center shadow-[0_0_40px_rgba(139,92,246,0.15)]"
+              style={{
+                background:
+                  "linear-gradient(135deg, rgba(250,204,21,0.12), rgba(245,158,11,0.06)), linear-gradient(138deg, rgba(18,18,36,0.85), rgba(28,28,56,0.6))",
+              }}
+            >
+              {/* Winner card art */}
+              <div className="flex justify-center mb-4">
+                <div style={{ background: avatarGrad, padding: "2px", borderRadius: 18, boxShadow: "0 0 60px rgba(250,204,21,0.35)" }}>
+                  <div style={{ width: 96, height: 96, borderRadius: 17, overflow: "hidden", background: winnerParticipant?.cardImage ? "transparent" : avatarGrad, position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {winnerParticipant?.cardImage ? (
+                      <img src={winnerParticipant.cardImage} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <>
+                        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(5,3,15,0.3),rgba(5,3,15,0.5))" }} />
+                        <span style={{ position: "relative", zIndex: 1, fontSize: 40, fontWeight: 900, color: "white", textShadow: "0 2px 12px rgba(0,0,0,0.5)" }}>
+                          {winner.name[0]?.toUpperCase()}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
-            <h2 className="text-3xl font-black text-yellow-400 mb-1">
-              {winner.name}
-            </h2>
-            <p className="text-white font-bold">
-              {winner.total} points · {winner.wins} wins
-            </p>
-          </div>
-        )}
+              <h2 className="text-3xl font-black text-yellow-400 mb-1">
+                {winner.name}
+              </h2>
+              <p className="text-white font-bold">
+                {winner.total} points · {winner.wins} wins
+              </p>
+            </div>
+          );
+        })()}
 
         {/* Podium */}
         <div className="pt-4">
@@ -228,6 +236,27 @@ export default function WinnerPage() {
             participants={olympic.participants}
           />
         </div>
+
+        {/* Player cards */}
+        {olympic.participants.length > 0 && (
+          <GlassCard>
+            <h2 className="font-bold text-white mb-4">Spieler</h2>
+            <div className="flex flex-wrap gap-3 justify-center">
+              {leaderboard.map((entry, i) => {
+                const p = olympic.participants.find((pt) => pt.name === entry.name);
+                return (
+                  <CompactPlayerCard
+                    key={entry.name}
+                    name={entry.name}
+                    avatarColor={p?.avatarColor ?? null}
+                    cardImage={p?.cardImage ?? null}
+                    fallbackIndex={i}
+                  />
+                );
+              })}
+            </div>
+          </GlassCard>
+        )}
 
         {/* Full leaderboard */}
         <GlassCard>

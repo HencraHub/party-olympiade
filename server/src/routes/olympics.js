@@ -2,6 +2,7 @@ import express from "express";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import Olympic from "../models/Olympic.js";
+import User from "../models/User.js";
 import { computeLeaderboard } from "../utils/scoring.js";
 
 const router = express.Router();
@@ -239,7 +240,18 @@ router.post("/:code/launch", requireAuth, async (req, res) => {
     if (olympic.hostParticipates && olympic.hostPlayerName?.trim()) {
       const hostName = olympic.hostPlayerName.trim();
       if (!olympic.participants.some((p) => p.name === hostName)) {
-        olympic.participants.push({ name: hostName });
+        const hostData = { name: hostName, userId: req.user.id };
+        try {
+          const hostUser = await User.findById(req.user.id)
+            .select("avatarColor cardImage playerCard")
+            .lean();
+          if (hostUser) {
+            hostData.avatarColor = hostUser.avatarColor ?? 0;
+            hostData.cardImage = hostUser.cardImage ?? null;
+            hostData.playerCard = hostUser.playerCard ?? null;
+          }
+        } catch {}
+        olympic.participants.push(hostData);
       }
     }
 

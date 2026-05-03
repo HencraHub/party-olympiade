@@ -33,3 +33,4 @@ Olympics
     e. host spielt mit -> host always participates -> the adjustment here should just be if his score counts (then he should also be able to guess in tiebreakers, doesnt work right now) or if he plays as a ghost (participates in games but his score doesnt count. e.g. 4 participant, the host gets P2, P3 will then take his P2 slot and so on) ✅
 16. add more filter options to game presets ✅
 17. each olympic should have a intro slide to improve the story telling. something like a powerpoint presentation. introducing the host and the participants. explaining the basic rules. ✅
+18. the player cards should have compact version, that will be displayed in the olympics, instead of the small square. the image on the main card also should be more square, it is currently too wide. the name could be on a transparent box/transparent fade.

@@ -12,6 +12,9 @@ import ScoreEntry from "../components/ScoreEntry.jsx";
 import FloatingRoomNav from "../components/ui/FloatingRoomNav.jsx";
 import TiebreakerModal from "../components/ui/TiebreakerModal.jsx";
 import IntroOverlay from "../components/ui/IntroOverlay.jsx";
+import CompactPlayerCard from "../components/ui/CompactPlayerCard.jsx";
+import ActivityFeed from "../components/ui/ActivityFeed.jsx";
+import { useAuthStore } from "../store/useAuthStore.js";
 import {
   DndContext,
   closestCenter,
@@ -144,6 +147,7 @@ export default function HostRoomPage() {
   const navigate = useNavigate();
   const { olympic, leaderboard, updateFromRoomEvent, setConnected } =
     useOlympicStore();
+  const { user: hostUser } = useAuthStore();
 
   const [tab, setTab] = useState("game"); // 'game' | 'score' | 'board' | 'players' | 'manage'
   const [scoreGame, setScoreGame] = useState(null); // game being scored
@@ -168,6 +172,8 @@ export default function HostRoomPage() {
   const [tiebreakerAnswers, setTiebreakerAnswers] = useState({});
   const [tiebreakerResolved, setTiebreakerResolved] = useState(null);
   const [introOlympic, setIntroOlympic] = useState(null);
+  const [feedItems, setFeedItems] = useState([]);
+  const [chatCooldown, setChatCooldown] = useState(0);
 
   const hostToken = localStorage.getItem(`hostToken_${code?.toUpperCase()}`);
 
@@ -225,11 +231,23 @@ export default function HostRoomPage() {
     socket.on("intro-start", ({ olympic: o }) => setIntroOlympic(o));
     socket.on("intro-ended", () => setIntroOlympic(null));
 
+    socket.on("chat-message", (msg) =>
+      setFeedItems((prev) => [...prev, { type: "chat", ...msg }]),
+    );
+    socket.on("bonus-events", (events) =>
+      setFeedItems((prev) => [
+        ...prev,
+        ...events.map((e) => ({ type: "bonus", ...e })),
+      ]),
+    );
+    socket.on("chat-cooldown", ({ secsLeft }) => setChatCooldown(secsLeft));
+
     socket.emit("join-room", {
       code: code.toUpperCase(),
       name: "Host",
       isHost: true,
       hostToken,
+      userId: hostUser?.id ?? null,
     });
 
     return () => {
@@ -242,6 +260,9 @@ export default function HostRoomPage() {
       socket.off("tiebreaker-resolved");
       socket.off("intro-start");
       socket.off("intro-ended");
+      socket.off("chat-message");
+      socket.off("bonus-events");
+      socket.off("chat-cooldown");
     };
   }, [code]);
 
@@ -517,38 +538,15 @@ export default function HostRoomPage() {
               </div>
 
               {/* Avatar grid — slot 0 always reserved for host */}
-              <div className="flex flex-wrap gap-4">
+              <div className="flex flex-wrap gap-3">
                 {/* Host slot (always first, always shown) */}
-                <div className="flex flex-col items-center gap-1.5 animate-fade-in">
-                  <div className="relative">
-                    <div
-                      className={`w-[70px] h-[70px] rounded-2xl bg-gradient-to-br ${avatarGradients[0]} flex items-center justify-center font-black text-xl text-white`}
-                      style={{ border: "2px solid rgba(255,255,255,0.12)" }}
-                    >
-                      {(hostName || "H")[0]?.toUpperCase()}
-                    </div>
-                    <span className="absolute -top-2 -right-1">
-                      <Crown size={14} className="text-yellow-400" />
-                    </span>
-                    <span
-                      className="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2"
-                      style={{ background: "#22c55e", borderColor: "#0a0c1e" }}
-                    />
-                  </div>
-                  <span className="text-white text-xs font-semibold max-w-[72px] truncate text-center">
-                    {hostName || "Host"}
-                  </span>
-                  <span
-                    className="text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full"
-                    style={{
-                      background: "rgba(139,92,246,0.25)",
-                      border: "1px solid rgba(139,92,246,0.4)",
-                      color: "#a78bfa",
-                    }}
-                  >
-                    <Crown size={9} className="inline mr-0.5" /> Host
-                  </span>
-                </div>
+                <CompactPlayerCard
+                  name={hostName || "Host"}
+                  avatarColor={hostUser?.avatarColor ?? null}
+                  cardImage={hostUser?.cardImage ?? null}
+                  isHost={true}
+                  fallbackIndex={0}
+                />
 
                 {/* Participant slots — exclude host when hostParticipates (already shown above) */}
                 {olympic.participants
@@ -560,41 +558,25 @@ export default function HostRoomPage() {
                       ),
                   )
                   .map((p, i) => (
-                    <div
-                      key={p.name}
-                      className="flex flex-col items-center gap-1.5 animate-fade-in group relative"
-                    >
-                      <div className="relative">
-                        <div
-                          className={`w-[70px] h-[70px] rounded-2xl bg-gradient-to-br ${avatarGradients[(i + 1) % avatarGradients.length]} flex items-center justify-center font-black text-xl text-white`}
-                          style={{ border: "2px solid rgba(255,255,255,0.12)" }}
-                        >
-                          {p.name[0]?.toUpperCase()}
-                        </div>
-                        {/* Online dot */}
-                        <span
-                          className="absolute bottom-1 right-1 w-3 h-3 rounded-full border-2"
-                          style={{
-                            background: "#22c55e",
-                            borderColor: "#0a0c1e",
-                          }}
-                        />
-                        {/* Kick button (hover) */}
-                        <button
-                          className="absolute -top-2 -left-1 w-5 h-5 rounded-full bg-pink-500 text-white text-[10px] font-black items-center justify-center hidden group-hover:flex shadow-lg z-10"
-                          onClick={() => confirmKick(p.name)}
-                          title={`Kick ${p.name}`}
-                        >
-                          ×
-                        </button>
-                      </div>
-                      <span className="text-white text-xs font-semibold max-w-[72px] truncate text-center">
-                        {p.name}
-                      </span>
+                    <div key={p.name} className="relative group">
+                      <CompactPlayerCard
+                        name={p.name}
+                        avatarColor={p.avatarColor ?? null}
+                        cardImage={p.cardImage ?? null}
+                        fallbackIndex={i + 1}
+                      />
+                      {/* Kick button on hover */}
+                      <button
+                        className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-pink-500 text-white text-[10px] font-black items-center justify-center hidden group-hover:flex shadow-lg z-30"
+                        onClick={() => confirmKick(p.name)}
+                        title={`Kick ${p.name}`}
+                      >
+                        ×
+                      </button>
                     </div>
                   ))}
 
-                {/* Empty slots — when hostParticipates the host is in playerCount but already shown above */}
+                {/* Empty slots */}
                 {Array.from({
                   length: Math.min(
                     maxPlayers -
@@ -605,17 +587,16 @@ export default function HostRoomPage() {
                 }).map((_, i) => (
                   <div
                     key={`empty-${i}`}
-                    className="flex flex-col items-center gap-1.5"
+                    className="flex items-center justify-center text-white/20 text-2xl font-light"
+                    style={{
+                      width: 83,
+                      height: 96,
+                      border: "1.5px dashed rgba(255,255,255,0.1)",
+                      background: "rgba(255,255,255,0.02)",
+                      borderRadius: 14,
+                    }}
                   >
-                    <div
-                      className="w-[70px] h-[70px] rounded-2xl flex items-center justify-center text-white/20 text-2xl font-light"
-                      style={{
-                        border: "2px dashed rgba(255,255,255,0.12)",
-                        background: "rgba(255,255,255,0.025)",
-                      }}
-                    >
-                      +
-                    </div>
+                    +
                   </div>
                 ))}
               </div>
@@ -1145,7 +1126,24 @@ export default function HostRoomPage() {
                 </div>
               )}
             </div>
-          </div>
+          </div>{/* end two-column grid */}
+
+          {/* ── Activity feed ── */}
+          <ActivityFeed
+            items={feedItems}
+            onSend={(text) => {
+              getSocket()?.emit("chat-message", {
+                code: code.toUpperCase(),
+                name: olympic.hostParticipates && olympic.hostPlayerName
+                  ? olympic.hostPlayerName
+                  : "Host",
+                text,
+              });
+            }}
+            myName={olympic.hostParticipates ? olympic.hostPlayerName : "Host"}
+            participants={olympic.participants}
+            cooldownSecs={chatCooldown}
+          />
         </div>
       </div>
 

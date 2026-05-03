@@ -1,30 +1,52 @@
+import { AVATAR_GRADIENTS } from "./Header.jsx";
+
 const RANK_STYLES = [
-  {
-    bg: "rgba(250,204,21,0.08)",
-    border: "rgba(250,204,21,0.22)",
-    num: "#facc15",
-  },
-  {
-    bg: "rgba(148,163,184,0.07)",
-    border: "rgba(148,163,184,0.2)",
-    num: "#94a3b8",
-  },
-  {
-    bg: "rgba(205,127,50,0.07)",
-    border: "rgba(205,127,50,0.2)",
-    num: "#cd7f32",
-  },
+  { bg: "rgba(250,204,21,0.08)", border: "rgba(250,204,21,0.22)", num: "#facc15" },
+  { bg: "rgba(148,163,184,0.07)", border: "rgba(148,163,184,0.2)", num: "#94a3b8" },
+  { bg: "rgba(205,127,50,0.07)", border: "rgba(205,127,50,0.2)", num: "#cd7f32" },
 ];
-const AVATAR_GRADIENTS = [
-  "from-pink-500 to-purple-600",
-  "from-purple-500 to-blue-600",
-  "from-cyan-500 to-blue-500",
-  "from-green-400 to-teal-500",
-  "from-orange-400 to-pink-500",
-  "from-yellow-400 to-orange-500",
-  "from-rose-400 to-pink-600",
-  "from-indigo-400 to-purple-500",
+
+const FALLBACK_GRADIENTS = [
+  "linear-gradient(135deg,#ec4899,#8b5cf6)",
+  "linear-gradient(135deg,#8b5cf6,#3b82f6)",
+  "linear-gradient(135deg,#22d3ee,#3b82f6)",
+  "linear-gradient(135deg,#22c55e,#14b8a6)",
+  "linear-gradient(135deg,#f97316,#ec4899)",
+  "linear-gradient(135deg,#eab308,#f97316)",
+  "linear-gradient(135deg,#f43f5e,#8b5cf6)",
+  "linear-gradient(135deg,#6366f1,#22d3ee)",
 ];
+
+function PlayerAvatar({ participant, name, index }) {
+  const grad =
+    participant?.avatarColor != null
+      ? AVATAR_GRADIENTS[participant.avatarColor] ?? AVATAR_GRADIENTS[0]
+      : FALLBACK_GRADIENTS[index % FALLBACK_GRADIENTS.length];
+
+  if (participant?.cardImage) {
+    return (
+      <div
+        className="w-7 h-7 rounded-lg flex-shrink-0 overflow-hidden"
+        style={{ background: grad }}
+      >
+        <img
+          src={participant.cardImage}
+          alt={name}
+          className="w-full h-full object-cover"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black text-white flex-shrink-0"
+      style={{ background: grad }}
+    >
+      {name[0]?.toUpperCase()}
+    </div>
+  );
+}
 
 export default function Scoreboard({
   leaderboard = [],
@@ -64,9 +86,7 @@ export default function Scoreboard({
       )}
 
       {leaderboard.map((entry, i) => {
-        const participantIdx = participants.findIndex(
-          (p) => p.name === entry.name,
-        );
+        const participantIdx = participants.findIndex((p) => p.name === entry.name);
         const participant = participants[participantIdx];
         const isMe = entry.name === myName;
         const rankStyle = RANK_STYLES[i];
@@ -93,32 +113,17 @@ export default function Scoreboard({
             {/* Rank */}
             <span
               className="text-xs font-black w-5 flex-shrink-0 text-center font-mono"
-              style={{
-                color: rankStyle ? rankStyle.num : "rgba(255,255,255,0.2)",
-              }}
+              style={{ color: rankStyle ? rankStyle.num : "rgba(255,255,255,0.2)" }}
             >
               {i + 1}
             </span>
 
             {/* Avatar */}
-            {participant?.avatarBase64 ? (
-              <img
-                src={participant.avatarBase64}
-                alt={entry.name}
-                className="w-7 h-7 rounded-full object-cover border border-white/10 flex-shrink-0"
-              />
-            ) : (
-              <div
-                className={`w-7 h-7 rounded-full bg-gradient-to-br ${
-                  AVATAR_GRADIENTS[
-                    (participantIdx >= 0 ? participantIdx : i) %
-                      AVATAR_GRADIENTS.length
-                  ]
-                } flex items-center justify-center text-xs font-black text-white flex-shrink-0`}
-              >
-                {entry.name[0]?.toUpperCase()}
-              </div>
-            )}
+            <PlayerAvatar
+              participant={participant}
+              name={entry.name}
+              index={participantIdx >= 0 ? participantIdx : i}
+            />
 
             {/* Name */}
             <span className="flex-1 flex items-center gap-1.5 min-w-0">

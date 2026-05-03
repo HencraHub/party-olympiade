@@ -1,9 +1,16 @@
 import Olympic from "../models/Olympic.js";
+import User from "../models/User.js";
 import { computeLeaderboard } from "../utils/scoring.js";
 import { getRandomTiebreakerQuestion } from "../data/tiebreakerQuestions.js";
 
 // In-memory tiebreaker state: code → { question, correctAnswer, unit, tiedPlayers, gameId, answers }
 const activeTiebreakers = new Map();
+
+// Chat rate limiting: socketId → { timestamps: number[], blockedUntil: number }
+const chatLimits = new Map();
+const CHAT_MAX_MSGS = 5;   // messages allowed in the window
+const CHAT_WINDOW_MS = 5000;  // rolling window (ms)
+const CHAT_COOLDOWN_MS = 10000; // block duration after exceeding limit (ms)
 
 export function initSocket(io) {
   io.on("connection", (socket) => {
@@ -27,6 +34,7 @@ export function initSocket(io) {
             return socket.emit("error", { message: "Olympic not found" });
 
           let participantAdded = false;
+          let hostDataSynced = false;
 
           // Only accept new players when the room is in lobby state
           if (olympic.status === "draft") {
@@ -45,6 +53,28 @@ export function initSocket(io) {
             }
           }
 
+          // Sync host card data into their participant entry on rejoin
+          if (isHost && userId && olympic.hostParticipates && olympic.hostPlayerName) {
+            const hostEntry = olympic.participants.find(
+              (p) => p.name === olympic.hostPlayerName.trim()
+            );
+            if (hostEntry) {
+              try {
+                const userDoc = await User.findById(userId)
+                  .select("avatarColor cardImage playerCard")
+                  .lean();
+                if (userDoc) {
+                  hostEntry.userId = userId;
+                  hostEntry.avatarColor = userDoc.avatarColor ?? 0;
+                  hostEntry.cardImage = userDoc.cardImage ?? null;
+                  hostEntry.playerCard = userDoc.playerCard ?? null;
+                  await olympic.save();
+                  hostDataSynced = true;
+                }
+              } catch {}
+            }
+          }
+
           // Dynamically add participant when a non-host joins (lobby only)
           if (!isHost && name && name.trim() && olympic.status === "lobby") {
             const trimName = name.trim().slice(0, 30);
@@ -55,10 +85,20 @@ export function initSocket(io) {
               if (olympic.participants.length >= (olympic.maxPlayers || 20)) {
                 return socket.emit("error", { message: "Room is full" });
               }
-              olympic.participants.push({
-                name: trimName,
-                userId: userId || null,
-              });
+              const participantData = { name: trimName, userId: userId || null };
+              if (userId) {
+                try {
+                  const userDoc = await User.findById(userId)
+                    .select("avatarColor cardImage playerCard")
+                    .lean();
+                  if (userDoc) {
+                    participantData.avatarColor = userDoc.avatarColor ?? 0;
+                    participantData.cardImage = userDoc.cardImage ?? null;
+                    participantData.playerCard = userDoc.playerCard ?? null;
+                  }
+                } catch {}
+              }
+              olympic.participants.push(participantData);
               await olympic.save();
               participantAdded = true;
             } else if (userId && !existing.userId) {
@@ -77,7 +117,7 @@ export function initSocket(io) {
           delete safeOlympic.hostToken;
           const leaderboard = computeLeaderboard(safeOlympic);
 
-          if (participantAdded) {
+          if (participantAdded || hostDataSynced) {
             // Broadcast to everyone so all devices see the updated player list
             io.to(upperCode).emit("room-update", {
               olympic: safeOlympic,
@@ -193,6 +233,15 @@ export function initSocket(io) {
           teams: teams || [],
         };
 
+        // Snapshot old bonus log counts before saving
+        const safeOld = olympic.toObject();
+        delete safeOld.hostToken;
+        const oldLeaderboard = computeLeaderboard(safeOld);
+        const oldBonusCounts = {};
+        for (const e of oldLeaderboard) {
+          oldBonusCounts[e.name] = e.bonusLog?.length ?? 0;
+        }
+
         if (existingIdx >= 0) olympic.results[existingIdx] = resultData;
         else olympic.results.push(resultData);
 
@@ -206,6 +255,19 @@ export function initSocket(io) {
           olympic: safe2,
           leaderboard: leaderboard2,
         });
+
+        // Emit newly earned bonus events
+        const newBonusEvents = [];
+        for (const entry of leaderboard2) {
+          const oldCount = oldBonusCounts[entry.name] ?? 0;
+          const newLogs = (entry.bonusLog || []).slice(oldCount);
+          for (const log of newLogs) {
+            newBonusEvents.push({ player: entry.name, ...log });
+          }
+        }
+        if (newBonusEvents.length > 0) {
+          io.to(upperCode).emit("bonus-events", newBonusEvents);
+        }
 
         // Detect ties and trigger tiebreaker if enabled
         if (olympic.tieRule === "tiebreaker" && placements?.length) {
@@ -372,7 +434,45 @@ export function initSocket(io) {
       }
     });
 
+    /**
+     * chat-message — relay a chat message to everyone in the room
+     * payload: { code, name, text }
+     */
+    socket.on("chat-message", ({ code, name, text }) => {
+      const upperCode = code?.toUpperCase();
+      const trimText = String(text || "").trim().slice(0, 200);
+      const trimName = String(name || "?").trim().slice(0, 30);
+      if (!trimText || !upperCode || !trimName) return;
+
+      const now = Date.now();
+      const limit = chatLimits.get(socket.id) || { timestamps: [], blockedUntil: 0 };
+
+      if (now < limit.blockedUntil) {
+        socket.emit("chat-cooldown", { secsLeft: Math.ceil((limit.blockedUntil - now) / 1000) });
+        return;
+      }
+
+      limit.timestamps = limit.timestamps.filter((t) => now - t < CHAT_WINDOW_MS);
+      limit.timestamps.push(now);
+
+      if (limit.timestamps.length > CHAT_MAX_MSGS) {
+        limit.blockedUntil = now + CHAT_COOLDOWN_MS;
+        limit.timestamps = [];
+        chatLimits.set(socket.id, limit);
+        socket.emit("chat-cooldown", { secsLeft: Math.ceil(CHAT_COOLDOWN_MS / 1000) });
+        return;
+      }
+
+      chatLimits.set(socket.id, limit);
+      io.to(upperCode).emit("chat-message", {
+        name: trimName,
+        text: trimText,
+        ts: Date.now(),
+      });
+    });
+
     socket.on("disconnect", () => {
+      chatLimits.delete(socket.id);
       console.log(`Socket disconnected: ${socket.id}`);
       // If a participant disconnects from the lobby, remove them from participants
       const roomCode = socket.data.code;

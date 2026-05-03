@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ChevronRight, ChevronLeft, X, Crown, Zap, Trophy } from "lucide-react";
 import { AVATAR_GRADIENTS } from "../Header.jsx";
 import { getSocket } from "../../socket/socket.js";
+import CompactPlayerCard from "./CompactPlayerCard.jsx";
 
 const SCORING_LABELS = {
   linear: "Linear (N+1 bis 1)",
@@ -75,26 +76,15 @@ function Slide({ olympic, slideIndex, totalSlides }) {
         <p className="text-[11px] font-black uppercase tracking-[0.3em] text-cyan-400">
           Die Teilnehmer
         </p>
-        <div className="flex flex-wrap gap-3 justify-center max-w-lg">
+        <div className="flex flex-wrap gap-3 justify-center max-w-xl">
           {participants.map((p, i) => (
-            <div
+            <CompactPlayerCard
               key={p._id || i}
-              className="flex flex-col items-center gap-2"
-            >
-              <div
-                className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-black text-white"
-                style={{
-                  background:
-                    AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length],
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
-                }}
-              >
-                {p.name?.[0]?.toUpperCase()}
-              </div>
-              <span className="text-xs font-bold text-white/70 text-center max-w-[64px] truncate">
-                {p.name}
-              </span>
-            </div>
+              name={p.name}
+              avatarColor={p.avatarColor ?? null}
+              cardImage={p.cardImage ?? null}
+              fallbackIndex={i}
+            />
           ))}
         </div>
         {participants.length === 0 && (
