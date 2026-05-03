@@ -9,3 +9,5 @@ dist/
 .claude-flow
 CLAUDE.md
 /doc
+.vercel
+.env*.local
